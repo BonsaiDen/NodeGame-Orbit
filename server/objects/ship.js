@@ -110,7 +110,7 @@ Ship.prototype.tick = function() {
     
     // Start Traveling
     if (this.inOrbit && this.nextPlanet !== null && !this.traveling) {
-        if (Math.abs(this.$.coreDifference(this.r, this.travelAngle)) < this.rs) {
+        if (Math.abs(this.$.coreDifference(this.r, this.travelAngle)) < this.rs * 0.75) {
             this.updated = true;
             this.planet.removeShip(this);
             this.r = this.travelAngle;
