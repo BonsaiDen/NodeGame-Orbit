@@ -68,7 +68,6 @@ Ship.prototype.tick = function() {
             this.orbit = tickDiff * this.$.shipToOrbitSpeed[this.type];
             if (this.orbit >= this.$.shipOrbits[this.type]) {
                 this.inOrbit = true;
-                this.planet.addShip(this);
                 this.orbit = this.$.shipOrbits[this.type];
             }
         
@@ -83,7 +82,7 @@ Ship.prototype.draw = function() {
     this.calculatePosition();
     
     // inFlight
-    if (!this.inOrbit || this.nextPlanet) {
+    if (this.nextPlanet) {
         this.$.drawShaded(this.player.color);
     
     // Stationed

@@ -32,30 +32,61 @@ function Planet(game, x, y, size, start, id) {
     this.player = null;
     
     this.start = start;
+    
     this.size = size;
     this.x = x;
     this.y = y;
     
     this.ships = {};
+    this.ships[this.$.neutralPlayer.id] =  {fight: [], bomb: [], def: []};
     this.shipCount = 0;
     
     // Production
-    this.rate = 10;
+    this.rateStep = 0;
+    this.rate = 100;
+    this.maxCount = 5;
+    
+    if (!start) {
+        this.initNeutral();
+    }
 }
 exports.Planet = Planet;
 
+
+// Inits and Resets ------------------------------------------------------------
 Planet.prototype.reset = function() {
-    this.rate = 10;
+    this.rateStep = 0;
+    this.rate = 100;
+    this.maxCount = 5;
+};
+
+Planet.prototype.initPlayer = function(player) {
+    this.player = player;
+    this.rateStep = 0;
+    this.rate = 50;
+    this.maxCount = 30;
+};
+
+Planet.prototype.initNeutral = function() {
+    this.player = this.$.neutralPlayer;
+    this.rateStep = 0;
+    this.rate = 250;
+    this.maxCount = Math.floor(this.size / 6);
+    
+    this.createShips('fight', this.player,
+                     Math.floor(this.maxCount * (0.5 + Math.random() / 2)), true);
 };
 
 
 // Production Ticking ----------------------------------------------------------
 Planet.prototype.tick = function() {
     if (this.player) {
-        this.rate--;
-        if (this.rate <= 0 && this.shipCount < 30) {
-            this.createShip('fight', this.player);
-            this.rate = 10;
+        this.rateStep++;
+        if (this.rateStep > this.rate) {
+            if (this.getPlayerShipCount(this.player) < this.maxCount) {
+                this.createShip('fight', this.player, false);
+                this.rateStep = 0;
+            }
         }
     }
 };
@@ -109,12 +140,18 @@ Planet.prototype.tickCombat = function() {
 
 
 // Ships -----------------------------------------------------------------------
-Planet.prototype.createShip = function(type, player) {
+Planet.prototype.createShip = function(type, player, orbit) {
     var ship = new Ship(this.$, type, this,
                         player, Math.floor(Math.random() * 360),
-                        Math.random() * 2 > 1 ? 1 : -1);
+                        Math.random() * 2 > 1 ? 1 : -1, orbit);
     
     this.$.ships.push(ship);
+};
+
+Planet.prototype.createShips = function(type, player, count, orbit) {
+    for(var i = 0; i < count; i++) {
+        this.createShip(type, player, orbit);
+    }
 };
 
 Planet.prototype.addShip = function(ship) {
@@ -164,6 +201,12 @@ Planet.prototype.send = function(player, target, type, amount) {
 };
 
 // Helpers ---------------------------------------------------------------------
+Planet.prototype.getPlayerShipCount = function(player) {
+    return this.ships[player.id]['fight'].length
+           + this.ships[player.id]['def'].length
+           + this.ships[player.id]['bomb'].length;
+};
+
 Planet.prototype.getTick = function() {
     return this.$.getTick();
 };

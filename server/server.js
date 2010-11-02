@@ -42,7 +42,7 @@ function Server(port) {
     this.maxClients = 8;
     this.clientCount = 0;
     this.clients = {};
-    this.clientID = 0;
+    this.clientID = 1;
     
     // Game
     this.game = new Game(this);

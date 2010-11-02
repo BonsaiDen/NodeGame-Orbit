@@ -45,9 +45,8 @@ function Game(server) {
     this.height = 0;
     this.maxDistance = 0;
     this.maxPlayers = 0;
-    this.playerColors = [-1, -1, -1, -1, -1, -1, -1];
+    this.playerColors = [-2, -1, -1, -1, -1, -1, -1, -1];
     this.playerCount = 0;
-    
     this.coreInit();
 }
 exports.Game = Game;
@@ -149,8 +148,7 @@ Game.prototype.addPlayer = function(client) {
     // Update planets
     var start = this.getStartPlanet()
     if (start !== null) {
-        start.reset();
-        start.player = player;
+        start.initPlayer(player);
     }
     
     var planets = [];
@@ -406,6 +404,7 @@ Game.prototype.coreInit = function() {
     this.ships = [];
     this.planets = [];
     this.players = {};
+    this.neutralPlayer = new Player(this, {id: 0, name: 'Foo'}, 0);
     this.loadMap();
     
     // Init Path Finding
@@ -438,6 +437,9 @@ Game.prototype.corePath = function(planet, target, player) {
         Q[i] = i;
     }
     distance[this.planets.indexOf(planet)] = 0;
+    
+    // remove non player and non neutral unless Q = target
+    // if planet != player and target != player and list.length == 1, don't move
     
     while (Q.length > 0) {
         var min = 100000000;

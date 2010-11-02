@@ -47,6 +47,9 @@ Game.prototype.corePath = function(planet, target, player) {
     }
     distance[this.planetList.indexOf(planet)] = 0;
     
+    // for Q remove non player and non target
+    
+    
     while (Q.length > 0) {
         var min = 100000000;
         var u = 0;

@@ -111,7 +111,7 @@ Planet.prototype.getPlayerShipCount = function(player) {
 // Drawing ---------------------------------------------------------------------
 Planet.prototype.draw = function() {
     this.$.drawWidth(4);
-    this.$.drawColor(this.player ? this.player.color : 5);
+    this.$.drawColor(this.player ? this.player.color : 0);
     this.$.drawAlpha(0.35);
     this.$.drawCircle(this.x, this.y, this.size - 2.5, false);
     this.$.drawWidth(5);
@@ -120,12 +120,12 @@ Planet.prototype.draw = function() {
     
     this.$.drawAlpha(1);
     this.$.drawWidth(3);
-    this.$.drawColor(this.player ? this.player.color : 5);
+    this.$.drawColor(this.player ? this.player.color : 0);
     this.$.drawCircle(this.x, this.y, this.size, false);
     
     // Selected
     if (this.$.player) {
-        this.$.drawColor(this.player ? this.player.color : 5);
+        this.$.drawColor(this.player ? this.player.color : 0);
         if (this === this.$.inputHover || this === this.$.player.selectPlanet) {
             this.$.drawWidth(1);
             this.$.drawCircle(this.x, this.y, this.size + 4, false);

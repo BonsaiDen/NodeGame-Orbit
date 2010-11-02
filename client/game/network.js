@@ -175,10 +175,7 @@ Game.prototype.netShipsUpdate = function(data) {
             ship.tickCount = d[5];
             ship.tickAngle = this.getTick();
             ship.or = d[6];
-            
-            if (ship.inOrbit) {
-                ship.planet.addShip(ship);
-            }
+            ship.planet.addShip(ship);
             
             // Already traveling
             if (ship.next && ship.traveling) {
@@ -202,9 +199,7 @@ Game.prototype.netShipsUpdate = function(data) {
         
             // Sent
             if (ship.next && !ship.traveling) {
-                if (ship.inOrbit) {
-                    ship.planet.addShip(ship);
-                }
+                ship.planet.addShip(ship);
                 ship.nextPlanet = this.planets[d[2]];
                 
                 // Has just finished traveling

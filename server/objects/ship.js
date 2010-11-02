@@ -23,7 +23,7 @@
 
 // Ships -----------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Ship(game, type, planet, player, r, dir) {
+function Ship(game, type, planet, player, r, dir, orbit) {
     this.$ = game;
     this.id = this.$.shipID++;
     this.player = player;
@@ -37,11 +37,12 @@ function Ship(game, type, planet, player, r, dir) {
     this.y = 0;
     this.rs = 0;
     this.r = r;
-    this.orbit = 0;
+    this.orbit = orbit ? this.$.shipOrbits[this.type] : 0;
     
-    this.inOrbit = false;
+    this.inOrbit = orbit;
     this.direction = dir;
     this.planet = planet;
+    this.planet.addShip(this);
     
     this.targetPlanet = null;
     this.nextPlanet = null;
@@ -98,7 +99,6 @@ Ship.prototype.tick = function() {
             if (this.orbit >= maxOrbit) {
                 this.orbit = maxOrbit;
                 this.inOrbit = true;
-                this.planet.addShip(this);
             }
         }
         
@@ -107,7 +107,7 @@ Ship.prototype.tick = function() {
     }
     
     // Start Traveling
-    if (this.nextPlanet !== null && !this.traveling) {
+    if (this.inOrbit && this.nextPlanet !== null && !this.traveling) {
         if (Math.abs(this.$.coreDifference(this.r, this.travelAngle)) < this.rs) {
             this.updated = true;
             this.lastTick = this.getTick();
