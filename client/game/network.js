@@ -187,10 +187,9 @@ Game.prototype.netShipsUpdate = function(data) {
                 ship.planet.removeShip(ship);
                 ship.orbit = this.shipOrbits[ship.type];
                 ship.nextPlanet = this.planets[d[7]];
-                ship.r = ship.or = d[8];
-                ship.tickAngle = this.getTick();
-                ship.arriveTick = d[9];
-                ship.travelTicks = d[10];
+                ship.r = ship.or;
+                ship.arriveTick = d[8];
+                ship.travelTicks = d[9];
                 ship.travelDistance = this.coreOrbit(ship, ship.planet, ship.nextPlanet);
                 ship.travelAngle = Math.round(this.coreAngle(ship.planet, ship.nextPlanet));
             
@@ -213,7 +212,7 @@ Game.prototype.netShipsUpdate = function(data) {
                     ship.planet = this.planets[d[3]];
                     ship.planet.addShip(ship);
                     ship.or = d[4];
-                    ship.tickAngle = d[5];
+                    ship.tickAngle = this.getTick();
                     if (!ship.next) {
                         ship.nextPlanet = null;
                     }
@@ -237,7 +236,7 @@ Game.prototype.netShipsUpdate = function(data) {
                 ship.planet = this.planets[d[2]];
                 ship.planet.addShip(ship);
                 ship.or = d[3];
-                ship.tickAngle = d[4];
+                ship.tickAngle = this.getTick();
                 if (!ship.next) {
                     ship.nextPlanet = null;
                 }

@@ -366,8 +366,7 @@ Game.prototype.shipToMessage = function(ship, create) {
         // Ship created in travel
         if (ship.nextPlanet && ship.traveling) {
             msg.push(ship.nextPlanet.id);
-            msg.push(ship.r);
-            msg.push(ship.arriveTick);   
+            msg.push(ship.arriveTick);
             msg.push(ship.travelTicks);
         
         // Ship created and already sent
@@ -386,7 +385,6 @@ Game.prototype.shipToMessage = function(ship, create) {
             if (ship.traveled) {
                 msg.push(ship.planet.id);
                 msg.push(ship.r);
-                msg.push(ship.getTick());
             }
         
         // Ship starts travel
@@ -400,7 +398,6 @@ Game.prototype.shipToMessage = function(ship, create) {
         } else {
             msg.push(ship.planet.id);
             msg.push(ship.r);
-            msg.push(ship.getTick());
         }
     
     } else {
