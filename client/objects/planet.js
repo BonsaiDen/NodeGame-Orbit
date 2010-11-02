@@ -142,8 +142,11 @@ Planet.prototype.draw = function() {
             }
         
         // Info
-        } else if ((this === this.$.inputHover && this.$.sendPath.length === 0)) {
-            this.drawSelect();
+        } else if (this === this.$.inputHover) {
+            if (this.$.sendPath.length === 0) {
+                this.drawSelect();
+            }
+            
             var playerCount = this.getPlayerShipCount(this.$.player);
             var localCount = this.getPlayerShipCount(this.player);
             if (playerCount > 0 && this.player !== this.$.player) {

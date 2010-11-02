@@ -82,16 +82,19 @@ Ship.prototype.tick = function() {
 Ship.prototype.draw = function() {
     this.calculatePosition();
     
-    // inFlight
-    if (this.nextPlanet) {
-        this.$.drawShaded(this.player.color);
-    
-    // Stationed
-    } else {
-        this.$.drawColor(this.player.color);
+    if (this.$.shipVisbile(this)) {
+        
+        // inFlight
+        if (this.nextPlanet) {
+            this.$.drawShaded(this.player.color);
+        
+        // Stationed
+        } else {
+            this.$.drawColor(this.player.color);
+        }
+        this.$.drawWidth(1.5);
+        this.$.drawCircle(this.x, this.y, 1.5, true);
     }
-    this.$.drawWidth(1.5);
-    this.$.drawCircle(this.x, this.y, 1.5, true);
 };
 
 Ship.prototype.attack = function(other) {

@@ -99,6 +99,12 @@ Player.prototype.send = function(target) {
     }
 };
 
+Player.prototype.stop = function(planet) {
+    if (planet.player === this) {
+        this.$.send({'stop': [planet.id, 'fight']}); // TODO make this work later
+    }
+};
+
 
 // Control ---------------------------------------------------------------------
 Player.prototype.selectStart = function(planet, type) {
@@ -119,6 +125,12 @@ Player.prototype.selectSimple = function(planet) {
     this.selectPlanet = planet;
     this.select = false;
     this.selectCount = 0;
+};
+
+Player.prototype.selectAll = function() {
+    if (this.selectPlanet && this.selectType) {
+        this.selectCount = this.selectPlanet.ships[this.id][this.selectType].length;
+    }
 };
 
 Player.prototype.selectCancel = function() {

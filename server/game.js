@@ -53,6 +53,7 @@ function Game(server, id) {
     this.maxPlayers = 0;
     this.playerColors = [-2, -1, -1, -1, -1, -1, -1, -1];
     this.playerCount = 0;
+    this.clientCount = 0;
     this.coreInit();
     this.run();
     this.$$.log('## Game #' + this.id + ' started');
@@ -69,7 +70,7 @@ Game.prototype.run = function() {
     this.tickCount++;
     for(var i = 0, l = this.planets.length; i < l; i++) {
         this.planets[i].tick();
-        if (this.tickCount % 6 === 0) {
+        if (this.tickCount % 4 === 0) {
             this.planets[i].tickCombat();
         }
     }
@@ -94,7 +95,7 @@ Game.prototype.run = function() {
                                 66 - (new Date().getTime() - frame));
                    
     // Check if all players have left the game
-    if (this.playerCount > 0) {
+    if (this.clientCount > 0) {
         this.lastPlayingTick = this.tickCount;
     
     } else if (this.tickCount - this.lastPlayingTick > 50) {
@@ -140,6 +141,12 @@ Game.prototype.onMessage = function(type, data, client) {
             if (from && to && this.shipTypes.indexOf(data[2]) !== -1) {
                 from.send(player, to, data[2], data[3]);
             }
+        
+        } else if (type === 'stop') {
+            var at = this.planets[data[0]];
+            if (at && this.shipTypes.indexOf(data[1]) !== -1) {
+                at.stop(player, data[1]);
+            }
         }
     }
 };
@@ -147,21 +154,22 @@ Game.prototype.onMessage = function(type, data, client) {
 
 // Networking ------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-Game.prototype.addPlayer = function(client) {
+Game.prototype.addPlayer = function(client, watch) {
     this.clients[client.id] = client;
     this.clients[client.id].ships = {};
+    this.clientCount++;
     
     // Find Free color
     var freeColor = -1;
-    for(var i = 1; i < this.maxPlayers + 1; i++) {
-        if(this.playerColors[i] === -1) {
-            this.playerColors[i] = client.id;
-            freeColor = i;
-            break;
+    if (!watch) {
+        for(var i = 1; i < this.maxPlayers + 1; i++) {
+            if(this.playerColors[i] === -1) {
+                this.playerColors[i] = client.id;
+                freeColor = i;
+                break;
+            }
         }
     }
-    
-    this.$$.log('color ' + freeColor);
     
     // Create player if we found a color
     var player = null;
@@ -171,7 +179,7 @@ Game.prototype.addPlayer = function(client) {
     }
     
     // Send other players to the client
-    for(var i in this.players) {
+    for (var i in this.players) {
         var p = this.players[i];
         client.send(MSG_PLAYER_ADD, [p.id, p.name, p.color]);
     }
@@ -250,6 +258,7 @@ Game.prototype.removePlayer = function(id) {
         this.playerColors[player.color] = -1;
         delete this.players[id];
     }
+    this.clientCount--;
 };
 
 
@@ -258,6 +267,7 @@ Game.prototype.removePlayer = function(id) {
 Game.prototype.updatePlanets = function() {
     for(var i in this.players) {
         this.players[i].shipMaxCount = 0;
+        this.players[i].planetCount = 0;
     }
     
     var planets = [];
@@ -265,6 +275,7 @@ Game.prototype.updatePlanets = function() {
         var p = this.planets[i];
         if (p.player) {
             p.player.shipMaxCount += p.maxCount;
+            p.player.planetCount++;
         }
         planets.push([p.id, p.player ? p.player.id : 0]); 
     }

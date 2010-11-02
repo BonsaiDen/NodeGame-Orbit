@@ -25,7 +25,7 @@ var Game = require('./game').Game;
 
 // Clients ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Client(server, conn, name, gameID) {
+function Client(server, conn, name, gameID, watch) {
     this.$$ = server;
     
     // Create a new game or join an existing one
@@ -45,7 +45,7 @@ function Client(server, conn, name, gameID) {
     this.name = name;
     
     this.$$.log('++ ' + this.info + ' joined Game #' + this.gameID);
-    this.$.addPlayer(this);
+    this.$.addPlayer(this, watch);
 }
 
 exports.Client = Client;
@@ -61,6 +61,13 @@ Client.prototype.onMessage = function(msg) {
             && typeof data[2] === 'string' && typeof data[3] === 'number') {
             
             this.$.onMessage('send', data, this);
+        }
+    
+    // Stop ships
+    } else if (msg.stop && msg.stop instanceof Array && msg.stop.length === 2) {
+        var data = msg.stop;
+        if (typeof data[0] === 'number' && typeof data[1] === 'string') {
+            this.$.onMessage('stop', data, this);
         }
     }
 };

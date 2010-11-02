@@ -83,12 +83,18 @@ Ship.prototype.send = function(target) {
     }
 };
 
+Ship.prototype.stop = function() {
+    this.nextPlanet = this.targetPlanet = null;
+    this.updated = true;
+};
+
 Ship.prototype.attack = function(other) {
     other.health -= this.$.shipDamage[this.type];
     if (other.health <= 0) {
         other.destroy();
     }
 };
+
 
 // Updates ---------------------------------------------------------------------
 Ship.prototype.tick = function() {

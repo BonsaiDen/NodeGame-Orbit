@@ -52,6 +52,12 @@ Game.prototype.inputInit = function(full) {
         
         }, false);
         
+        this.canvas.addEventListener('contextmenu', function(e) {
+            that.inputClick(e || window.event);
+            e.preventDefault();
+            return false;
+        }, false);  
+        
         this.canvas.addEventListener('mousedown', function(e) {
             that.inputDown(e || window.event);
         }, false);
@@ -62,6 +68,10 @@ Game.prototype.inputInit = function(full) {
         
         this.canvas.addEventListener('click', function(e) {
             that.inputClick(e || window.event);
+        }, false); 
+        
+        this.canvas.addEventListener('dblclick', function(e) {
+            that.inputDoubleClick(e || window.event);
         }, false); 
     }
         
@@ -190,8 +200,17 @@ Game.prototype.inputUp = function(e) {
 };
 
 Game.prototype.inputClick = function(e) {
-    if (!this.inputHover) {
+    if (this.inputHover && e.button === 2) {
+        this.player.stop(this.inputHover);
+    
+    } else if (!this.inputHover) {
         this.player.selectCancel();
+    }
+};
+
+Game.prototype.inputDoubleClick = function(e) {
+    if (this.inputHover) {
+        this.player.selectAll();
     }
 };
 

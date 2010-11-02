@@ -74,8 +74,8 @@ Planet.prototype.initPlayer = function(player) {
 Planet.prototype.initNeutral = function(ships, orbit) {
     this.player = this.$.neutralPlayer;
     this.rateStep = 0;
-    this.rate = Math.floor(8000 / this.size * 0.5);
-    this.maxCount = Math.floor(this.size / 4.5);
+    this.rate = Math.floor(8000 / this.size);
+    this.maxCount = Math.floor(this.size / 2.5);
     
     if (ships) {
         var count = Math.ceil(3 + (Math.random() * this.maxCount / 2));
@@ -88,7 +88,17 @@ Planet.prototype.initNeutral = function(ships, orbit) {
 Planet.prototype.tick = function() {
     if (this.player) {
         this.rateStep++;
-        if (this.rateStep > this.rate) {
+        
+        var rate = this.rate;
+        var mod = [1.0, 0.55, 0.9, 1.15, 1.30, 1.5, 1.8, 2.2, 2.5, 3.0];
+        if (this.player.planetCount < mod.length) {
+            rate = this.rate * mod[this.player.planetCount];
+        
+        } else {
+            rate = 3.0;
+        }
+        
+        if (this.rateStep > rate) {
             if (this.player.shipCount < this.player.shipMaxCount
                 && this.getPlayerShipCount(this.player) < this.maxCount) {
                 
@@ -231,6 +241,14 @@ Planet.prototype.send = function(player, target, type, amount) {
         }
     }
 };
+
+Planet.prototype.stop = function(player, type) {
+    var ships = this.ships[player.id][type];
+    for(var i = 0, l = ships.length; i < l; i++) {
+        ships[i].stop();
+    }
+}
+
 
 // Helpers ---------------------------------------------------------------------
 Planet.prototype.getPlayerShipCount = function(player) {

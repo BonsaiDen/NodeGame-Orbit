@@ -48,6 +48,13 @@ Game.prototype.drawTick = function() {
     this.bg.scale(this.scale, this.scale);    
     this.bg.translate(-this.cameraX, -this.cameraY);
     
+    this.bg.beginPath();  
+    this.bg.moveTo(this.cameraX, this.cameraY);
+    this.bg.lineTo(this.cameraX + this.width / this.scale, this.cameraY);
+    this.bg.lineTo(this.cameraX + this.width / this.scale, this.cameraY + this.height / this.scale);
+    this.bg.lineTo(this.cameraX, this.cameraY + this.height / this.scale);
+    this.bg.clip();
+    
     this.bg.globalCompositeOperation = 'source-over';
     this.bg.fillStyle = '#000000';
     this.bg.fillRect(0, 0, this.width, this.height);
@@ -67,7 +74,7 @@ Game.prototype.drawTick = function() {
             var r = Math.atan2(dy, dx);
             this.bg.moveTo(from.x + Math.cos(r) * (from.size + 1),
                            from.y + Math.sin(r) * (from.size + 1));
-              
+            
             this.bg.lineTo(to.x - Math.cos(r) * (to.size + 1),
                            to.y - Math.sin(r) * (to.size + 1));
             
@@ -92,6 +99,16 @@ Game.prototype.drawTick = function() {
     
     this.effectDraw();
     this.bg.restore();
+};
+
+
+Game.prototype.shipVisbile = function(ship) {
+    if (ship.x >= this.cameraX - 5 && ship.x <= this.cameraX + this.width / this.scale + 5) {
+        if (ship.y >= this.cameraY - 5  && ship.y <= this.cameraY + this.height / this.scale + 5) {
+            return true;
+        }
+    }
+    return false;
 };
 
 Game.prototype.drawClear = function() {

@@ -150,7 +150,7 @@ Server.prototype.status = function(end) {
 
 // Login -----------------------------------------------------------------------
 Server.prototype.checkLogin = function(msg) {
-    if (msg instanceof Array && msg.length >= 2
+    if (msg instanceof Array && msg.length >= 3
         && msg[0] === 'init' && typeof msg[1] === 'string') {
         
         return true;
@@ -179,6 +179,13 @@ Server.prototype.checkGame = function(game) {
     return 0;
 }
 
+Server.prototype.checkWatch = function(watch) {
+    if (typeof watch === 'boolean') {
+        return watch;
+    }
+    return false;
+}
+
 
 // Events ----------------------------------------------------------------------
 Server.prototype.onMessage = function(conn, msg) {
@@ -187,15 +194,16 @@ Server.prototype.onMessage = function(conn, msg) {
         conn.close();
     
     } else {
-      //  try {
+       // try {
             
             // Login or Message
             var msg = BISON.decode(msg);
             if (!conn.$clientID && this.checkLogin(msg)) {
                 var name = this.checkName(msg[1]);
                 var game = this.checkGame(msg[2]);
+                var watch = this.checkWatch(msg[3]);
                 if (name !== null) {
-                    conn.$clientID = this.addClient(conn, name, game);
+                    conn.$clientID = this.addClient(conn, name, game, watch);
                 }
             
             } else if (conn.$clientID) {
@@ -216,9 +224,9 @@ Server.prototype.onShutdown = function() {
 
 
 // Clients ---------------------------------------------------------------------
-Server.prototype.addClient = function(conn, name, game) {
+Server.prototype.addClient = function(conn, name, game, watch) {
     this.clientID++;
-    this.clients[this.clientID] = new Client(this, conn, name, game);
+    this.clients[this.clientID] = new Client(this, conn, name, game, watch);
     this.clientCount++;
     return this.clientID;
 };
