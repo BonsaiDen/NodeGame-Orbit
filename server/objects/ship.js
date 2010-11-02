@@ -56,12 +56,8 @@ function Ship(game, type, planet, player, r, dir) {
 exports.Ship = Ship;
 
 Ship.prototype.destroy = function() {
+    this.health = 0;
     this.planet.removeShip(this);
-    var ships = this.$.ships;
-    var index = ships.indexOf(this);
-    if (index !== -1) {
-        ships.splice(index, 1);
-    }
 };
 
 

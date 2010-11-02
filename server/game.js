@@ -182,8 +182,6 @@ Game.prototype.removePlayer = function(client) {
     for(var i = 0; i < this.ships.length; i++) {
         if (this.ships[i].player.id === client.id) {
             this.ships[i].destroy();
-            this.ships.splice(i, 1);
-            i--;
         }
     }
     this.updateAllShips();
@@ -232,7 +230,6 @@ Game.prototype.getStartPlanet = function() {
 };
 
 
-
 // Ships -----------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 Game.prototype.updateAllShips = function() {
@@ -242,11 +239,17 @@ Game.prototype.updateAllShips = function() {
     
     for(var i = 0, l = this.ships.length; i < l; i++) {
         this.ships[i].updated = false;
+        if (this.ships[i].health === 0) {
+            this.ships.splice(i, 1);
+            l--;
+            i--;
+        }
     }
 };
 
 Game.prototype.updateShips = function(client) {
     var updates = [];
+    var removes = [];
     for(var i = 0, l = this.ships.length; i < l; i++) {
         var ship = this.ships[i];
         
@@ -258,15 +261,9 @@ Game.prototype.updateShips = function(client) {
             updates.push(this.shipToMessage(ship, !client.ships[ship.id]));
             client.ships[ship.id] = [this.tickCount, ship];
         }
-    }
-    
-    // Remove destroyed ships
-    var removes = [];
-    for(var i in client.ships) {
-        var ship = client.ships[i];
-        if (this.ships.indexOf(ship[1]) === -1) {
-            removes.push(ship[1].id);
-            delete client.ships[i];
+        if (ship.health === 0) {
+            removes.push(ship.id);
+            delete client.ships[ship.id];
         }
     }
     
@@ -287,6 +284,7 @@ Game.prototype.shipToMessage = function(ship, create) {
     flags += ship.updated ? 8 : 0;
     flags += ship.nextPlanet ? 16 : 0;
     flags += ship.traveled ? 32 : 0;
+    flags += ship.direction === 1 ? 64 : 0;
     
     // Basic fields
     msg.push(flags);
@@ -300,7 +298,6 @@ Game.prototype.shipToMessage = function(ship, create) {
         msg.push(ship.player.id);
         msg.push(ship.lastTick);
         msg.push(ship.r);
-        msg.push(ship.direction === 1);
         
         // Ship created in travel
         if (ship.nextPlanet && ship.traveling) {
@@ -324,7 +321,6 @@ Game.prototype.shipToMessage = function(ship, create) {
             // Ship has just arrived
             if (ship.traveled) {
                 msg.push(ship.planet.id);
-                msg.push(ship.direction === 1);
                 msg.push(ship.r);    
             }
         
@@ -338,7 +334,6 @@ Game.prototype.shipToMessage = function(ship, create) {
         // Ship finishes travel
         } else {
             msg.push(ship.planet.id);
-            msg.push(ship.direction === 1);
             msg.push(ship.r);
         }
     

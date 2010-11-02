@@ -161,6 +161,7 @@ Game.prototype.netShipsUpdate = function(data) {
         ship.inOrbit = !!(d[0] & 4);
         ship.next = !!(d[0] & 16);
         ship.traveled = !!(d[0] & 32);
+        ship.direction = (d[0] & 64) ? 1 : -1;
         
         // Create
         if (d[0] & 1) {
@@ -170,7 +171,6 @@ Game.prototype.netShipsUpdate = function(data) {
             ship.tickCount = d[5];
             ship.tickAngle = this.getTick();
             ship.or = d[6];
-            ship.direction = d[7] ? 1 : -1;
             
             if (ship.inOrbit) {
                 ship.planet.addShip(ship);
@@ -180,17 +180,17 @@ Game.prototype.netShipsUpdate = function(data) {
             if (ship.next && ship.traveling) {
                 ship.planet.removeShip(ship);
                 ship.orbit = this.shipOrbits[ship.type];
-                ship.nextPlanet = this.planets[d[8]];
-                ship.r = ship.or = d[9];
+                ship.nextPlanet = this.planets[d[7]];
+                ship.r = ship.or = d[8];
                 ship.tickAngle = this.getTick();
-                ship.arriveTick = d[10];
-                ship.travelTicks = d[11];
+                ship.arriveTick = d[9];
+                ship.travelTicks = d[10];
                 ship.travelDistance = this.coreOrbit(ship, ship.planet, ship.nextPlanet);
                 ship.travelAngle = Math.round(this.coreAngle(ship.planet, ship.nextPlanet));
             
             // Already sent
             } else if (ship.next) {
-                ship.nextPlanet = this.planets[d[8]];
+                ship.nextPlanet = this.planets[d[7]];
             }
         
         // Send // Arrive
@@ -208,8 +208,7 @@ Game.prototype.netShipsUpdate = function(data) {
                     ship.planet.removeShip(ship);
                     ship.planet = this.planets[d[3]];
                     ship.planet.addShip(ship);
-                    ship.direction = d[4] ? 1 : -1;
-                    ship.or = d[5];
+                    ship.or = d[4];
                     ship.tickAngle = this.getTick();
                     if (!ship.next) {
                         ship.nextPlanet = null;
@@ -233,8 +232,7 @@ Game.prototype.netShipsUpdate = function(data) {
                 ship.planet.removeShip(ship);
                 ship.planet = this.planets[d[2]];
                 ship.planet.addShip(ship);
-                ship.direction = d[3] ? 1 : -1;
-                ship.or = d[4];
+                ship.or = d[3];
                 ship.tickAngle = this.getTick();
                 if (!ship.next) {
                     ship.nextPlanet = null;
