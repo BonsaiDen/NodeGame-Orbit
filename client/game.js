@@ -33,6 +33,7 @@ function Game(client) {
     this.width = 0;
     this.height = 0;
     this.maxDistance = 0;
+    this.shipSpeed = 0;
     this.coreInit();
 }
 
@@ -49,6 +50,12 @@ Game.prototype.run = function() {
         }
         
         // Tick the Game
+        if (this.tickCount % 8 === 0) {
+            for(var i in this.planets) {
+                this.planets[i].tickCombat();
+            }
+        }
+        
         for(var i in this.ships) {
             this.ships[i].tick();
         }

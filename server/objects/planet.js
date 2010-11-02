@@ -41,12 +41,10 @@ function Planet(game, x, y, size, start, id) {
     
     // Production
     this.rate = 10;
-    this.count = 20;
 }
 exports.Planet = Planet;
 
 Planet.prototype.reset = function() {
-    this.count = 20;
     this.rate = 10;
 };
 
@@ -55,10 +53,56 @@ Planet.prototype.reset = function() {
 Planet.prototype.tick = function() {
     if (this.player) {
         this.rate--;
-        if (this.rate === 0 && this.count > 0) {
+        if (this.rate <= 0 && this.shipCount < 30) {
             this.createShip('fight', this.player);
             this.rate = 10;
-            this.count--;
+        }
+    }
+};
+
+
+// Combat ----------------------------------------------------------------------
+Planet.prototype.tickCombat = function() {
+    if (this.shipCount === 0) {
+        return;
+    }
+    
+    var ships = [];
+    var tl = this.$.shipTypes.length;
+    for(var p in this.ships) {
+        for(var t = 0; t < tl; t++) {
+            ships = ships.concat(this.ships[p][this.$.shipTypes[t]]);
+        }
+    }
+    ships.sort(function(a, b) {
+        return a.r < b.r;
+    });
+    
+    var rs = Math.round(Math.PI / this.size * this.$.shipSpeed * 100) / 100 * 2;
+    var fightDistance = rs * 3;
+    for(var i = 0, l = ships.length; i < l; i++) {
+        var c = ships[i];
+        if (c.inOrbit && c.health > 0) {
+            for(var e = i + 1;; e++) {
+                if (e === l) {
+                    e = 0;
+                }
+                if (e === i) {
+                    break;
+                }
+                
+                var s = ships[e];
+                var ds = Math.abs(this.$.coreDifference(s.r, c.r));
+                if (s.health > 0 && ds <= fightDistance) {
+                    if (s.player !== c.player) {
+                        c.attack(s);
+                        break;
+                    }
+                
+                } else {
+                    break;
+                }
+            }
         }
     }
 };

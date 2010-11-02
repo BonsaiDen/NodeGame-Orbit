@@ -51,6 +51,7 @@ function Ship(game, id) {
 }
 
 Ship.prototype.destroy = function() {
+    this.$.effectExplosion(this.player.color, this.planet, this.orbit, this.r, 9);
     this.planet.removeShip(this);
 };
 
@@ -59,7 +60,7 @@ Ship.prototype.destroy = function() {
 Ship.prototype.tick = function() {
     if (!this.traveling) {
         var tickDiff = this.getTick() - this.tickAngle;
-        var rs = Math.round(Math.PI / this.planet.size * 9.54 * 100) / 100 
+        var rs = Math.round(Math.PI / this.planet.size * this.$.shipSpeed * 100) / 100 
         this.r = (this.or + this.direction * rs * tickDiff + 360) % 360;
         
         tickDiff = this.getTick() - this.tickCount;
@@ -90,6 +91,10 @@ Ship.prototype.draw = function() {
         this.$.drawColor(this.player.color);
     }
     this.$.drawShip(this.type, this.x, this.y, this.r, false);
+};
+
+Ship.prototype.attack = function(other) {
+    this.$.effectExplosion(this.player.color, this.planet, other.orbit, other.r, 6);
 };
 
 Ship.prototype.clear = function() {

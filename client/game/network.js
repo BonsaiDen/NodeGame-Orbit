@@ -66,6 +66,7 @@ Game.prototype.netMessage = function(msg) {
         this.width = msg[0];
         this.height = msg[1];
         this.maxDistance = msg[2];
+        this.shipSpeed = msg[3];
     
     } else if (type === MSG_PLANETS_INIT) {
         this.netPlanetsInit(msg[0]);

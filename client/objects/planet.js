@@ -37,6 +37,53 @@ function Planet(game, id, x, y, size, player) {
 }
 
 
+// Combat ----------------------------------------------------------------------
+Planet.prototype.tickCombat = function() {
+    if (this.shipCount === 0) {
+        return;
+    }
+    
+    var ships = [];
+    var tl = this.$.shipTypes.length;
+    for(var p in this.ships) {
+        for(var t = 0; t < tl; t++) {
+            ships = ships.concat(this.ships[p][this.$.shipTypes[t]]);
+        }
+    }
+    ships.sort(function(a, b) {
+        return a.r < b.r;
+    });
+    
+    var rs = Math.round(Math.PI / this.size * this.$.shipSpeed * 100) / 100 * 2;
+    var fightDistance = rs * 3;
+    for(var i = 0, l = ships.length; i < l; i++) {
+        var c = ships[i];
+        if (c.inOrbit) {
+            for(var e = i + 1;; e++) {
+                if (e === l) {
+                    e = 0;
+                }
+                if (e === i) {
+                    break;
+                }
+                
+                var s = ships[e];
+                var ds = Math.abs(this.$.coreDifference(s.r, c.r));
+                if (ds <= fightDistance ) {
+                    if (s.player !== c.player) {
+                        c.attack(s);
+                        break;
+                    }
+                
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+};
+
+
 // Ships -----------------------------------------------------------------------
 Planet.prototype.addShip = function(ship) {
     if (this.ships[ship.player.id][ship.type].indexOf(ship) === -1) {

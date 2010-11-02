@@ -62,6 +62,9 @@ Game.prototype.run = function() {
     this.tickCount++;
     for(var i = 0, l = this.planets.length; i < l; i++) {
         this.planets[i].tick();
+        if (this.tickCount % 8 === 0) {
+            this.planets[i].tickCombat();
+        }
     }
     
     for(var i = 0, l = this.ships.length; i < l; i++) {
@@ -140,7 +143,8 @@ Game.prototype.addPlayer = function(client) {
     
     // Init the client
     client.send(MSG_GAME_TICK, [this.tickCount]);
-    client.send(MSG_GAME_SIZE, [this.width, this.height, this.maxDistance]);
+    client.send(MSG_GAME_SIZE, [this.width, this.height, this.maxDistance,
+                                this.shipSpeed]);
     
     // Update planets
     var start = this.getStartPlanet()
@@ -398,6 +402,9 @@ Game.prototype.coreInit = function() {
     this.shipOrbits = {def: 5, fight: 15, bomb: 10};
     this.shipToOrbitSpeed = {def: 0.125, fight: 0.5, bomb: 0.25};
     this.shipTypes = ['def', 'fight', 'bomb'];
+    this.shipSpeed = 9.54;
+    this.shipHealth = {def: 40, fight: 20, bomb: 15};
+    this.shipDamage = {def: 5, fight: 5, bomb: 20};
     
     this.shipID = 0;
     this.ships = [];

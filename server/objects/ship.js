@@ -29,6 +29,7 @@ function Ship(game, type, planet, player, r, dir) {
     this.player = player;
     this.type = type;
     this.typeID = {fight: 0, bomb: 1, def: 2}[this.type];
+    this.health = this.$.shipHealth[this.type];
     
     this.lastTick = this.getTick();
     
@@ -56,6 +57,11 @@ exports.Ship = Ship;
 
 Ship.prototype.destroy = function() {
     this.planet.removeShip(this);
+    var ships = this.$.ships;
+    var index = ships.indexOf(this);
+    if (index !== -1) {
+        ships.splice(index, 1);
+    }
 };
 
 
@@ -78,6 +84,12 @@ Ship.prototype.send = function(target) {
     }
 };
 
+Ship.prototype.attack = function(other) {
+    other.health -= this.$.shipDamage[this.type];
+    if (other.health <= 0) {
+        other.destroy();
+    }
+};
 
 // Updates ---------------------------------------------------------------------
 Ship.prototype.tick = function() {
@@ -94,7 +106,7 @@ Ship.prototype.tick = function() {
             }
         }
         
-        this.rs = Math.round(Math.PI / this.planet.size * 9.54 * 100) / 100;
+        this.rs = Math.round(Math.PI / this.planet.size * this.$.shipSpeed * 100) / 100;
         this.r = (this.r + this.direction * this.rs + 360) % 360;
     }
     

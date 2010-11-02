@@ -20,12 +20,16 @@
   
 */
 
+var EFFECT_EXPLOSION = 1;
+var EFFECT_LASER = 2;
+
 
 // Drawing ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 Game.prototype.drawInit = function() {
     this.colors = ['#f00000', '#0080ff', '#f0f000', '#00f000', '#9000ff', '#777777'];
     this.colorsShaded = ['#700000', '#004080', '#707000', '#007000', '#500080', '#303030'];
+    this.effects = [];
     
     this.canvas = $('bg');
     this.canvas.width = this.width;
@@ -68,6 +72,8 @@ Game.prototype.drawTick = function() {
     for(var i in this.planets) {
         this.planets[i].draw();
     }
+    
+    this.effectDraw();
 };
 
 Game.prototype.drawClear = function() {
@@ -134,5 +140,42 @@ Game.prototype.drawShip = function(type, x, y, r, clear) {
         this.drawWidth(2);
         this.drawCircle(x, y, 3, true);
     }
+};
+
+
+// Effects ---------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+Game.prototype.effectDraw = function() {
+    var time = new Date().getTime();
+    for(var i = 0, l = this.effects.length; i < l; i++) {
+        var e = this.effects[i];
+        
+        // Particle died
+        if (time > e.t + e.l) {
+            this.effects.splice(i, 1);
+            l--;
+            i--;
+        
+        } else {
+            var step = 100 / e.l;
+            var delta = 1 - step * ((time - e.t) / 100);
+            var x = e.p.x + Math.cos(e.r * Math.PI / 180) * (e.p.size + e.o);
+            var y = e.p.y + Math.sin(e.r * Math.PI / 180) * (e.p.size + e.o);
+            this.drawAlpha(delta);
+            if (e.i === EFFECT_EXPLOSION) {
+                this.drawWidth(0);
+                this.drawColor(e.c);
+                this.drawCircle(x, y, e.s * delta, true);
+            }
+        }
+    }
+    this.drawAlpha(1);
+};
+
+Game.prototype.effectExplosion = function(color, planet, orbit, r, size) {
+    r = r + (Math.random() * 2 - 1);
+    orbit = orbit + (Math.random() * 2.5 - 1.25);
+    this.effects.push({i: EFFECT_EXPLOSION, t: new Date().getTime(), l: 2000,
+                       s: size, c: color, p: planet, o: orbit, r: r});
 };
 
