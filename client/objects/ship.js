@@ -51,7 +51,7 @@ function Ship(game, id) {
 }
 
 Ship.prototype.destroy = function() {
-    this.$.effectExplosion(this.player.color, this.planet, this.orbit, this.r, 9);
+    this.$.effectExplosion(this.player.color, this.planet, this.orbit, this.r, 8);
     this.planet.removeShip(this);
 };
 
@@ -94,7 +94,7 @@ Ship.prototype.draw = function() {
 };
 
 Ship.prototype.attack = function(other) {
-    this.$.effectExplosion(this.player.color, this.planet, other.orbit, other.r, 6);
+    this.$.effectExplosion(this.player.color, this.planet, other.orbit, other.r, 4);
 };
 
 

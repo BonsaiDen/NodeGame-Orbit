@@ -36,6 +36,7 @@ Game.prototype.drawInit = function() {
     this.canvas.height = this.height;
     this.bg = this.canvas.getContext('2d');
     
+    this.scale = 1;
     this.mouseX = -1;
     this.mouseY = -1;
     this.cameraX = 0;
@@ -44,9 +45,8 @@ Game.prototype.drawInit = function() {
 
 Game.prototype.drawTick = function() {
     this.bg.save();
-    this.bg.scale(2, 2);    
+    this.bg.scale(this.scale, this.scale);    
     this.bg.translate(-this.cameraX, -this.cameraY);
-    
     
     this.bg.globalCompositeOperation = 'source-over';
     this.bg.fillStyle = '#000000';
@@ -55,23 +55,31 @@ Game.prototype.drawTick = function() {
     this.bg.globalCompositeOperation = 'lighter';
     if (this.sendPath.length > 0) {
         this.bg.lineCap = 'round';
-        this.drawWidth(4);
         this.drawShaded(this.player.color);
-        
-        var ox = this.player.selectPlanet.x;
-        var oy = this.player.selectPlanet.y;
-        
-        this.bg.beginPath();
+        var from = this.player.selectPlanet;
         for(var i = 0, l = this.sendPath.length; i < l; i++) {
-            var tx = this.sendPath[i].x;
-            var ty = this.sendPath[i].y;
-            this.bg.moveTo(ox, oy);
-            this.bg.lineTo(tx, ty);
-            ox = tx;
-            oy = ty;
+            this.drawWidth(4);
+            this.bg.beginPath();
+            
+            var to = this.sendPath[i];
+            var dx = to.x - from.x;
+            var dy = to.y - from.y;
+            var r = Math.atan2(dy, dx);
+            this.bg.moveTo(from.x + Math.cos(r) * (from.size + 1),
+                           from.y + Math.sin(r) * (from.size + 1));
+              
+            this.bg.lineTo(to.x - Math.cos(r) * (to.size + 1),
+                           to.y - Math.sin(r) * (to.size + 1));
+            
+            this.bg.closePath();
+            this.bg.stroke();
+            
+            if (to === this.sendPath[this.sendPath.length - 1]) {
+                this.drawColor(this.player.color);
+            }
+            to.drawSelect();
+            from = to;
         }
-        this.bg.closePath();
-        this.bg.stroke();
     }
     
     for(var i in this.ships) {

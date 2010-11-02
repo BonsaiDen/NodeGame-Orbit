@@ -45,7 +45,7 @@ Game.prototype.coreBuildPath = function() {
         for(var e = i + 1; e < l; e++) {
             var a = this.planetList[i];
             var b = this.planetList[e];
-            var dist = this.coreDistance(a, b);
+            var dist = this.coreSurfaceDistance(a, b);
             if (dist <= this.maxDistance) {
                 this.planetNodes[i].push(b);
                 this.planetNodes[e].push(a);
@@ -120,6 +120,10 @@ Game.prototype.coreDistance = function(from, to) {
     var dx = from.x - to.x;
     var dy = from.y - to.y;
     return Math.sqrt(dx * dx + dy * dy);
+};
+
+Game.prototype.coreSurfaceDistance = function(from, to) {
+    return this.coreDistance(from, to) - from.size - to.size;
 };
 
 Game.prototype.coreOrbit = function(ship, from, to) {

@@ -127,11 +127,11 @@ Planet.prototype.draw = function() {
     // Selected
     if (this.$.player) {
         this.$.drawColor(this.player ? this.player.color : 0);
-        if (this === this.$.inputHover || this === this.$.player.selectPlanet) {
-            this.$.drawWidth(1);
-            this.$.drawCircle(this.x, this.y, this.size + 4, false);
+        if ((this === this.$.inputHover && this.$.sendPath.length === 0)
+            || this === this.$.player.selectPlanet) {
+            
+            this.drawSelect();
         }
-        
         if (this === this.$.player.selectPlanet) {
             if (this.$.player.selectPlanet.getPlayerShipCount(this.$.player) > 0) {
                 this.$.drawColor(this.$.player.color);
@@ -141,9 +141,8 @@ Planet.prototype.draw = function() {
     }
 };
 
-Planet.prototype.clear = function() {
-    this.$.drawWidth(3);
-    this.$.drawClear();
-    this.$.drawCircle(this.x, this.y, this.size + 20, true);
+Planet.prototype.drawSelect = function() {
+    this.$.drawWidth(1);
+    this.$.drawCircle(this.x, this.y, this.size + 4, false);
 };
 

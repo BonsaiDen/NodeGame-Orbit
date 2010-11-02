@@ -353,31 +353,31 @@ Game.prototype.shipToMessage = function(ship, create) {
 Game.prototype.loadMap = function() { 
     var planets = [
         // Top Left
-        [48, 64, 20, true],
-        [176, 112, 35, false],
+        [48, 64, 22, true],
+        [176, 112, 40, false],
         
         // Top Right
-        [592, 64, 20, true],
-        [464, 112, 35, false], 
+        [592, 64, 22, true],
+        [464, 112, 40, false], 
         
         // Bottom Right
-        [592, 416, 20, true],
-        [464, 368, 35, false],
+        [592, 416, 22, true],
+        [464, 368, 40, false],
         
         // Top Left
-        [48, 416, 20, true],
-        [176, 368, 35, false],      
+        [48, 416, 22, true],
+        [176, 368, 40, false],      
         
         // Center
         [320, 56, 27, false],
         [320, 424, 27, false],
          
         // Sides
-        [112, 240, 25, false],
-        [528, 240, 25, false]
+        [112, 240, 17, false],
+        [528, 240, 17, false]
     ];       
     
-    this.maxDistance = 165;
+    this.maxDistance = 90;
     this.width = 640;
     this.height = 480;
     
@@ -429,7 +429,7 @@ Game.prototype.coreBuildPath = function(player) {
         for(var e = i + 1; e < l; e++) {
             var a = this.planets[i];
             var b = this.planets[e];
-            var dist = this.coreDistance(a, b);
+            var dist = this.coreSurfaceDistance(a, b);
             if (dist <= this.maxDistance) {
                 this.planetNodes[i].push(b);
                 this.planetNodes[e].push(a);
@@ -506,6 +506,10 @@ Game.prototype.coreDistance = function(from, to) {
     var dx = from.x - to.x;
     var dy = from.y - to.y;
     return Math.sqrt(dx * dx + dy * dy);
+};
+
+Game.prototype.coreSurfaceDistance = function(from, to) {
+    return this.coreDistance(from, to) - from.size - to.size;
 };
 
 Game.prototype.coreOrbit = function(ship, from, to) {

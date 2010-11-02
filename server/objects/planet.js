@@ -66,8 +66,8 @@ Planet.prototype.initPlayer = function(player) {
     }
     this.player = player;
     this.rateStep = 0;
-    this.rate = Math.floor((this.start ? 2500 : 4000) / this.size * 0.5);
-    this.maxCount = Math.floor(this.size * 0.75);
+    this.rate = Math.floor((this.start ? 4000 : 6000) / this.size * 0.5);
+    this.maxCount = Math.floor(this.size * 0.65);
     this.createShips('fight', this.player, 3, true);
 };
 
