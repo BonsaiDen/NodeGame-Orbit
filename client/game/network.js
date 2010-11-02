@@ -142,6 +142,7 @@ Game.prototype.netPlanetsInit = function(data) {
         }
     }
     this.coreBuildPath(); 
+    this.updateBackground = true;
 };
 
 Game.prototype.netPlanetsUpdate = function(data) {
@@ -149,6 +150,7 @@ Game.prototype.netPlanetsUpdate = function(data) {
         var d = data[i];
         this.planets[d[0]].player = this.players[d[1]] || null;
     }
+    this.updateBackground = true;
 };
 
 
