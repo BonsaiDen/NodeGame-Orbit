@@ -72,6 +72,7 @@ Planet.prototype.tickCombat = function() {
                 if (ds <= fightDistance ) {
                     if (s.player !== c.player) {
                         c.attack(s);
+                        s.attack(c);
                         break;
                     }
                 

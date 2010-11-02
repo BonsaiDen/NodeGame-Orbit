@@ -172,7 +172,7 @@ Game.prototype.netShipsUpdate = function(data) {
             ship.type = this.shipTypes[d[2]];
             ship.planet = this.planets[d[3]];
             ship.player = this.players[d[4]] || null;
-            ship.tickCount = d[5];
+            ship.tickInit = d[5];
             ship.tickAngle = this.getTick();
             ship.or = d[6];
             ship.planet.addShip(ship);
@@ -196,7 +196,7 @@ Game.prototype.netShipsUpdate = function(data) {
         
         // Send // Arrive
         } else if (d[0] & 8) {
-        
+            
             // Sent
             if (ship.next && !ship.traveling) {
                 ship.planet.addShip(ship);

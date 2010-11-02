@@ -61,7 +61,7 @@ Game.prototype.run = function() {
     this.tickCount++;
     for(var i = 0, l = this.planets.length; i < l; i++) {
         this.planets[i].tick();
-        if (this.tickCount % 8 === 0) {
+        if (this.tickCount % 6 === 0) {
             this.planets[i].tickCombat();
         }
     }
@@ -295,7 +295,7 @@ Game.prototype.shipToMessage = function(ship, create) {
         msg.push(ship.typeID);
         msg.push(ship.planet.id);
         msg.push(ship.player.id);
-        msg.push(ship.lastTick);
+        msg.push(ship.tickInit);
         msg.push(ship.r);
         
         // Ship created in travel

@@ -50,7 +50,7 @@ Game.prototype.run = function() {
         }
         
         // Tick the Game
-        if (this.tickCount % 8 === 0) {
+        if (this.tickCount % 6 === 0) {
             for(var i in this.planets) {
                 this.planets[i].tickCombat();
             }

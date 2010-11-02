@@ -31,7 +31,7 @@ function Ship(game, type, planet, player, r, dir, orbit) {
     this.typeID = {fight: 0, bomb: 1, def: 2}[this.type];
     this.health = this.$.shipHealth[this.type];
     
-    this.lastTick = this.getTick();
+    this.tickInit = this.getTick();
     
     this.x = 0;
     this.y = 0;
@@ -110,7 +110,6 @@ Ship.prototype.tick = function() {
     if (this.inOrbit && this.nextPlanet !== null && !this.traveling) {
         if (Math.abs(this.$.coreDifference(this.r, this.travelAngle)) < this.rs) {
             this.updated = true;
-            this.lastTick = this.getTick();
             this.planet.removeShip(this);
             this.r = this.travelAngle;
             
@@ -130,9 +129,8 @@ Ship.prototype.tick = function() {
         this.traveled = true;
         this.planet = this.nextPlanet;
         
-        this.lastTick = this.getTick();
         this.r = (this.r + 180) % 360;
-        this.direction = this.direction === 1 ? -1 : 1;
+        this.direction = Math.random() > 0.5 ? -1 : 1;
         
         this.nextPlanet.addShip(this);
         if (this.nextPlanet === this.targetPlanet) {
