@@ -93,6 +93,7 @@ Game.prototype.netMessage = function(msg) {
         this.drawInit();
         if (this.player) {
             this.inputInit();
+            this.canvas.style.borderColor = this.colorsShaded[this.player.color];
         }
         this.running = true;
         this.run();

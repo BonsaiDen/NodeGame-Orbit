@@ -15,11 +15,53 @@
         <script type="text/javascript" src="./libs/bison.js"></script>
         
         <script type="text/javascript" src="config.js"></script>
+        
+        
+        <style type="text/css">
+        body {
+            margin: 0px;
+            padding: 0px;
+            background-color: #202020;
+            font-family: Arial;
+            color: #ffffff;
+            font-weight: bold;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            font-size: 12px;
+        }
+        
+        #about {
+            text-align: center;
+            width: 400px;
+            margin: 8px auto 4px;
+        }
+        a {
+            color: #ffffff;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        a:hover {
+            color: #ffffff;
+            text-decoration: underline;
+        }
+        
+        canvas {
+            display: block;
+            margin: 8px auto 4px;
+            border: 3px #f0f0f0 solid;
+            background-color: #000000;
+        }
+        </style>
     </head>
     
     <body onload="initGame()">
         <canvas id="bg" width="0" height="0"></canvas>
-        <br/>
-        Copyright (c) 2010 by Ivo Wetzel
+        <div id="about">
+        Copyright (c) 2010 by Ivo Wetzel |
+        <a href="http://github.com/BonsaiDen/NodeGame-Orbit">@GitHub<a/> |
+        <a href="http://twitter.com/BonsaiDen">@Twitter</a> 
+        <br/>Click a planet to select your ships and send them around!
+        </div>
     </body>
 </html>
