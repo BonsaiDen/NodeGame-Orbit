@@ -35,7 +35,8 @@ var MSG_SHIPS_DESTROY = 9;
 // Network ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 Game.prototype.onConnect = function(succes) {
-    this.$$.send(['init', 'Bonsai']);
+    var gameID = parseInt(document.location.search.substr(1));
+    this.$$.send(['init', 'Bonsai', gameID]);
     this.planets = {};
     this.players = {};
     this.ships = {};

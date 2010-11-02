@@ -25,7 +25,6 @@ var ws = require('./libs/ws');
 var util = require('util');
 
 var BISON = require('./libs/bison');
-var Game = require('./game').Game;
 var Client = require('./client').Client;
 
 
@@ -45,7 +44,8 @@ function Server(port) {
     this.clientID = 1;
     
     // Game
-    this.game = new Game(this);
+    this.gameCount = 0;
+    this.games = {};
     
     // Socket
     var that = this;
@@ -74,8 +74,6 @@ function Server(port) {
     this.startTime = this.getTime();
     this.status();
     process.addListener('SIGINT', function(){that.onShutdown()})
-    
-    this.game.run();
     this.$.listen(port);
 }
 
@@ -92,7 +90,7 @@ Server.prototype.timeDiff = function(time) {
 Server.prototype.log = function(str) {
     if (this.showStatus) {
         this.logs.push([this.getTime(), str]);
-        if (this.logs.length > 16) {
+        if (this.logs.length > 18) {
             this.logs.shift();
         }
 
@@ -124,12 +122,10 @@ Server.prototype.status = function(end) {
     }
     
     var stats = '    Running ' + this.toTime(this.getTime()) + ' | '
-                + this.game.playerCount
-                + ' Player(s) / '
-                + (this.clientCount - this.game.playerCount)
-                + ' Viewer(s) / '
-                + this.game.ships.length
-                + ' Ships(s)\n    Traffic '
+                + this.clientCount
+                + ' Clients(s) | '
+                + this.gameCount
+                + ' Game(s) | Traffic '
                 + this.toSize(this.bytesSend)
                 + ' | '
                 + this.toSize((this.bytesSend - this.bytesSendLast) * 2)
@@ -154,7 +150,7 @@ Server.prototype.status = function(end) {
 
 // Login -----------------------------------------------------------------------
 Server.prototype.checkLogin = function(msg) {
-    if (msg instanceof Array && msg.length === 2
+    if (msg instanceof Array && msg.length >= 2
         && msg[0] === 'init' && typeof msg[1] === 'string') {
         
         return true;
@@ -174,6 +170,15 @@ Server.prototype.checkName = function(name) {
     }
 };
 
+Server.prototype.checkGame = function(game) {
+    if (typeof game === 'number') {
+        if (game >= 0 && game <= 12) {
+            return game;
+        }
+    }
+    return 0;
+}
+
 
 // Events ----------------------------------------------------------------------
 Server.prototype.onMessage = function(conn, msg) {
@@ -182,24 +187,25 @@ Server.prototype.onMessage = function(conn, msg) {
         conn.close();
     
     } else {
-   //     try {
+        try {
             
             // Login or Message
             var msg = BISON.decode(msg);
             if (!conn.$clientID && this.checkLogin(msg)) {
                 var name = this.checkName(msg[1]);
+                var game = this.checkGame(msg[2]);
                 if (name !== null) {
-                    conn.$clientID = this.addClient(conn, name);
+                    conn.$clientID = this.addClient(conn, name, game);
                 }
             
             } else if (conn.$clientID) {
                 this.clients[conn.$clientID].onMessage(msg);
             }
         
-//        } catch (e) {
-//            this.log('!! Error: ' + e);
-//            conn.close();
-//        }
+        } catch (e) {
+            this.log('!! Error: ' + e);
+            conn.close();
+        }
     }
 };
 
@@ -210,10 +216,9 @@ Server.prototype.onShutdown = function() {
 
 
 // Clients ---------------------------------------------------------------------
-Server.prototype.addClient = function(conn, name) {
+Server.prototype.addClient = function(conn, name, game) {
     this.clientID++;
-    this.clients[this.clientID] = new Client(this, conn, name);
-    this.clients[this.clientID].onInit();
+    this.clients[this.clientID] = new Client(this, conn, name, game);
     this.clientCount++;
     return this.clientID;
 };
@@ -228,12 +233,11 @@ Server.prototype.removeClient = function(id) {
 
 
 // Network ---------------------------------------------------------------------
-Server.prototype.broadcast = function(type, msg) {
+Server.prototype.broadcast = function(type, msg, clients) {
     msg.unshift(type);
     msg = BISON.encode(msg);
-    for(var i in this.clients) {
-        var c = this.clients[i];
-        this.bytesSend += c.$conn.send(msg);
+    for(var i in clients) {
+        this.bytesSend += clients[i].$conn.send(msg);
     }
 };
 

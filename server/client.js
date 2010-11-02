@@ -20,28 +20,38 @@
   
 */
 
+var Game = require('./game').Game;
+
 
 // Clients ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Client(server, conn, name) {
+function Client(server, conn, name, gameID) {
     this.$$ = server;
-    this.$ = server.game;
-    this.$conn = conn;
-    this.info = conn.id;
-    this.id = this.$$.clientID;
-    this.ships = {};
     
+    // Create a new game or join an existing one
+    if (!this.$$.games[gameID]) {
+        this.$ = this.$$.games[gameID] = new Game(this.$$, gameID);
+        this.$$.gameCount++;
+    
+    } else {
+        this.$ = this.$$.games[gameID];
+    }
+    
+    // Stuff
+    this.$conn = conn;
+    this.info = name + ' [' + conn.id + ']';
+    this.id = this.$$.clientID;
+    this.gameID = gameID;
     this.name = name;
-    this.$$.log('++ ' + this.info + ' connected');
+    
+    this.$$.log('++ ' + this.info + ' joined Game #' + this.gameID);
+    this.$.addPlayer(this);
 }
+
 exports.Client = Client;
 
 
-// Events ---------------------------------------------------------------------
-Client.prototype.onInit = function() {
-    this.$.addPlayer(this);
-};
-
+// Events ----------------------------------------------------------------------
 Client.prototype.onMessage = function(msg) {
 
     // Send Ships
@@ -56,13 +66,17 @@ Client.prototype.onMessage = function(msg) {
 };
 
 Client.prototype.onRemove = function() {
-    this.$$.log('++ ' + this.info + ' left');
-    this.$.removePlayer(this);
+    this.$$.log('++ ' + this.info + ' left Game #' + this.gameID);
+    this.$.removePlayer(this.id);
 };
 
 
 // Network ---------------------------------------------------------------------
 Client.prototype.send = function(type, msg) {
     this.$$.send(this.$conn, type, msg);
+};
+
+Client.prototype.close = function() {
+    this.$conn.close();
 };
 

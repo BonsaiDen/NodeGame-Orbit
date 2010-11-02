@@ -25,11 +25,12 @@
 // -----------------------------------------------------------------------------
 function Player(game, client, color) {
     this.$ = game;
-    this.$$ = client;
+    this.client = client;
     this.id = client.id;
     this.name = client.name;
     this.color = color;
     
+    this.ships = {};
     this.shipCount = 0;
     this.shipMaxCount = 0;
     this.$.players[this.id] = this;
