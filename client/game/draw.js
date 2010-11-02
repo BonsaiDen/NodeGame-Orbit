@@ -125,10 +125,14 @@ Game.prototype.drawCircle = function(x, y, size, filled) {
     }
 };
 
-Game.prototype.drawText = function(x, y, text, align, baseline) {
+Game.prototype.drawText = function(x, y, text, align, baseline, scale) {
+    this.bg.save();
+    this.bg.translate(x, y);
+    this.bg.scale(scale, scale);
     this.bg.textAlign = align;
     this.bg.textBaseline = baseline;
-    this.bg.fillText(text, x, y);   
+    this.bg.fillText(text, 0, 0);
+    this.bg.restore();
 };
 
 Game.prototype.drawLine = function(ox, oy, tx, ty) {

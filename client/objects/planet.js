@@ -32,6 +32,7 @@ function Planet(game, id, x, y, size, player) {
     this.shipCount = 0;
     
     this.size = size;
+    this.maxCount = Math.floor(this.size * 0.65);
     this.x = x;
     this.y = y;
 }
@@ -127,15 +128,31 @@ Planet.prototype.draw = function() {
     // Selected
     if (this.$.player) {
         this.$.drawColor(this.player ? this.player.color : 0);
-        if ((this === this.$.inputHover && this.$.sendPath.length === 0)
-            || this === this.$.player.selectPlanet) {
-            
+        
+        // Select
+        var size = (100 / 15) * this.size / 100;
+        if (this === this.$.player.selectPlanet && this.$.player.selectCount > 0) {
             this.drawSelect();
-        }
-        if (this === this.$.player.selectPlanet) {
-            if (this.$.player.selectPlanet.getPlayerShipCount(this.$.player) > 0) {
+            var playerCount = this.$.player.selectPlanet.getPlayerShipCount(this.$.player);
+            if (playerCount > 0) {
                 this.$.drawColor(this.$.player.color);
-                this.$.drawText(this.x, this.y, this.$.player.selectCount, 'center', 'middle');
+                this.$.drawText(this.x, this.y, this.$.player.selectCount
+                                + '/' + playerCount, 'center', 'middle', size);
+            }
+        
+        // Info
+        } else if ((this === this.$.inputHover && this.$.sendPath.length === 0)) {
+            this.drawSelect();
+            var playerCount = this.getPlayerShipCount(this.$.player);
+            if (playerCount > 0 && this.player !== this.$.player) {
+                this.$.drawShaded(this.$.player.color);
+                this.$.drawText(this.x, this.y, playerCount, 'center', 'middle', size)
+            
+            } else {
+                this.$.drawShaded(this.player ? this.player.color : 0);
+                this.$.drawText(this.x, this.y,
+                               this.getPlayerShipCount(this.player)
+                               + '/' + this.maxCount, 'center', 'middle', size);
             }
         }
     }
