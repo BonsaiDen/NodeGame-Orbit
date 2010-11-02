@@ -32,6 +32,7 @@ function Game(client) {
     this.messageQueue = [];
     this.width = 0;
     this.height = 0;
+    this.maxDistance = 0;
     this.coreInit();
 }
 

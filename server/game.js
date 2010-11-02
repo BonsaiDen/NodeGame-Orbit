@@ -41,9 +41,10 @@ var MSG_SHIPS_DESTROY = 9;
 // -----------------------------------------------------------------------------
 function Game(server) {
     this.$$ = server;
-    this.width = 640;
-    this.height = 480;
-    this.maxPlayers = 4;
+    this.width = 0;
+    this.height = 0;
+    this.maxDistance = 0;
+    this.maxPlayers = 0;
     this.playerColors = [-1, -1, -1, -1, -1, -1, -1];
     this.playerCount = 0;
     
@@ -139,7 +140,7 @@ Game.prototype.addPlayer = function(client) {
     
     // Init the client
     client.send(MSG_GAME_TICK, [this.tickCount]);
-    client.send(MSG_GAME_SIZE, [this.width, this.height]);
+    client.send(MSG_GAME_SIZE, [this.width, this.height, this.maxDistance]);
     
     // Update planets
     var start = this.getStartPlanet()
@@ -346,15 +347,36 @@ Game.prototype.shipToMessage = function(ship, create) {
 
 // Map -------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-Game.prototype.loadMap = function() {
+Game.prototype.loadMap = function() { 
     var planets = [
-            [120, 120, 20, true],
-            [240, 120, 15, false],
-            [200, 220, 15, false],
-            [280, 280, 35, false],
-            [390, 260, 20, false],
-            [450, 220, 15, false],
-            [510, 140, 20, true]];
+        // Top Left
+        [48, 64, 20, true],
+        [176, 112, 35, false],
+        
+        // Top Right
+        [576, 64, 20, true],
+        [464, 112, 35, false], 
+        
+        // Bottom Right
+        [576, 416, 20, true],
+        [464, 368, 35, false],
+        
+        // Top Left
+        [48, 416, 20, true],
+        [176, 368, 35, false],      
+        
+        // Center
+        [320, 48, 27, false],
+        [320, 432, 27, false],
+         
+        // Sides
+        [112, 240, 25, false],
+        [528, 240, 25, false]
+    ];       
+    
+    this.maxDistance = 165;
+    this.width = 640;
+    this.height = 480;
     
     this.maxPlayers = 0;
     for(var i = 0; i < planets.length; i++) {
@@ -394,7 +416,7 @@ Game.prototype.coreInit = function() {
             var a = this.planets[i];
             var b = this.planets[e];
             var dist = this.coreDistance(a, b);
-            if (dist <= 120) {
+            if (dist <= this.maxDistance) {
                 this.planetNodes[i].push(b);
                 this.planetNodes[e].push(a);
             }

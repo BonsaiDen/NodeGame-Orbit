@@ -65,6 +65,7 @@ Game.prototype.netMessage = function(msg) {
     if (type === MSG_GAME_SIZE) {
         this.width = msg[0];
         this.height = msg[1];
+        this.maxDistance = msg[2];
     
     } else if (type === MSG_PLANETS_INIT) {
         this.netPlanetsInit(msg[0]);
@@ -128,7 +129,7 @@ Game.prototype.netPlanetsInit = function(data) {
             var a = this.planetList[i];
             var b = this.planetList[e];
             var dist = this.coreDistance(a, b);
-            if (dist <= 120) {
+            if (dist <= this.maxDistance) {
                 this.planetNodes[i].push(b);
                 this.planetNodes[e].push(a);
             }
@@ -202,6 +203,7 @@ Game.prototype.netShipsUpdate = function(data) {
                 
                 // Has just finished traveling
                 if (ship.traveled) {
+                    ship.planet.removeShip(ship);
                     ship.planet = this.planets[d[3]];
                     ship.planet.addShip(ship);
                     ship.direction = d[4] ? 1 : -1;
@@ -226,6 +228,7 @@ Game.prototype.netShipsUpdate = function(data) {
             
             // Finish travel
             } else {
+                ship.planet.removeShip(ship);
                 ship.planet = this.planets[d[2]];
                 ship.planet.addShip(ship);
                 ship.direction = d[3] ? 1 : -1;

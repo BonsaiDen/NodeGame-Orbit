@@ -70,7 +70,7 @@ Player.prototype.tick = function() {
             } else if (ticks > 90) {
                 add = 10;
             
-            } else if (ticks > 1) {
+            } else if (ticks > 0) {
                 add = 1;
             }
             this.selectCount = Math.min(maxCount, this.selectCount + add);

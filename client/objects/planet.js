@@ -54,6 +54,12 @@ Planet.prototype.removeShip = function(ship) {
     }
 };
 
+Planet.prototype.getPlayerShipCount = function(player) {
+    return this.ships[player.id]['fight'].length
+           + this.ships[player.id]['def'].length
+           + this.ships[player.id]['bomb'].length;
+};
+
 
 // Drawing ---------------------------------------------------------------------
 Planet.prototype.draw = function() {
@@ -79,8 +85,10 @@ Planet.prototype.draw = function() {
         }
         
         if (this === this.$.player.selectPlanet) {
-            this.$.drawColor(this.$.player.color);
-            this.$.drawText(this.x, this.y, this.$.player.selectCount, 'center', 'middle');
+            if (this.$.player.selectPlanet.getPlayerShipCount(this.$.player) > 0) {
+                this.$.drawColor(this.$.player.color);
+                this.$.drawText(this.x, this.y, this.$.player.selectCount, 'center', 'middle');
+            }
         }
     }
 };
