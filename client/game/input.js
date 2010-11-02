@@ -23,46 +23,48 @@
 
 // Input -----------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-Game.prototype.inputInit = function() {
+Game.prototype.inputInit = function(full) {
     var that = this;
     this.moveTimeout = null;
     this.inputHover = null;
     this.inputSelected = null;
     this.inputSend = false;
     
-    this.canvas.addEventListener('mousemove', function(e) {
-        e = e || window.event;
-        clearTimeout(that.moveTimeout);
-        that.moveTimeout = setTimeout(function() {
-            var x = e.clientX - that.canvas.offsetLeft + window.scrollX;
-            var y = e.clientY - that.canvas.offsetTop + window.scrollY;
-            that.mouseX = x;
-            that.mouseY = y;
-            that.inputMove(x, y);
-        }, 5);
+    if (full) {
+        this.canvas.addEventListener('mousemove', function(e) {
+            e = e || window.event;
+            clearTimeout(that.moveTimeout);
+            that.moveTimeout = setTimeout(function() {
+                var x = e.clientX - that.canvas.offsetLeft + window.scrollX;
+                var y = e.clientY - that.canvas.offsetTop + window.scrollY;
+                that.mouseX = x;
+                that.mouseY = y;
+                that.inputMove(x, y);
+            }, 5);
+            
+        }, false);
         
-    }, false);
-    
-    this.canvas.addEventListener('mouseout', function(e) {
-        clearTimeout(that.moveTimeout);
-        that.moveTimeout = setTimeout(function() {
-            that.inputMove(-1, -1);
-        }, 5);
-    
-    }, false);
-    
-    this.canvas.addEventListener('mousedown', function(e) {
-        that.inputDown(e || window.event);
-    }, false);
-    
-    this.canvas.addEventListener('mouseup', function(e) {
-        that.inputUp(e || window.event);
-    }, false);
-    
-    this.canvas.addEventListener('click', function(e) {
-        that.inputClick(e || window.event);
-    }, false); 
-    
+        this.canvas.addEventListener('mouseout', function(e) {
+            clearTimeout(that.moveTimeout);
+            that.moveTimeout = setTimeout(function() {
+                that.inputMove(-1, -1);
+            }, 5);
+        
+        }, false);
+        
+        this.canvas.addEventListener('mousedown', function(e) {
+            that.inputDown(e || window.event);
+        }, false);
+        
+        this.canvas.addEventListener('mouseup', function(e) {
+            that.inputUp(e || window.event);
+        }, false);
+        
+        this.canvas.addEventListener('click', function(e) {
+            that.inputClick(e || window.event);
+        }, false); 
+    }
+        
     // Keyboard Input
     this.keys = {};
     window.onkeydown = window.onkeyup = function(e) {
@@ -121,6 +123,10 @@ Game.prototype.inputKeyboard = function() {
 
 // Mouse -----------------------------------------------------------------------
 Game.prototype.inputMove = function(x, y) {
+    if (!this.player) {
+        return;
+    }
+
     x = this.cameraX + (x / this.scale);
     y = this.cameraY + (y / this.scale);
     

@@ -149,10 +149,11 @@ Game.prototype.onMessage = function(type, data, client) {
 // -----------------------------------------------------------------------------
 Game.prototype.addPlayer = function(client) {
     this.clients[client.id] = client;
+    this.clients[client.id].ships = {};
     
     // Find Free color
     var freeColor = -1;
-    for(var i = 0; i < this.maxPlayers; i++) {
+    for(var i = 1; i < this.maxPlayers + 1; i++) {
         if(this.playerColors[i] === -1) {
             this.playerColors[i] = client.id;
             freeColor = i;
@@ -160,13 +161,15 @@ Game.prototype.addPlayer = function(client) {
         }
     }
     
+    this.$$.log('color ' + freeColor);
+    
     // Create player if we found a color
     var player = null;
     if (freeColor !== -1) {
         player = new Player(this, client, freeColor);
         this.playerCount++;
     }
-
+    
     // Send other players to the client
     for(var i in this.players) {
         var p = this.players[i];
@@ -185,8 +188,10 @@ Game.prototype.addPlayer = function(client) {
     
     // Update planets
     var start = this.getStartPlanet()
-    if (start !== null) {
-        start.initPlayer(player);
+    if (player) {
+        if (start !== null) {
+            start.initPlayer(player);
+        }
     }
     
     var planets = [];
@@ -205,9 +210,8 @@ Game.prototype.addPlayer = function(client) {
     this.updatePlanets();
     this.updateShips(client);
     
-    
     // Start the client
-    client.send(MSG_GAME_START, [player !== null ? player.id : 0,
+    client.send(MSG_GAME_START, [player !== null ? player.id : null,
                                  start !== null ? start.id : 0]);
 };
 
@@ -282,10 +286,8 @@ Game.prototype.getStartPlanet = function() {
 // Ships -----------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 Game.prototype.updateAllShips = function() {
-    for(var i in this.players) {
-        if (this.players[i].client.id > 0) {
-            this.updateShips(this.players[i].client);
-        }
+    for(var i in this.clients) {
+        this.updateShips(this.clients[i]);
     }
     
     for(var i = 0, l = this.ships.length; i < l; i++) {
@@ -301,22 +303,20 @@ Game.prototype.updateAllShips = function() {
 Game.prototype.updateShips = function(client) {
     var updates = [];
     var removes = [];
-    var player = this.players[client.id];
-    
     for(var i = 0, l = this.ships.length; i < l; i++) {
         var ship = this.ships[i];
         
         // Check for updates
-        if (!player.ships[ship.id]
-            || this.tickCount - player.ships[ship.id][0] > 140
+        if (!client.ships[ship.id]
+            || this.tickCount - client.ships[ship.id][0] > 140
             || ship.updated) {
              
-            updates.push(this.shipToMessage(ship, !player.ships[ship.id]));
-            player.ships[ship.id] = [this.tickCount, ship];
+            updates.push(this.shipToMessage(ship, !client.ships[ship.id]));
+            client.ships[ship.id] = [this.tickCount, ship];
         }
         if (ship.health === 0) {
             removes.push(ship.id);
-            delete player.ships[ship.id];
+            delete client.ships[ship.id];
         }
     }
     

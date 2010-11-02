@@ -91,11 +91,16 @@ Game.prototype.netMessage = function(msg) {
         this.players[msg[0]].remove();
     
     } else if (type === MSG_GAME_START) {
-        this.player = this.players[msg[0]];
-        this.drawInit();
+        if (msg[0] !== null) {
+            this.player = this.players[msg[0]];
         
+        } else {
+            this.player = null;
+        }
+        
+        this.drawInit();
         if (this.player) {
-            this.inputInit();
+            this.inputInit(true);
             this.canvas.style.borderColor = this.colorsShaded[this.player.color];
             if (this.planets[msg[1]]) {
                 this.cameraX = this.planets[msg[1]].x - this.width / 4;
@@ -103,6 +108,7 @@ Game.prototype.netMessage = function(msg) {
             }
         
         } else {
+            this.inputInit(false);
             this.cameraX = this.width / 2 - this.width / 4;
             this.cameraY = this.height / 2 - this.height / 4;
         }
