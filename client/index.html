@@ -46,17 +46,33 @@
             text-decoration: underline;
         }
         
-        canvas {
-            display: block;
+        #bgs {
             margin: 8px auto 4px;
             border: 3px #f0f0f0 solid;
+            width: 640px;
+            height: 480px;
+        }
+        
+        #bg {
+            display: inline-block;
+            background-color: transparent;
+            position: absolute;
+            top: 11px;
+        }
+        
+        #bgg {
+            display: block;
             background-color: #000000;
         }
+        
         </style>
     </head>
     
     <body onload="initGame()">
-        <canvas id="bg" width="0" height="0"></canvas>
+        <div id="bgs">
+            <canvas id="bgg" width="640" height="480"></canvas>
+            <canvas id="bg" width="640" height="480"></canvas>
+        <div>
         <div id="about">
             Copyright (c) 2010 by Ivo Wetzel |
             <a href="http://github.com/BonsaiDen/NodeGame-Orbit">@GitHub<a/> |

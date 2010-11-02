@@ -111,7 +111,21 @@ Planet.prototype.getPlayerShipCount = function(player) {
 
 
 // Drawing ---------------------------------------------------------------------
-Planet.prototype.draw = function() {
+Planet.prototype.clear = function(sx, sy) {
+    if (this.$.planetVisbile(this, sx, sy)) {
+        this.$.bgg.clearRect(this.x - this.size - sx - 8,
+                             this.y - this.size - sy - 8,
+                             this.size * 2 + 16, this.size * 2 + 16);
+    }
+};
+
+Planet.prototype.draw = function(sx, sy) {
+    if (!this.$.planetVisbile(this, sx, sy)) {
+        return false;
+    }
+    
+    // Draw Planet
+    this.$.drawBack();
     this.$.drawWidth(4);
     this.$.drawColor(this.player ? this.player.color : 0);
     this.$.drawAlpha(0.35);
@@ -127,7 +141,12 @@ Planet.prototype.draw = function() {
     
     // Selected
     if (this.$.player) {
-        this.$.drawColor(this.player ? this.player.color : 0);
+        if (this.player === this.$.player) {
+            this.$.drawColor(this.$.player.color);
+        
+        } else {
+            this.$.drawShaded(this.$.player.color);
+        }
         
         // Select
         var size = (100 / 15) * this.size / 100;
@@ -164,6 +183,7 @@ Planet.prototype.draw = function() {
             }
         }
     }
+    this.$.drawFront();
 };
 
 Planet.prototype.drawSelect = function() {

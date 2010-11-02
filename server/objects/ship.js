@@ -84,8 +84,10 @@ Ship.prototype.send = function(target) {
 };
 
 Ship.prototype.stop = function() {
-    this.nextPlanet = this.targetPlanet = null;
-    this.updated = true;
+    if (this.nextPlanet) {
+        this.nextPlanet = this.targetPlanet = null;
+        this.updated = true;
+    }
 };
 
 Ship.prototype.attack = function(other) {

@@ -46,7 +46,7 @@ Game.prototype.inputInit = function(full) {
                 that.mouseY = y;
                 that.inputMove(x, y);
             }, 5);
-            
+        
         }, false);
         
         this.canvas.addEventListener('mouseout', function(e) {
@@ -152,6 +152,7 @@ Game.prototype.inputMove = function(x, y) {
         var mx = this.mouseDragX - x;
         var my = this.mouseDragY - y;
         
+        this.updateBackground = true;
         this.cameraX = this.mouseDragCX + mx * 1.25 / this.scale;
         this.cameraY = this.mouseDragCY + my * 1.25 / this.scale;
         this.cameraX = Math.min(this.cameraX, this.width - this.width / this.scale);
@@ -179,6 +180,7 @@ Game.prototype.inputMove = function(x, y) {
     
     // Calculate path and stuff
     if (oldHover !== newHover) {
+        this.updateBackground = true;
         if (this.oldHover) {
             this.player.selectStop();
         }
@@ -188,6 +190,9 @@ Game.prototype.inputMove = function(x, y) {
                                               newHover, this.player);
             
             } else {
+                if (this.sendPath.length > 0) {
+                    this.clearBackground = true;
+                }
                 this.sendPath = [];
             }
         }
@@ -197,20 +202,23 @@ Game.prototype.inputMove = function(x, y) {
 
 Game.prototype.inputDown = function(e) {
     if (this.inputHover && !this.inputSend) {
-        if (this.player.selectPlanet) {
-            this.sendPath = [];
-        }
-        if (this.player.selectPlanet
-            && this.inputHover !== this.player.selectPlanet
-            && this.player.selectCount > 0) {
+        if (e.button === 0) {
+            if (this.player.selectPlanet) {
+                this.sendPath = [];
+                this.clearBackground = true;
+            }
+            if (this.player.selectPlanet
+                && this.inputHover !== this.player.selectPlanet
+                && this.player.selectCount > 0) {
+                
+                this.player.send(this.inputHover);
+                this.inputSend = true;
             
-            this.player.send(this.inputHover);
-            this.inputSend = true;
-        
-        } else {
-            this.player.selectStart(this.inputHover, 'fight');
+            } else {
+                this.player.selectStart(this.inputHover, 'fight');
+            }
         }
-        
+    
     } else if (!this.inputHover) {
         this.mouseDragCX = this.cameraX;
         this.mouseDragCY = this.cameraY;   
@@ -226,6 +234,7 @@ Game.prototype.inputUp = function(e) {
             this.player.selectStop();
         }
         this.inputSend = false;
+        this.updateBackground = true;
     }
     this.mouseDrag = false;
 };
@@ -236,12 +245,14 @@ Game.prototype.inputClick = function(e) {
     
     } else if (!this.inputHover) {
         this.player.selectCancel();
+        this.updateBackground = true;
     }
 };
 
 Game.prototype.inputDoubleClick = function(e) {
     if (this.inputHover) {
         this.player.selectAll();
+        this.updateBackground = true;
     }
 };
 

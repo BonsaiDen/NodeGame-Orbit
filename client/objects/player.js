@@ -58,7 +58,7 @@ Player.prototype.remove = function() {
 Player.prototype.tick = function() {
     if (this.selectPlanet && this.selectType && this.getTick() % 2 === 0) {
         var maxCount = this.selectPlanet.ships[this.id][this.selectType].length;
-        
+        var oldCount = this.selectCount;
         if (this.select) {
             var ticks = this.getTick() - this.selectTick;
             var add = 0;
@@ -78,6 +78,10 @@ Player.prototype.tick = function() {
         
         } else {
             this.selectCount = Math.min(maxCount, this.selectCount);
+        }
+        
+        if (this.selectCount !== oldCount) {
+            this.$.updateBackground = true;
         }
     }
 }

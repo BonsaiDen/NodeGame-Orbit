@@ -70,7 +70,7 @@ Game.prototype.run = function() {
     this.tickCount++;
     for(var i = 0, l = this.planets.length; i < l; i++) {
         this.planets[i].tick();
-        if (this.tickCount % 4 === 0) {
+        if (this.tickCount % this.combatTickRate === 0) {
             this.planets[i].tickCombat();
         }
     }
@@ -192,13 +192,13 @@ Game.prototype.addPlayer = function(client, watch) {
     // Init the client
     client.send(MSG_GAME_TICK, [this.tickCount]);
     client.send(MSG_GAME_SIZE, [this.width, this.height, this.maxDistance,
-                                this.shipSpeed]);
+                                this.shipSpeed, this.combatTickRate]);
     
     // Update planets
     var start = this.getStartPlanet()
     if (player) {
         if (start !== null) {
-            start.initPlayer(player);
+            start.initPlayer(player, true);
         }
     }
     
@@ -385,7 +385,8 @@ Game.prototype.shipToMessage = function(ship, create) {
             // Ship has just arrived
             if (ship.traveled) {
                 msg.push(ship.planet.id);
-                msg.push(ship.r);    
+                msg.push(ship.r);
+                msg.push(ship.getTick());
             }
         
         // Ship starts travel
@@ -399,6 +400,7 @@ Game.prototype.shipToMessage = function(ship, create) {
         } else {
             msg.push(ship.planet.id);
             msg.push(ship.r);
+            msg.push(ship.getTick());
         }
     
     } else {
@@ -465,6 +467,7 @@ Game.prototype.coreInit = function() {
     this.shipHealth = {def: 40, fight: 20, bomb: 15};
     this.shipDamage = {def: 5, fight: 5, bomb: 20};
     
+    this.combatTickRate = 6;
     this.shipID = 0;
     this.ships = [];
     this.planets = [];

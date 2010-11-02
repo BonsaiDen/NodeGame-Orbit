@@ -79,10 +79,15 @@ Ship.prototype.tick = function() {
 };
 
 // Drawing ---------------------------------------------------------------------
-Ship.prototype.draw = function() {
+Ship.prototype.clear = function(sx, sy) {
     this.calculatePosition();
-    
-    if (this.$.shipVisbile(this)) {
+    if (this.$.shipVisbile(this, sx, sy)) {
+        this.$.bg.clearRect(this.x - 3 - sx, this.y - 3 - sy, 6, 6);
+    }
+};
+
+Ship.prototype.draw = function(sx, sy) {
+    if (this.$.shipVisbile(this, sx, sy)) {
         
         // inFlight
         if (this.nextPlanet) {
@@ -92,7 +97,6 @@ Ship.prototype.draw = function() {
         } else {
             this.$.drawColor(this.player.color);
         }
-        this.$.drawWidth(1.5);
         this.$.drawCircle(this.x, this.y, 1.5, true);
     }
 };

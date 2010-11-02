@@ -70,6 +70,7 @@ Game.prototype.netMessage = function(msg) {
         this.height = msg[1];
         this.maxDistance = msg[2];
         this.shipSpeed = msg[3];
+        this.combatTickRate = msg[4];
     
     } else if (type === MSG_PLANETS_INIT) {
         this.netPlanetsInit(msg[0]);
@@ -101,9 +102,11 @@ Game.prototype.netMessage = function(msg) {
         }
         
         this.drawInit();
+        this.cameraOldX = this.cameraX;
+        this.cameraOldY = this.cameraY;
         if (this.player) {
             this.inputInit(true);
-            this.canvas.style.borderColor = this.colorsShaded[this.player.color];
+            $('bgs').style.borderColor = this.colorsShaded[this.player.color];
             if (this.planets[msg[1]]) {
                 this.cameraX = this.planets[msg[1]].x - this.width / 4;
                 this.cameraY = this.planets[msg[1]].y - this.height / 4;
@@ -208,7 +211,7 @@ Game.prototype.netShipsUpdate = function(data) {
                     ship.planet = this.planets[d[3]];
                     ship.planet.addShip(ship);
                     ship.or = d[4];
-                    ship.tickAngle = this.getTick();
+                    ship.tickAngle = d[5];
                     if (!ship.next) {
                         ship.nextPlanet = null;
                     }
@@ -232,7 +235,7 @@ Game.prototype.netShipsUpdate = function(data) {
                 ship.planet = this.planets[d[2]];
                 ship.planet.addShip(ship);
                 ship.or = d[3];
-                ship.tickAngle = this.getTick();
+                ship.tickAngle = d[4];
                 if (!ship.next) {
                     ship.nextPlanet = null;
                 }

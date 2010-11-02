@@ -60,7 +60,7 @@ Planet.prototype.reset = function() {
     this.maxCount = 5;
 };
 
-Planet.prototype.initPlayer = function(player) {
+Planet.prototype.initPlayer = function(player, start) {
     if (!this.ships[player.id]) {
         this.ships[player.id] = {fight: [], bomb: [], def: []};
     }
@@ -68,7 +68,9 @@ Planet.prototype.initPlayer = function(player) {
     this.rateStep = 0;
     this.rate = Math.floor((this.start ? 4000 : 6000) / this.size * 0.5);
     this.maxCount = Math.floor(this.size * 0.65);
-    this.createShips('fight', this.player, 3, true);
+    if (start) {
+        this.createShips('fight', this.player, 3, true);
+    }
 };
 
 Planet.prototype.initNeutral = function(ships, orbit) {
@@ -78,7 +80,7 @@ Planet.prototype.initNeutral = function(ships, orbit) {
     this.maxCount = Math.floor(this.size / 2.5);
     
     if (ships) {
-        var count = Math.ceil(3 + (Math.random() * this.maxCount / 2));
+        var count = Math.ceil(this.maxCount / 2);
         this.createShips('fight', this.player, count, orbit);
     }
 };
@@ -100,9 +102,11 @@ Planet.prototype.tick = function() {
         
         if (this.rateStep > rate) {
             if (this.player.shipCount < this.player.shipMaxCount
-                && this.getPlayerShipCount(this.player) < this.maxCount) {
+                || this.player.id === 0) {
                 
-                this.createShip('fight', this.player, false);
+                if (this.getPlayerShipCount(this.player) < this.maxCount) {
+                    this.createShip('fight', this.player, false);
+                }
             }
             this.rateStep = 0;
         }
