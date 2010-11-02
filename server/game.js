@@ -157,7 +157,7 @@ Game.prototype.addPlayer = function(client) {
         planets.push([p.id, p.x, p.y, p.size, p.player ? p.player.id : 0]);
         
         // Add space for the player ships
-        if (player) {
+        if (player && !p.ships[player.id]) {
             p.ships[player.id] = {fight: [], bomb: [], def: []};
         }
     }
@@ -189,7 +189,12 @@ Game.prototype.removePlayer = function(client) {
     for (var i = 0, l = this.planets.length; i < l; i++) {
         var p = this.planets[i];
         if (p.player && p.player.id === client.id) {
-            p.player = null;
+            if (p.start) {
+                p.player = null;
+            
+            } else {
+                p.initNeutral(false, false);
+            }
         }
         delete p.ships[client.id];
     }
@@ -352,11 +357,11 @@ Game.prototype.loadMap = function() {
         [176, 112, 35, false],
         
         // Top Right
-        [576, 64, 20, true],
+        [592, 64, 20, true],
         [464, 112, 35, false], 
         
         // Bottom Right
-        [576, 416, 20, true],
+        [592, 416, 20, true],
         [464, 368, 35, false],
         
         // Top Left
@@ -364,8 +369,8 @@ Game.prototype.loadMap = function() {
         [176, 368, 35, false],      
         
         // Center
-        [320, 48, 27, false],
-        [320, 432, 27, false],
+        [320, 56, 27, false],
+        [320, 424, 27, false],
          
         // Sides
         [112, 240, 25, false],
@@ -407,8 +412,15 @@ Game.prototype.coreInit = function() {
     this.neutralPlayer = new Player(this, {id: 0, name: 'Foo'}, 0);
     this.loadMap();
     
-    // Init Path Finding
+    this.coreBuildPath(); 
+};
+
+
+// Pathfinding -----------------------------------------------------------------
+// -----------------------------------------------------------------------------
+Game.prototype.coreBuildPath = function(player) {
     this.planetNodes = [];
+    
     var l = this.planets.length;
     for(var i = 0; i < l; i++) {
         this.planetNodes.push([]);
@@ -469,7 +481,10 @@ Game.prototype.corePath = function(planet, target, player) {
         for(var i = 0, l = this.planetNodes[u].length; i < l; i++) {
             var v = this.planetNodes[u][i];
             var e = this.planets.indexOf(v);
-            if (Q.indexOf(e) !== -1) {
+            if (Q.indexOf(e) !== -1
+                && (this.planets[u].player === player
+                    || (v == target && v.player == player))) {
+                
                 var alt = distance[u] + this.coreDistance(this.planets[u], v);
                 if (alt < distance[e]) {
                     distance[e] = alt;

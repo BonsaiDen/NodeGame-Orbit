@@ -104,10 +104,10 @@ Game.prototype.inputKeyboard = function() {
         this.inputMove(this.mouseX, this.mouseY);
     }
     
-    this.cameraX = Math.min(this.cameraX, this.width * 0.85);
-    this.cameraX = Math.max(this.cameraX, this.width * 0.15);
-    this.cameraY = Math.min(this.cameraY, this.height * 0.85);
-    this.cameraY = Math.max(this.cameraY, this.height * 0.15);
+    this.cameraX = Math.min(this.cameraX, this.width / 2);
+    this.cameraX = Math.max(this.cameraX, 0);
+    this.cameraY = Math.min(this.cameraY, this.height / 2);
+    this.cameraY = Math.max(this.cameraY, 0);
     
     for(var i in this.keys) {
         if (this.keys[i] === 2) {
@@ -117,8 +117,8 @@ Game.prototype.inputKeyboard = function() {
 };
 
 Game.prototype.inputMove = function(x, y) {
-    x = this.cameraX + (x - this.width / 4);
-    y = this.cameraY + (y - this.height / 4);
+    x = this.cameraX + (x / 2);
+    y = this.cameraY + (y / 2);
     
     // Select Planet
     var oldHover = this.inputHover;
@@ -128,7 +128,7 @@ Game.prototype.inputMove = function(x, y) {
             var p = this.planets[i];
             var dx = p.x - x;
             var dy = p.y - y;
-            if (Math.sqrt(dx * dx + dy * dy) < p.size) {
+            if (Math.sqrt(dx * dx + dy * dy) < p.size * 2) {
                 newHover = p;
             }
         }

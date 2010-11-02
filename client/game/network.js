@@ -96,8 +96,8 @@ Game.prototype.netMessage = function(msg) {
             this.inputInit();
             this.canvas.style.borderColor = this.colorsShaded[this.player.color];
             if (this.planets[msg[1]]) {
-                this.cameraX = this.planets[msg[1]].x;
-                this.cameraY = this.planets[msg[1]].y;
+                this.cameraX = this.planets[msg[1]].x - this.width / 2;
+                this.cameraY = this.planets[msg[1]].y - this.height / 2;
             }
         }
         this.running = true;
@@ -111,7 +111,7 @@ Game.prototype.netPlanetsInit = function(data) {
     this.planetNodes = [];
     this.planetList = [];
     this.planets = {};
-
+    
     for(var i = 0; i < data.length; i++) {
         var d = data[i];
         var p = new Planet(this, d[0], d[1], d[2], d[3], this.players[d[4]] || null);
@@ -124,23 +124,7 @@ Game.prototype.netPlanetsInit = function(data) {
             }
         }
     }
-       
-    // Init Path Finding
-    var l = this.planetList.length;
-    for(var i = 0; i < l; i++) {
-        this.planetNodes.push([]);
-    }
-    for(var i = 0; i < l; i++) {
-        for(var e = i + 1; e < l; e++) {
-            var a = this.planetList[i];
-            var b = this.planetList[e];
-            var dist = this.coreDistance(a, b);
-            if (dist <= this.maxDistance) {
-                this.planetNodes[i].push(b);
-                this.planetNodes[e].push(a);
-            }
-        }
-    }
+    this.coreBuildPath(); 
 };
 
 Game.prototype.netPlanetsUpdate = function(data) {

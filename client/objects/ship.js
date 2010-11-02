@@ -90,7 +90,7 @@ Ship.prototype.draw = function() {
         this.$.drawColor(this.player.color);
     }
     this.$.drawWidth(1.5);
-    this.$.drawCircle(this.x, this.y, 1, false);
+    this.$.drawCircle(this.x, this.y, 1.5, true);
 };
 
 Ship.prototype.attack = function(other) {

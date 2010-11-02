@@ -23,7 +23,7 @@
 
 // Ships -----------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Ship(game, type, planet, player, r, dir, orbit) {
+function Ship(game, type, planet, player, r, orbit) {
     this.$ = game;
     this.id = this.$.shipID++;
     this.player = player;
@@ -40,8 +40,8 @@ function Ship(game, type, planet, player, r, dir, orbit) {
     this.orbit = orbit ? this.$.shipOrbits[this.type] : 0;
     
     this.inOrbit = orbit;
-    this.direction = dir;
     this.planet = planet;
+    this.direction = this.planet.getPreferedDirection(player, this.type);
     this.planet.addShip(this);
     
     this.targetPlanet = null;
@@ -130,7 +130,7 @@ Ship.prototype.tick = function() {
         this.planet = this.nextPlanet;
         
         this.r = (this.r + 180) % 360;
-        this.direction = Math.random() > 0.5 ? -1 : 1;
+        this.direction = this.planet.getPreferedDirection(this.player, this.type);
         
         this.nextPlanet.addShip(this);
         if (this.nextPlanet === this.targetPlanet) {

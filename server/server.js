@@ -182,7 +182,7 @@ Server.prototype.onMessage = function(conn, msg) {
         conn.close();
     
     } else {
-        try {
+   //     try {
             
             // Login or Message
             var msg = BISON.decode(msg);
@@ -196,10 +196,10 @@ Server.prototype.onMessage = function(conn, msg) {
                 this.clients[conn.$clientID].onMessage(msg);
             }
         
-        } catch (e) {
-            this.log('!! Error: ' + e);
-            conn.close();
-        }
+//        } catch (e) {
+//            this.log('!! Error: ' + e);
+//            conn.close();
+//        }
     }
 };
 

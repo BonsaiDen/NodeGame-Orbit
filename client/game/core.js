@@ -35,7 +35,26 @@ Game.prototype.coreInit = function() {
 
 // Pathfinding -----------------------------------------------------------------
 // -----------------------------------------------------------------------------
-Game.prototype.corePath = function(planet, target, player) {
+Game.prototype.coreBuildPath = function() {
+    this.planetNodes = [];
+    var l = this.planetList.length;
+    for(var i = 0; i < l; i++) {
+        this.planetNodes.push([]);
+    }
+    for(var i = 0; i < l; i++) {
+        for(var e = i + 1; e < l; e++) {
+            var a = this.planetList[i];
+            var b = this.planetList[e];
+            var dist = this.coreDistance(a, b);
+            if (dist <= this.maxDistance) {
+                this.planetNodes[i].push(b);
+                this.planetNodes[e].push(a);
+            }
+        }
+    }
+};
+
+Game.prototype.corePath = function(planet, target, player) {   
     var l = this.planetList.length;
     var distance = new Array(l);
     var previous = new Array(l);
@@ -46,10 +65,6 @@ Game.prototype.corePath = function(planet, target, player) {
         Q[i] = i;
     }
     distance[this.planetList.indexOf(planet)] = 0;
-    
-    // for Q remove non player and non target
-    
-    
     while (Q.length > 0) {
         var min = 100000000;
         var u = 0;
@@ -78,7 +93,10 @@ Game.prototype.corePath = function(planet, target, player) {
         for(var i = 0, l = this.planetNodes[u].length; i < l; i++) {
             var v = this.planetNodes[u][i];
             var e = this.planetList.indexOf(v);
-            if (Q.indexOf(e) !== -1) {
+            if (Q.indexOf(e) !== -1
+                && (this.planetList[u].player === player
+                    || (v == target && v.player == player))) {
+                
                 var alt = distance[u] + this.coreDistance(this.planetList[u], v);
                 if (alt < distance[e]) {
                     distance[e] = alt;

@@ -85,10 +85,13 @@ Player.prototype.tick = function() {
 // Send Ships ------------------------------------------------------------------
 Player.prototype.send = function(target) {
     if (this.selectPlanet && this.selectCount > 0) {
-        this.$.send({'send': [this.selectPlanet.id, target.id,
-                              this.selectType, this.selectCount]});
-        
-        this.selectCount = 0;
+        var path = this.$.corePath(this.selectPlanet, target, this);
+        if (path.length > 0) {
+            this.$.send({'send': [this.selectPlanet.id, target.id,
+                                  this.selectType, this.selectCount]});
+            
+            this.selectCount = 0;
+        }
     
     } else {
         this.selectPlanet = target;

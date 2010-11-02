@@ -32,8 +32,8 @@ Game.prototype.drawInit = function() {
     this.effects = [];
     
     this.canvas = $('bg');
-    this.canvas.width = this.width / 2;
-    this.canvas.height = this.height / 2;
+    this.canvas.width = this.width;
+    this.canvas.height = this.height;
     this.bg = this.canvas.getContext('2d');
     
     this.mouseX = -1;
@@ -44,8 +44,9 @@ Game.prototype.drawInit = function() {
 
 Game.prototype.drawTick = function() {
     this.bg.save();
-    this.bg.translate(-this.cameraX + this.width / 4,
-                      -this.cameraY + this.height / 4);
+    this.bg.scale(2, 2);    
+    this.bg.translate(-this.cameraX, -this.cameraY);
+    
     
     this.bg.globalCompositeOperation = 'source-over';
     this.bg.fillStyle = '#000000';

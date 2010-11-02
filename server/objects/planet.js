@@ -47,7 +47,7 @@ function Planet(game, x, y, size, start, id) {
     this.maxCount = 5;
     
     if (!start) {
-        this.initNeutral();
+        this.initNeutral(true, true);
     }
 }
 exports.Planet = Planet;
@@ -61,20 +61,26 @@ Planet.prototype.reset = function() {
 };
 
 Planet.prototype.initPlayer = function(player) {
+    if (!this.ships[player.id]) {
+        this.ships[player.id] = {fight: [], bomb: [], def: []};
+    }
     this.player = player;
     this.rateStep = 0;
-    this.rate = 50;
-    this.maxCount = 30;
+    this.rate = Math.floor((this.start ? 2500 : 4000) / this.size * 0.5);
+    this.maxCount = Math.floor(this.size * 0.75);
+    this.createShips('fight', this.player, 3, true);
 };
 
-Planet.prototype.initNeutral = function() {
+Planet.prototype.initNeutral = function(ships, orbit) {
     this.player = this.$.neutralPlayer;
     this.rateStep = 0;
-    this.rate = 250;
-    this.maxCount = Math.floor(this.size / 6);
+    this.rate = Math.floor(8000 / this.size * 0.5);
+    this.maxCount = Math.floor(this.size / 3.5);
     
-    this.createShips('fight', this.player,
-                     Math.floor(this.maxCount * (0.5 + Math.random() / 2)), true);
+    if (ships) {
+        var count = Math.ceil(3 + (Math.random() * this.maxCount / 2));
+        this.createShips('fight', this.player, count, orbit);
+    }
 };
 
 
@@ -143,8 +149,7 @@ Planet.prototype.tickCombat = function() {
 // Ships -----------------------------------------------------------------------
 Planet.prototype.createShip = function(type, player, orbit) {
     var ship = new Ship(this.$, type, this,
-                        player, Math.floor(Math.random() * 360),
-                        Math.random() * 2 > 1 ? 1 : -1, orbit);
+                        player, Math.floor(Math.random() * 360), orbit);
     
     this.$.ships.push(ship);
 };
@@ -158,6 +163,10 @@ Planet.prototype.createShips = function(type, player, count, orbit) {
 Planet.prototype.addShip = function(ship) {
     if (this.ships[ship.player.id][ship.type].indexOf(ship) === -1) {
         this.ships[ship.player.id][ship.type].push(ship);
+        if (this.shipCount === 0 && this.player !== ship.player) {
+            this.initPlayer(ship.player);
+            this.$.updatePlanets();
+        } 
         this.shipCount++;
     }
 };
@@ -168,6 +177,26 @@ Planet.prototype.removeShip = function(ship) {
     if (index !== -1) {
         ships.splice(index, 1);
         this.shipCount--;
+    }
+    
+    // Take over planets
+    if (ship.player === this.player) {
+        var locals = this.getPlayerShipCount(this.player);
+        if (locals === 0) {
+            var master = null;
+            var max = 0;
+            for(var i in this.ships) {
+                var count = this.getPlayerShipCount(this.$.players[i]);
+                if (count > max) {
+                    master = this.$.players[i];
+                    max = count;
+                }
+            }
+            if (master) {
+                this.initPlayer(master);
+                this.$.updatePlanets();
+            }
+        }
     }
 };
 
@@ -206,6 +235,20 @@ Planet.prototype.getPlayerShipCount = function(player) {
     return this.ships[player.id]['fight'].length
            + this.ships[player.id]['def'].length
            + this.ships[player.id]['bomb'].length;
+};
+
+Planet.prototype.getPreferedDirection = function(player, type) {
+    var ships = this.ships[player.id][type];
+    var left = 0, right = 0;
+    for(var i = 0, l = ships.length; i < l; i++) {
+        if (ships[i].direction === 1) {
+            left++;
+        
+        } else {
+            right++;
+        }
+    }
+    return left > right ? -1 : 1;
 };
 
 Planet.prototype.getTick = function() {
