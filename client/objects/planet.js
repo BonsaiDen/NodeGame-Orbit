@@ -136,23 +136,28 @@ Planet.prototype.draw = function() {
             var playerCount = this.$.player.selectPlanet.getPlayerShipCount(this.$.player);
             if (playerCount > 0) {
                 this.$.drawColor(this.$.player.color);
-                this.$.drawText(this.x, this.y, this.$.player.selectCount
-                                + '/' + playerCount, 'center', 'middle', size);
+                this.$.drawText(this.x, this.y + 1 * size, this.$.player.selectCount, 'center', 'bottom', size);
+                this.$.drawText(this.x, this.y + 1 * size, '_', 'center', 'bottom', size);
+                this.$.drawText(this.x, this.y - 1 * size, playerCount, 'center', 'top', size);                
             }
         
         // Info
         } else if ((this === this.$.inputHover && this.$.sendPath.length === 0)) {
             this.drawSelect();
             var playerCount = this.getPlayerShipCount(this.$.player);
+            var localCount = this.getPlayerShipCount(this.player);
             if (playerCount > 0 && this.player !== this.$.player) {
                 this.$.drawShaded(this.$.player.color);
-                this.$.drawText(this.x, this.y, playerCount, 'center', 'middle', size)
+                this.$.drawText(this.x, this.y + 1 * size, playerCount, 'center', 'bottom', size);
+                this.$.drawShaded(this.player.color);
+                this.$.drawText(this.x, this.y - 4.5 * size, '_', 'center', 'middle', size);
+                this.$.drawText(this.x, this.y - 1 * size, localCount, 'center', 'top', size);
             
             } else {
                 this.$.drawShaded(this.player ? this.player.color : 0);
-                this.$.drawText(this.x, this.y,
-                               this.getPlayerShipCount(this.player)
-                               + '/' + this.maxCount, 'center', 'middle', size);
+                this.$.drawText(this.x, this.y + 1 * size, localCount, 'center', 'bottom', size);
+                this.$.drawText(this.x, this.y + 1 * size, '_', 'center', 'bottom', size);
+                this.$.drawText(this.x, this.y - 1 * size, this.maxCount, 'center', 'top', size);
             }
         }
     }
