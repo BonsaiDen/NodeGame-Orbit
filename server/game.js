@@ -542,8 +542,7 @@ Game.prototype.corePath = function(planet, target, player) {
             var v = this.planetNodes[u][i];
             var e = this.planets.indexOf(v);
             if (Q.indexOf(e) !== -1
-                && (this.planets[u].player === player
-                    || (v == target && v.player == player))) {
+                && (this.planets[u].player === player || v.player === player)) {
                 
                 var alt = distance[u] + this.coreDistance(this.planets[u], v);
                 if (alt < distance[e]) {
