@@ -97,6 +97,7 @@ Ship.prototype.draw = function(sx, sy) {
         } else {
             this.$.drawColor(this.player.color);
         }
+        
         this.$.drawCircle(this.x, this.y, 1.5, true);
     }
 };

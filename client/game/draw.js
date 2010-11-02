@@ -81,37 +81,41 @@ Game.prototype.drawTick = function() {
             this.bgg.lineCap = 'round';
             this.drawShaded(this.player.color);
             var from = this.player.selectPlanet;
-            for(var i = 0, l = this.sendPath.length; i < l; i++) {
-                this.drawWidth(4);
-                this.bgg.beginPath();
-                
-                var to = this.sendPath[i];
-                var dx = to.x - from.x;
-                var dy = to.y - from.y;
-                var r = Math.atan2(dy, dx);
-                this.bgg.moveTo(from.x + Math.cos(r) * (from.size + 1),
-                               from.y + Math.sin(r) * (from.size + 1));
-                
-                this.bgg.lineTo(to.x - Math.cos(r) * (to.size + 1),
-                               to.y - Math.sin(r) * (to.size + 1));
-                
-                this.bgg.closePath();
-                this.bgg.stroke();
-                
-                if (to === this.sendPath[this.sendPath.length - 1]) {
-                    this.drawColor(this.player.color);
+            if (from) {
+                for(var i = 0, l = this.sendPath.length; i < l; i++) {
+                    this.drawWidth(4);
+                    this.bgg.beginPath();
+                    
+                    var to = this.sendPath[i];
+                    var dx = to.x - from.x;
+                    var dy = to.y - from.y;
+                    var r = Math.atan2(dy, dx);
+                    this.bgg.moveTo(from.x + Math.cos(r) * (from.size + 1),
+                                   from.y + Math.sin(r) * (from.size + 1));
+                    
+                    this.bgg.lineTo(to.x - Math.cos(r) * (to.size + 1),
+                                   to.y - Math.sin(r) * (to.size + 1));
+                    
+                    this.bgg.closePath();
+                    this.bgg.stroke();
+                    
+                    if (to === this.sendPath[this.sendPath.length - 1]) {
+                        this.drawColor(this.player.color);
+                    }
+                    to.drawSelect();
+                    from = to;
                 }
-                to.drawSelect();
-                from = to;
+            } else {
+                this.clearBackground = true;
             }
             this.drawFront();
         }
-       
+        
+        this.updateBackground = false;
         for(var i in this.planets) {
             this.planets[i].draw();
         }
         this.bgg.restore();
-        this.updateBackground = false;
     }
     
     // Foreground

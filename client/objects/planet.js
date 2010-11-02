@@ -182,6 +182,16 @@ Planet.prototype.draw = function(sx, sy) {
                 this.$.drawText(this.x, this.y - 1 * size, this.maxCount, 'center', 'top', size);
             }
         }
+        
+        // Clear send path when all ships on the planet get destroyed
+        if (this === this.$.player.selectPlanet && this.$.player.selectCount === 0) {
+            if (this.$.sendPath.length > 0) {
+                this.$.sendPath = 0;
+                this.$.updateBackground = true;
+                this.$.clearBackground = true;
+            }
+        }
+        
     }
     this.$.drawFront();
 };
