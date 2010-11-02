@@ -73,7 +73,7 @@ Game.prototype.run = function() {
     }
     
     // Send Updates
-    if (this.tickCount % 3 === 0) {
+    if (this.tickCount % 20 === 0) {
         this.$$.broadcast(MSG_GAME_TICK, [this.tickCount]);
     }
     this.updateAllShips();
