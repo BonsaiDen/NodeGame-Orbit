@@ -96,8 +96,8 @@ Game.prototype.netMessage = function(msg) {
             this.inputInit();
             this.canvas.style.borderColor = this.colorsShaded[this.player.color];
             if (this.planets[msg[1]]) {
-                this.cameraX = this.planets[msg[1]].x - this.width / 2;
-                this.cameraY = this.planets[msg[1]].y - this.height / 2;
+                this.cameraX = this.planets[msg[1]].x - this.width / 2 / this.scale;
+                this.cameraY = this.planets[msg[1]].y - this.height / 2 / this.scale;
             }
         }
         this.running = true;
@@ -155,7 +155,9 @@ Game.prototype.netShipsUpdate = function(data) {
         if (d[0] & 1) {
             ship.type = this.shipTypes[d[2]];
             ship.planet = this.planets[d[3]];
-            ship.player = this.players[d[4]] || null;
+            ship.player = this.players[d[4]];
+            ship.player.shipCount++;
+            
             ship.tickInit = d[5];
             ship.tickAngle = this.getTick();
             ship.or = d[6];

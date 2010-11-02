@@ -29,6 +29,7 @@ function Player(game, id, name, color) {
     this.color = color;
     this.id = id;
     this.$.players[id] = this;
+    this.shipCount = 0;
     
     // GUI
     this.selectTick = 0;

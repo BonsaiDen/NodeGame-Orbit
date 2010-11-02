@@ -31,7 +31,7 @@ function Ship(game, id) {
     this.y = 0;
     this.planet = null;
     this.id = id;
-    this.player = null;;
+    this.player = null;
     
     this.direction = 0;
     this.tickInit = 0;
@@ -51,6 +51,7 @@ function Ship(game, id) {
 }
 
 Ship.prototype.destroy = function() {
+    this.player.shipCount--;
     this.$.effectExplosion(this.player.color, this.planet, this.orbit, this.r, 8);
     this.planet.removeShip(this);
 };

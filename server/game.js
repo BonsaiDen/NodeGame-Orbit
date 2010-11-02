@@ -214,9 +214,16 @@ Game.prototype.removePlayer = function(client) {
 // Planets ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 Game.prototype.updatePlanets = function() {
+    for(var i in this.players) {
+        this.players[i].shipMaxCount = 0;
+    }
+    
     var planets = [];
     for (var i = 0, l = this.planets.length; i < l; i++) {
         var p = this.planets[i];
+        if (p.player) {
+            p.player.shipMaxCount += p.maxCount;
+        }
         planets.push([p.id, p.player ? p.player.id : 0]); 
     }
     this.$$.broadcast(MSG_PLANETS_UPDATE, [planets]);
@@ -356,13 +363,13 @@ Game.prototype.loadMap = function() {
         [48, 64, 22, true],
         [176, 112, 40, false],
         
+        // Bottom Right
+        [592, 416, 22, true],
+        [464, 368, 40, false],  
+        
         // Top Right
         [592, 64, 22, true],
         [464, 112, 40, false], 
-        
-        // Bottom Right
-        [592, 416, 22, true],
-        [464, 368, 40, false],
         
         // Top Left
         [48, 416, 22, true],

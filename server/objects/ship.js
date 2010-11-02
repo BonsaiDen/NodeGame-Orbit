@@ -27,10 +27,11 @@ function Ship(game, type, planet, player, r, orbit) {
     this.$ = game;
     this.id = this.$.shipID++;
     this.player = player;
+    this.player.shipCount++;
+    
     this.type = type;
     this.typeID = {fight: 0, bomb: 1, def: 2}[this.type];
     this.health = this.$.shipHealth[this.type];
-    
     this.tickInit = this.getTick();
     
     this.x = 0;
@@ -57,6 +58,7 @@ function Ship(game, type, planet, player, r, orbit) {
 exports.Ship = Ship;
 
 Ship.prototype.destroy = function() {
+    this.player.shipCount--;
     this.health = 0;
     this.planet.removeShip(this);
 };

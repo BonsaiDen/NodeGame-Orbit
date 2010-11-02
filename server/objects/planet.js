@@ -75,7 +75,7 @@ Planet.prototype.initNeutral = function(ships, orbit) {
     this.player = this.$.neutralPlayer;
     this.rateStep = 0;
     this.rate = Math.floor(8000 / this.size * 0.5);
-    this.maxCount = Math.floor(this.size / 3.5);
+    this.maxCount = Math.floor(this.size / 4.5);
     
     if (ships) {
         var count = Math.ceil(3 + (Math.random() * this.maxCount / 2));
@@ -89,10 +89,12 @@ Planet.prototype.tick = function() {
     if (this.player) {
         this.rateStep++;
         if (this.rateStep > this.rate) {
-            if (this.getPlayerShipCount(this.player) < this.maxCount) {
+            if (this.player.shipCount < this.player.shipMaxCount
+                && this.getPlayerShipCount(this.player) < this.maxCount) {
+                
                 this.createShip('fight', this.player, false);
-                this.rateStep = 0;
             }
+            this.rateStep = 0;
         }
     }
 };
