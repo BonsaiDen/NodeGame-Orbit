@@ -36,7 +36,7 @@ Game.prototype.drawInit = function() {
     this.canvas.height = this.height;
     this.bg = this.canvas.getContext('2d');
     
-    this.scale = 1;
+    this.scale = 2;
     this.mouseX = -1;
     this.mouseY = -1;
     this.cameraX = 0;
