@@ -95,6 +95,10 @@ Game.prototype.netMessage = function(msg) {
         if (this.player) {
             this.inputInit();
             this.canvas.style.borderColor = this.colorsShaded[this.player.color];
+            if (this.planets[msg[1]]) {
+                this.cameraX = this.planets[msg[1]].x;
+                this.cameraY = this.planets[msg[1]].y;
+            }
         }
         this.running = true;
         this.run();

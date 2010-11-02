@@ -171,7 +171,8 @@ Game.prototype.addPlayer = function(client) {
     
     
     // Start the client
-    client.send(MSG_GAME_START, [player !== null ? player.id : 0]);
+    client.send(MSG_GAME_START, [player !== null ? player.id : 0,
+                                 start !== null ? start.id : 0]);
 };
 
 

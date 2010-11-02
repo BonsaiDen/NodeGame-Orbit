@@ -90,17 +90,12 @@ Ship.prototype.draw = function() {
     } else {
         this.$.drawColor(this.player.color);
     }
-    this.$.drawShip(this.type, this.x, this.y, this.r, false);
+    this.$.drawWidth(1.5);
+    this.$.drawCircle(this.x, this.y, 1, false);
 };
 
 Ship.prototype.attack = function(other) {
     this.$.effectExplosion(this.player.color, this.planet, other.orbit, other.r, 6);
-};
-
-Ship.prototype.clear = function() {
-    if (this.traveling) {
-        this.$.drawShip(this.type, this.x, this.y, this.r, true);
-    }
 };
 
 

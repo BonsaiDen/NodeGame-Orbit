@@ -34,8 +34,11 @@ Game.prototype.inputInit = function() {
         e = e || window.event;
         clearTimeout(that.moveTimeout);
         that.moveTimeout = setTimeout(function() {
-            that.inputMove(e.clientX - that.canvas.offsetLeft + window.scrollX,
-                           e.clientY - that.canvas.offsetTop + window.scrollY);
+            var x = e.clientX - that.canvas.offsetLeft + window.scrollX;
+            var y = e.clientY - that.canvas.offsetTop + window.scrollY;
+            that.mouseX = x;
+            that.mouseY = y;
+            that.inputMove(x, y);
         }, 5);
         
     }, false);
@@ -59,10 +62,64 @@ Game.prototype.inputInit = function() {
     this.canvas.addEventListener('click', function(e) {
         that.inputClick(e || window.event);
     }, false); 
+    
+    // Keyboard Input
+    this.keys = {};
+    window.onkeydown = window.onkeyup = function(e) {
+        var key = e.keyCode;
+        if (key !== 116 && !e.shiftKey && !e.altKey && !e.ctrlKey) {
+            if (e.type === "keydown") {
+                that.keys[key] = 1;
+            
+            } else {
+                that.keys[key] = 2;
+            }
+            if (that.playing) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    };
+    window.onblur = function(e) {
+        that.keys = {};
+    };
+};
+
+Game.prototype.inputKeyboard = function() {
+    if (this.keys[39]) {
+        this.cameraX += 8;
+        this.inputMove(this.mouseX, this.mouseY);
+    
+    } else if (this.keys[37]) {
+        this.cameraX -= 8;
+        this.inputMove(this.mouseX, this.mouseY);
+    }
+    
+    if (this.keys[40]) {
+        this.cameraY += 8;
+        this.inputMove(this.mouseX, this.mouseY);
+    
+    } else if (this.keys[38]) {
+        this.cameraY -= 8;
+        this.inputMove(this.mouseX, this.mouseY);
+    }
+    
+    this.cameraX = Math.min(this.cameraX, this.width * 0.85);
+    this.cameraX = Math.max(this.cameraX, this.width * 0.15);
+    this.cameraY = Math.min(this.cameraY, this.height * 0.85);
+    this.cameraY = Math.max(this.cameraY, this.height * 0.15);
+    
+    for(var i in this.keys) {
+        if (this.keys[i] === 2) {
+            this.keys[i] = 0;
+        }
+    }
 };
 
 Game.prototype.inputMove = function(x, y) {
-
+    x = this.cameraX + (x - this.width / 4);
+    y = this.cameraY + (y - this.height / 4);
+    
     // Select Planet
     var oldHover = this.inputHover;
     var newHover = null;

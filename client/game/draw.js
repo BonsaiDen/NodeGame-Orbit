@@ -32,13 +32,21 @@ Game.prototype.drawInit = function() {
     this.effects = [];
     
     this.canvas = $('bg');
-    this.canvas.width = this.width;
-    this.canvas.height = this.height;
+    this.canvas.width = this.width / 2;
+    this.canvas.height = this.height / 2;
     this.bg = this.canvas.getContext('2d');
-    this.bg.font = 'bold 12px' + ' "Tahoma", "DejaVu Sans Mono", "Bitstream Vera Sans Mono"';
+    
+    this.mouseX = -1;
+    this.mouseY = -1;
+    this.cameraX = 0;
+    this.cameraY = 0;
 };
 
 Game.prototype.drawTick = function() {
+    this.bg.save();
+    this.bg.translate(-this.cameraX + this.width / 4,
+                      -this.cameraY + this.height / 4);
+    
     this.bg.globalCompositeOperation = 'source-over';
     this.bg.fillStyle = '#000000';
     this.bg.fillRect(0, 0, this.width, this.height);
@@ -74,26 +82,25 @@ Game.prototype.drawTick = function() {
     }
     
     this.effectDraw();
+    this.bg.restore();
 };
 
 Game.prototype.drawClear = function() {
     this.bg.fillStyle = '#000000';
 };
 
-Game.prototype.drawClearScreen = function() {
-    this.bg.globalCompositeOperation = 'source-over';
-    this.bg.fillStyle = '#000000';
-    this.bg.fillRect(0, 0, this.width, this.height);
-};
-
 Game.prototype.drawColor = function(color) {
-    this.bg.fillStyle = this.colors[color];
-    this.bg.strokeStyle = this.colors[color];
+    if (this.bg.fillStyle !== this.colors[color]) {
+        this.bg.fillStyle = this.colors[color];
+        this.bg.strokeStyle = this.colors[color];
+    }
 };
 
 Game.prototype.drawShaded = function(color) {
-    this.bg.fillStyle = this.colorsShaded[color];
-    this.bg.strokeStyle = this.colorsShaded[color];
+    if (this.bg.fillStyle !== this.colorsShaded[color]) {
+        this.bg.fillStyle = this.colorsShaded[color];
+        this.bg.strokeStyle = this.colorsShaded[color];
+    }
 };
 
 Game.prototype.drawCircle = function(x, y, size, filled) {
@@ -124,22 +131,13 @@ Game.prototype.drawLine = function(ox, oy, tx, ty) {
 };
 
 Game.prototype.drawWidth = function(width) {
-    this.bg.lineWidth = width;
+    if (this.bg.lineWidth !== width) {
+        this.bg.lineWidth = width;
+    }
 };
 
 Game.prototype.drawAlpha = function(value) {
     this.bg.globalAlpha = value;
-};
-
-Game.prototype.drawShip = function(type, x, y, r, clear) {
-    if (!clear) {
-        this.drawWidth(1.5);
-        this.drawCircle(x, y, 1, false);
-    
-    } else {
-        this.drawWidth(2);
-        this.drawCircle(x, y, 3, true);
-    }
 };
 
 

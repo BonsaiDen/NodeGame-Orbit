@@ -64,6 +64,9 @@ Game.prototype.run = function() {
             this.players[i].tick();
         }
         
+        // Control Camera
+        this.inputKeyboard();
+        
         // Render
         this.drawTick();
         
