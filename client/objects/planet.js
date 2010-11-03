@@ -209,7 +209,7 @@ Planet.prototype.draw = function(sx, sy) {
                 this.$.sendPath = [];
                 this.$.drawBackground(true);
             }
-        }   
+        }
     }
     this.$.drawFront();
 };

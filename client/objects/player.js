@@ -123,6 +123,7 @@ Player.prototype.selectStart = function(planet, type) {
 
 Player.prototype.selectStop = function() {
     this.select = false;
+    this.sendPath = [];
 };
 
 Player.prototype.selectSimple = function(planet) {

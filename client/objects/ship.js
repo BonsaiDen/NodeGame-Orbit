@@ -81,7 +81,6 @@ Ship.prototype.tick = function() {
 
 // Drawing ---------------------------------------------------------------------
 Ship.prototype.clear = function(sx, sy) {
-    
     if (this.$.shipVisbile(this, sx, sy)) {
         this.$.fbg.clearRect(this.x - 3 - sx, this.y - 3 - sy, 6, 6);
     }
@@ -93,7 +92,7 @@ Ship.prototype.draw = function(sx, sy) {
         
         // inFlight
         if (this.nextPlanet) {
-            this.$.drawShaded(this.player.color);
+            this.$.drawDark(this.player.color);
         
         // Stationed
         } else {
@@ -145,6 +144,7 @@ Ship.prototype.initTravel = function(pid, r, arrive, travel) {
     this.travelTicks = travel;
     this.travelDistance = this.$.coreOrbit(this, this.planet, this.nextPlanet);
     this.travelAngle = Math.round(this.$.coreAngle(this.planet, this.nextPlanet));
+    this.direction = 0;
 };
 
 Ship.prototype.finishTravel = function(pid, or) {

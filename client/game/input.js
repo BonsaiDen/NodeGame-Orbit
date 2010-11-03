@@ -34,6 +34,7 @@ Game.prototype.inputInit = function(full) {
     this.mouseDragCY = 0;   
     this.mouseDragX = 0;
     this.mouseDragY = 0;
+    this.mouseDragDown = false;
     
     if (full) {
         this.canvas.addEventListener('mousemove', function(e) {
@@ -146,6 +147,14 @@ Game.prototype.inputMove = function(x, y) {
     }
     
     // Mouse Dragging
+    if (this.mouseDragDown) {
+        if (Math.abs(this.mouseDragX - this.mouseX) > 2
+            || Math.abs(this.mouseDragY - this.mouseY) > 2) {
+            
+            this.mouseDrag = true;
+        }
+    }
+    
     if (this.mouseDrag) {
         return this.inputDragMouse(x, y);
     }
@@ -170,7 +179,7 @@ Game.prototype.inputMove = function(x, y) {
     
     // Calculate paths
     if (oldHover !== newHover) {
-        this.drawBackground();
+        this.drawBackground(this.sendPath.length > 0);
         if (this.oldHover) {
             this.player.selectStop();
         }
@@ -180,9 +189,6 @@ Game.prototype.inputMove = function(x, y) {
                                               newHover, this.player);
             
             } else {
-                if (this.sendPath.length > 0) {
-                    this.drawBackground(true);
-                }
                 this.sendPath = [];
             }
         }
@@ -209,34 +215,35 @@ Game.prototype.inputDown = function(e) {
             }
         }
     
-    } else if (!this.inputHover) {
+    } else if (!this.inputHover && e.button === 0) {
         this.mouseDragCX = this.cameraX;
         this.mouseDragCY = this.cameraY;   
         this.mouseDragX = this.mouseX;
         this.mouseDragY = this.mouseY;
-        this.mouseDrag = true;
+        this.mouseDragDown = true;
     }
 };
 
 Game.prototype.inputUp = function(e) {
-    if (this.inputHover) {
+    if (this.inputHover && !this.mouseDrag) {
         if (!this.inputSend) {
             this.player.selectStop();
         }
         this.inputSend = false;
         this.drawBackground();
     }
-    this.mouseDrag = false;
 };
 
 Game.prototype.inputClick = function(e) {
     if (this.inputHover && e.button === 2) {
         this.player.stop(this.inputHover);
     
-    } else if (!this.inputHover) {
+    } else if (!this.inputHover && !this.mouseDrag) {
         this.player.selectCancel();
         this.drawBackground();
     }
+    this.mouseDrag = false;
+    this.mouseDragDown = false;
 };
 
 Game.prototype.inputDoubleClick = function(e) {
@@ -251,7 +258,7 @@ Game.prototype.inputDragMouse = function(x, y) {
         this.mouseDrag = false;
         return;
     }
-
+    
     var mx = this.mouseDragX - x;
     var my = this.mouseDragY - y;
     

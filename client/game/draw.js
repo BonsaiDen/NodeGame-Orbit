@@ -28,7 +28,9 @@ var EFFECT_LASER = 2;
 // -----------------------------------------------------------------------------
 Game.prototype.drawInit = function() {
     this.colors = ['#777777', '#f00000', '#0080ff', '#f0f000', '#00f000', '#9000ff'];
-    this.colorsShaded = ['#303030', '#700000', '#004080', '#707000', '#007000', '#500080'];
+    this.colorsShaded = ['#203030', '#700000', '#004080', '#707000', '#007000', '#500080'];
+    this.colorsDark = ['#202020', '#500000', '#002060', '#505000', '#005000', '#300060'];
+    
     this.effects = [];
     this.effectsClear = [];
     
@@ -41,8 +43,7 @@ Game.prototype.drawInit = function() {
     this.canvasBack = $('bgg');
     this.bbg = this.canvasBack.getContext('2d');
     this.updateBackground = true;
-    this.clearBackground = false;
-    
+    this.clearBackground = false;    
     this.cbg = this.fbg;
     
     // Stuff
@@ -61,15 +62,12 @@ Game.prototype.drawTick = function() {
     
     // Background
     if (this.updateBackground || sx !== 0 || sy !== 0
-        || (this.getTick() % 4 === 0
+        || (Math.floor(this.getTick()) % 4 === 0
         && (this.inputHover || (this.player && this.player.selectPlanet)))) {
         
         this.bbg.save();
         this.bbg.scale(this.scale, this.scale);    
         this.bbg.translate(-this.cameraX, -this.cameraY);
-        if (this.sendPath.length > 0 && (sx !== 0 || sy !== 0)) {
-            this.clearBackground = true;
-        }
         if (this.clearBackground) {
             this.bbg.clearRect(this.cameraX, this.cameraY, 320, 240);
             this.clearBackground = false;
@@ -79,36 +77,55 @@ Game.prototype.drawTick = function() {
                 this.planets[i].clear(sx, sy);
             }
         }
-        
+
         if (this.sendPath.length > 0) {
             this.drawBack();
             this.bbg.lineCap = 'round';
-            this.drawShaded(this.player.color);
+            
             var from = this.player.selectPlanet;
             if (from) {
+                this.drawShaded(this.player.color);
+                this.bbg.globalCompositeOperation = 'lighter';
                 for(var i = 0, l = this.sendPath.length; i < l; i++) {
-                    this.drawWidth(4);
-                    this.bbg.beginPath();
-                    
                     var to = this.sendPath[i];
                     var dx = to.x - from.x;
                     var dy = to.y - from.y;
+                    
+                    // Clear
+                    this.bbg.clearRect((to.x > from.x ? from.x : to.x) - sx,
+                                       (to.y > from.y ? from.y : to.y) - sy,
+                                       Math.abs(dx), Math.abs(dy));
+                    
                     var r = Math.atan2(dy, dx);
-                    this.bbg.moveTo(from.x + Math.cos(r) * (from.size + 1),
-                                   from.y + Math.sin(r) * (from.size + 1));
                     
-                    this.bbg.lineTo(to.x - Math.cos(r) * (to.size + 1),
-                                   to.y - Math.sin(r) * (to.size + 1));
-                    
-                    this.bbg.closePath();
-                    this.bbg.stroke();
-                    
-                    if (to === this.sendPath[this.sendPath.length - 1]) {
-                        this.drawColor(this.player.color);
+                    // Arrows
+                    var d = (Math.sqrt(dx * dx + dy * dy) - from.size - 22 - to.size) / 4;
+                    for(var e = 1; e < 4; e++) {
+                        this.bbg.save();
+                        this.bbg.translate(from.x + (Math.cos(r) * (from.size + 11 + d * e)),
+                                           from.y + (Math.sin(r) * (from.size + 11 + d * e)));
+                        
+                        this.bbg.rotate(r + Math.PI / 2);
+                        this.drawDark(this.player.color);
+                        this.drawPathArrow(false);
+                        this.drawShaded(this.player.color);
+                        this.drawPathArrow(true);
+                        this.bbg.restore();
                     }
-                    to.drawSelect();
                     from = to;
                 }
+                
+                // Select Rings
+                this.bbg.globalCompositeOperation = 'source-over';
+                this.drawDark(this.player.color);
+                for(var i = 0, l = this.sendPath.length; i < l; i++) {
+                    var p = this.sendPath[i];  
+                    if (p === this.sendPath[this.sendPath.length - 1]) {
+                        this.drawColor(this.player.color);
+                    }
+                    p.drawSelect();
+                }
+            
             } else {
                 this.clearBackground = true;
             }
@@ -202,6 +219,35 @@ Game.prototype.drawShaded = function(color) {
         this.cbg.fillStyle = this.colorsShaded[color];
         this.cbg.strokeStyle = this.colorsShaded[color];
     }
+};
+
+Game.prototype.drawDark = function(color) {
+    if (this.cbg.fillStyle !== this.colorsDark[color]) {
+        this.cbg.fillStyle = this.colorsDark[color];
+        this.cbg.strokeStyle = this.colorsDark[color];
+    }
+};
+
+Game.prototype.drawPathLine = function(from, to, r) {
+    this.bbg.beginPath();
+    this.bbg.moveTo(from.x + Math.cos(r) * (from.size + 1),
+                    from.y + Math.sin(r) * (from.size + 1));
+    
+    this.bbg.lineTo(to.x - Math.cos(r) * (to.size + 1),
+                    to.y - Math.sin(r) * (to.size + 1));
+    
+    this.bbg.closePath();
+    this.bbg.stroke();
+};
+
+Game.prototype.drawPathArrow = function(small) {
+    this.bbg.beginPath();
+    this.bbg.moveTo(0, small ? -2.5 : -5);
+    this.bbg.lineTo(small ? -3.5 : -5, small ? 3.5 : 4.5);
+    this.bbg.lineTo(small ? 3.5 : 5, small ? 3.5 : 4.5);
+    this.bbg.lineTo(0, small ? -2.5 : -5);
+    this.bbg.closePath();
+    this.bbg.fill();
 };
 
 Game.prototype.drawCircle = function(x, y, size, filled) {
