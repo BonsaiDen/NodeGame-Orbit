@@ -46,9 +46,7 @@ function Planet(game, x, y, size, start, id) {
     this.rate = 100;
     this.maxCount = 5;
     
-    if (!start) {
-        this.initNeutral(true, true);
-    }
+    this.initNeutral(true, true);
 }
 exports.Planet = Planet;
 

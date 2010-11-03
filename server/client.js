@@ -26,7 +26,7 @@
 function Client(server, conn, name) {
     this.$$ = server;
     this.$conn = conn;
-    this.info = name + ' [' + conn.id + ']';
+    this.info = '[' + conn.id + ']';
     this.id = this.$$.clientID;
     this.gameID = -1;
     this.name = name;
@@ -59,7 +59,7 @@ Client.prototype.onMessage = function(msg) {
 };
 
 Client.prototype.onRemove = function() {
-    this.$$.log('++', this.info, 'left Game #' + this.gameID);
+    this.$$.log('--', this.info, 'left Game #' + this.gameID);
     this.$.removeClient(this);
 };
 

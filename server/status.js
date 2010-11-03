@@ -82,7 +82,7 @@ Status.prototype.log = function() {
 };
 
 Status.prototype.logError = function(e) {
-    var parts = e.stack.split('\n');
+    var parts = (e.stack || e.message).split('\n');
     for(var i = parts.length - 1; i >= 0; i--) {
         this.logs.push([-1, (i > 0 ? '  ' : '') + parts[i].trim()]);
         if (this.logs.length > 18) {

@@ -113,7 +113,7 @@ Server.prototype.onMessage = function(conn, msg) {
                 this.status.logError(e);
                 
             } else {
-                console.log(e.stack);
+                console.log(e.stack || e.message);
             }
             conn.close();
         }

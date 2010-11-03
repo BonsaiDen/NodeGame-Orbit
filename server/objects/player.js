@@ -25,8 +25,6 @@
 // -----------------------------------------------------------------------------
 function Player(game, client, color) {
     this.$ = game;
-    this.$.playerCount++;
-    
     this.id = this.$.playerID++;
     this.name = client.name;
     this.color = color;
@@ -34,7 +32,9 @@ function Player(game, client, color) {
     
     this.client = client;
     this.client.player = this;
+    this.clientDropTick = -1;
     
+    this.startPlanet = null;
     this.planetCount = 0;
     this.shipCount = 0;
     this.shipMaxCount = 0;
