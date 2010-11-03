@@ -235,24 +235,16 @@ Game.prototype.removePlayer = function(id) {
     }
     this.updateAllShips();
     
-    // Updates planets
-    for (var i = 0, l = this.planets.length; i < l; i++) {
-        var p = this.planets[i];
-        if (p.player && p.player.id === id) {
-            if (p.start) {
-                p.player = null;
-            
-            } else {
-                p.initNeutral(false, false);
-            }
-        }
-        delete p.ships[id];
-    }
-    this.updatePlanets();
-    
-    // Remove the player
     var player = this.players[id];
     if (player) {
+        // Updates planets
+        for (var i = 0, l = this.planets.length; i < l; i++) {
+            var p = this.planets[i];
+            p.removePlayer(player)
+        }
+        this.updatePlanets();
+        
+        // Remove the player 
         this.playerCount--;
         this.broadcast(MSG_PLAYER_REMOVE, [id]);
         this.playerColors[player.color] = -1;
@@ -273,10 +265,7 @@ Game.prototype.updatePlanets = function() {
     var planets = [];
     for (var i = 0, l = this.planets.length; i < l; i++) {
         var p = this.planets[i];
-        if (p.player) {
-            p.player.shipMaxCount += p.maxCount;
-            p.player.planetCount++;
-        }
+        p.updatePlayer();
         planets.push([p.id, p.player ? p.player.id : 0]); 
     }
     this.broadcast(MSG_PLANETS_UPDATE, [planets]);
@@ -286,7 +275,7 @@ Game.prototype.updatePlanets = function() {
 Game.prototype.getStartPlanet = function() {
     for (var i = 0, l = this.planets.length; i < l; i++) {
         var p = this.planets[i];
-        if (p.start && !p.player) {
+        if (p.start && (!p.player || p.player === this.neutralPlayer)) {
             return p;
         }
     }
@@ -301,6 +290,7 @@ Game.prototype.updateAllShips = function() {
         this.updateShips(this.clients[i]);
     }
     
+    // Remove destroyed ships
     for(var i = 0, l = this.ships.length; i < l; i++) {
         this.ships[i].updated = false;
         if (this.ships[i].health === 0) {
@@ -318,16 +308,18 @@ Game.prototype.updateShips = function(client) {
         var ship = this.ships[i];
         
         // Check for updates
-        if (!client.ships[ship.id]
-            || this.tickCount - client.ships[ship.id][0] > 140
-            || ship.updated) {
-             
-            updates.push(this.shipToMessage(ship, !client.ships[ship.id]));
-            client.ships[ship.id] = [this.tickCount, ship];
-        }
         if (ship.health === 0) {
             removes.push(ship.id);
             delete client.ships[ship.id];
+        
+        } else {
+            if (!client.ships[ship.id]
+                || this.tickCount - client.ships[ship.id][0] > 140
+                || ship.updated) {
+                 
+                updates.push(this.shipToMessage(ship, !client.ships[ship.id]));
+                client.ships[ship.id] = [this.tickCount, ship];
+            }
         }
     }
     

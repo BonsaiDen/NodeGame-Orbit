@@ -31,6 +31,11 @@ function Status(server) {
     this.startTime = this.getTime();
     this.bytesSendLast = 0;
     this.logs = [];
+    
+    var that = this;
+    console.log = function() {
+        that.log.apply(that, arguments);
+    }
 }
 exports.Status = Status;
 
@@ -38,7 +43,7 @@ exports.Status = Status;
 // Status Screen ---------------------------------------------------------------
 Status.prototype.update = function(end) {
     var that = this;
-    var stats = '    Running ' + this.toTime(this.getTime()) + ' | '
+    var stats = '  Running ' + this.toTime(this.getTime()) + ' | '
                 + this.$$.clientCount
                 + ' Clients(s) | '
                 + this.$$.gameCount
@@ -50,8 +55,8 @@ Status.prototype.update = function(end) {
     
     this.bytesSendLast = this.$$.bytesSend;
     for(var i = this.logs.length - 1; i >= 0; i--) {
-        stats += '\n      ' + this.toTime(this.logs[i][0])
-                            + ' ' + this.logs[i][1];
+        stats += '\n    ' + this.toTime(this.logs[i][0])
+                            + '' + this.logs[i][1];
     }
     util.print('\x1b[H\x1b[J# NodeGame: Orbit at port '
               + this.$$.port + '\n' + stats + '\n\x1b[s\x1b[H');
@@ -76,6 +81,16 @@ Status.prototype.log = function() {
     }
 };
 
+Status.prototype.logError = function(e) {
+    var parts = e.stack.split('\n');
+    for(var i = parts.length - 1; i >= 0; i--) {
+        this.logs.push([-1, (i > 0 ? '  ' : '') + parts[i].trim()]);
+        if (this.logs.length > 18) {
+            this.logs.shift();
+        } 
+    }
+};
+
 
 // Helpers ---------------------------------------------------------------------
 Status.prototype.getTime = function() {
@@ -92,9 +107,13 @@ Status.prototype.toSize = function(size) {
 };
 
 Status.prototype.toTime = function(time) {
+    if (time === -1) {
+        return '';
+    }
+
     var t = Math.round((time - this.startTime) / 1000);
     var m = Math.floor(t / 60);
     var s = t % 60;
-    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s + ' ';
 };
 

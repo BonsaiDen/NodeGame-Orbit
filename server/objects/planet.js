@@ -29,7 +29,7 @@ var Ship = require('./ship').Ship;
 function Planet(game, x, y, size, start, id) {
     this.$ = game;
     this.id = id;
-    this.player = null;
+    this.player = this.$.neutralPlayer;
     
     this.start = start;
     
@@ -53,7 +53,7 @@ function Planet(game, x, y, size, start, id) {
 exports.Planet = Planet;
 
 
-// Inits and Resets ------------------------------------------------------------
+// Player Handling -------------------------------------------------------------
 Planet.prototype.reset = function() {
     this.rateStep = 0;
     this.rate = 100;
@@ -69,7 +69,8 @@ Planet.prototype.initPlayer = function(player, start) {
     this.rate = Math.floor((this.start ? 4000 : 6000) / this.size * 0.5);
     this.maxCount = Math.floor(this.size * 0.65);
     if (start) {
-        this.createShips('fight', this.player, 3, true);
+        this.removeNeutral();
+        this.createShips('fight', this.player, 3, false);
     }
 };
 
@@ -85,6 +86,54 @@ Planet.prototype.initNeutral = function(ships, orbit) {
     }
 };
 
+Planet.prototype.updatePlayer = function() {
+    this.player.shipMaxCount += this.maxCount;
+    this.player.planetCount++;
+};
+
+Planet.prototype.checkPlayer = function() {
+    var locals = this.getPlayerShipCount(this.player);
+    if (locals === 0) {
+        var master = null;
+        var max = 0;
+        for(var i in this.ships) {
+            var count = this.getPlayerShipCount(this.$.players[i]);
+            if (count > max) {
+                master = this.$.players[i];
+                max = count;
+            }
+        }
+        if (master) {
+            this.initPlayer(master);
+            this.$.updatePlanets();
+            return true;
+        }
+    }
+    return false;
+};
+
+Planet.prototype.removePlayer = function(player) {
+    this.removeShips(player);
+    if (this.player === player && !this.checkPlayer()) {
+        this.initNeutral(true, false);
+    }
+    delete this.ships[player.id];
+};
+
+Planet.prototype.removeNeutral = function() {
+    this.removeShips(this.$.neutralPlayer);
+};
+
+Planet.prototype.removeShips = function(player) {
+    var ships = this.ships[player.id];
+    for(var t in ships) {
+        for(var i = 0; i < ships[t].length; i++) {
+            ships[t][i].destroy();
+            i--;
+        }
+    }
+};
+
 
 // Production Ticking ----------------------------------------------------------
 Planet.prototype.tick = function() {
@@ -92,12 +141,14 @@ Planet.prototype.tick = function() {
         this.rateStep++;
         
         var rate = this.rate;
-        var mod = [1.0, 0.55, 0.9, 1.15, 1.30, 1.5, 1.8, 2.2, 2.5, 3.0];
-        if (this.player.planetCount < mod.length) {
-            rate = this.rate * mod[this.player.planetCount];
-        
-        } else {
-            rate = 3.0;
+        if (this.player !== this.$.neutralPlayer) {
+            var mod = [1.0, 0.55, 0.9, 1.15, 1.30, 1.5, 1.8, 2.2, 2.5, 3.0];
+            if (this.player.planetCount < mod.length) {
+                rate = this.rate * mod[this.player.planetCount];
+            
+            } else {
+                rate = 3.0;
+            }
         }
         
         if (this.rateStep > rate) {
@@ -197,22 +248,7 @@ Planet.prototype.removeShip = function(ship) {
     
     // Take over planets
     if (ship.player === this.player) {
-        var locals = this.getPlayerShipCount(this.player);
-        if (locals === 0) {
-            var master = null;
-            var max = 0;
-            for(var i in this.ships) {
-                var count = this.getPlayerShipCount(this.$.players[i]);
-                if (count > max) {
-                    master = this.$.players[i];
-                    max = count;
-                }
-            }
-            if (master) {
-                this.initPlayer(master);
-                this.$.updatePlanets();
-            }
-        }
+        this.checkPlayer();
     }
 };
 
