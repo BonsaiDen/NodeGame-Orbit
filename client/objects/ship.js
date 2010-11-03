@@ -67,6 +67,7 @@ Ship.prototype.tick = function() {
         tickDiff = this.getTick() - this.tickInit;
         if (!this.inOrbit) {
             this.orbit = tickDiff * this.$.shipToOrbitSpeed[this.type];
+            
             if (this.orbit >= this.$.shipOrbits[this.type]) {
                 this.inOrbit = true;
                 this.orbit = this.$.shipOrbits[this.type];

@@ -25,10 +25,15 @@
 // -----------------------------------------------------------------------------
 function Player(game, client, color) {
     this.$ = game;
-    this.client = client;
-    this.id = client.id;
+    this.$.playerCount++;
+    
+    this.id = this.$.playerID++;
     this.name = client.name;
     this.color = color;
+    this.$.playerColors[color] = this.id;
+    
+    this.client = client;
+    this.client.player = this;
     
     this.planetCount = 0;
     this.shipCount = 0;
@@ -41,7 +46,7 @@ exports.Player = Player;
 
 // Updates ---------------------------------------------------------------------
 Player.prototype.tick = function() {
-
+    
 };
 
 

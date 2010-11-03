@@ -42,18 +42,6 @@ var MSG_SHIPS_DESTROY = 9;
 function Game(server, id) {
     this.$$ = server;
     this.id = id;
-    this.clients = {};
-    
-    this.width = 0;
-    this.height = 0;
-    
-    this.lastPlayingTick = 0;
-    this.tickTimer = null;
-    this.maxDistance = 0;
-    this.maxPlayers = 0;
-    this.playerColors = [-2, -1, -1, -1, -1, -1, -1, -1];
-    this.playerCount = 0;
-    this.clientCount = 0;
     this.coreInit();
     this.run();
     this.$$.log('## Game #' + this.id + ' started');
@@ -93,7 +81,7 @@ Game.prototype.run = function() {
     var that = this;
     this.tickTimer = setTimeout(function() {that.run();},
                                 66 - (new Date().getTime() - frame));
-                   
+    
     // Check if all players have left the game
     if (this.clientCount > 0) {
         this.lastPlayingTick = this.tickCount;
@@ -105,13 +93,14 @@ Game.prototype.run = function() {
 
 Game.prototype.stop = function() {
     this.$$.log('## Game #' + this.id + ' ended');
-
+    
     clearTimeout(this.tickTimer);
     for(var i in this.players) {
         if (this.players[i].client.id > 0) {
             this.players[i].client.close();
         }
     }
+    
     this.planets = {};
     this.ships = {};
     this.players = {};
@@ -133,7 +122,7 @@ Game.prototype.broadcast = function(type, msg) {
 // Events ----------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 Game.prototype.onMessage = function(type, data, client) {
-    var player = this.players[client.id];
+    var player = client.player;
     if (player) {
         if (type === 'send') {
             var from = this.planets[data[0]];
@@ -152,9 +141,9 @@ Game.prototype.onMessage = function(type, data, client) {
 };
 
 
-// Networking ------------------------------------------------------------------
+// Players ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-Game.prototype.addPlayer = function(client, watch) {
+Game.prototype.addClient = function(client, watch) {
     this.clients[client.id] = client;
     this.clients[client.id].ships = {};
     this.clientCount++;
@@ -164,7 +153,6 @@ Game.prototype.addPlayer = function(client, watch) {
     if (!watch) {
         for(var i = 1; i < this.maxPlayers + 1; i++) {
             if(this.playerColors[i] === -1) {
-                this.playerColors[i] = client.id;
                 freeColor = i;
                 break;
             }
@@ -175,7 +163,6 @@ Game.prototype.addPlayer = function(client, watch) {
     var player = null;
     if (freeColor !== -1) {
         player = new Player(this, client, freeColor);
-        this.playerCount++;
     }
     
     // Send other players to the client
@@ -194,7 +181,7 @@ Game.prototype.addPlayer = function(client, watch) {
     client.send(MSG_GAME_SIZE, [this.width, this.height, this.maxDistance,
                                 this.shipSpeed, this.combatTickRate]);
     
-    // Update planets
+    // Get Starting planet
     var start = this.getStartPlanet()
     if (player) {
         if (start !== null) {
@@ -202,12 +189,11 @@ Game.prototype.addPlayer = function(client, watch) {
         }
     }
     
+    // Update planets
     var planets = [];
     for (var i = 0, l = this.planets.length; i < l; i++) {
         var p = this.planets[i];
         planets.push([p.id, p.x, p.y, p.size, p.player ? p.player.id : 0]);
-        
-        // Add space for the player ships
         if (player && !p.ships[player.id]) {
             p.ships[player.id] = {fight: [], bomb: [], def: []};
         }
@@ -223,20 +209,18 @@ Game.prototype.addPlayer = function(client, watch) {
                                  start !== null ? start.id : 0]);
 };
 
-
-// Remove a Player -------------------------------------------------------------
-Game.prototype.removePlayer = function(id) {
-    
-    // Remove all ships
-    for(var i = 0; i < this.ships.length; i++) {
-        if (this.ships[i].player.id === id) {
-            this.ships[i].destroy();
-        }
-    }
-    this.updateAllShips();
-    
-    var player = this.players[id];
+Game.prototype.removeClient = function(client) {
+    var player = client.player;
     if (player) {
+        
+        // Remove all ships 
+        for(var i = 0; i < this.ships.length; i++) {
+            if (this.ships[i].player === player) {
+                this.ships[i].destroy();
+            }
+        }
+        this.updateAllShips();
+        
         // Updates planets
         for (var i = 0, l = this.planets.length; i < l; i++) {
             var p = this.planets[i];
@@ -246,9 +230,9 @@ Game.prototype.removePlayer = function(id) {
         
         // Remove the player 
         this.playerCount--;
-        this.broadcast(MSG_PLAYER_REMOVE, [id]);
+        this.broadcast(MSG_PLAYER_REMOVE, [player.id]);
         this.playerColors[player.color] = -1;
-        delete this.players[id];
+        delete this.players[player.id];
     }
     this.clientCount--;
 };
@@ -316,8 +300,8 @@ Game.prototype.updateShips = function(client) {
             if (!client.ships[ship.id]
                 || this.tickCount - client.ships[ship.id][0] > 140
                 || ship.updated) {
-                 
-                updates.push(this.shipToMessage(ship, !client.ships[ship.id]));
+                
+                updates.push(ship.toMessage(!client.ships[ship.id]));
                 client.ships[ship.id] = [this.tickCount, ship];
             }
         }
@@ -326,76 +310,6 @@ Game.prototype.updateShips = function(client) {
     // Send Messages
     client.send(MSG_SHIPS_UPDATE, [updates]);
     client.send(MSG_SHIPS_DESTROY, [removes]);
-};
-
-
-Game.prototype.shipToMessage = function(ship, create) {
-    var msg = [];
-    
-    // Ship Flags
-    var flags = 0;
-    flags += create ? 1 : 0;
-    flags += ship.traveling ? 2: 0;
-    flags += ship.inOrbit ? 4 : 0;
-    flags += ship.updated ? 8 : 0;
-    flags += ship.nextPlanet ? 16 : 0;
-    flags += ship.traveled ? 32 : 0;
-    flags += ship.direction === 1 ? 64 : 0;
-    
-    // Basic fields
-    msg.push(flags);
-    msg.push(ship.id);
-    
-    
-    // Ship created
-    if (create) {
-        msg.push(ship.typeID);
-        msg.push(ship.planet.id);
-        msg.push(ship.player.id);
-        msg.push(ship.tickInit);
-        msg.push(ship.r);
-        
-        // Ship created in travel
-        if (ship.nextPlanet && ship.traveling) {
-            msg.push(ship.nextPlanet.id);
-            msg.push(ship.arriveTick);
-            msg.push(ship.travelTicks);
-        
-        // Ship created and already sent
-        } else if (ship.nextPlanet) {
-            msg.push(ship.nextPlanet.id);
-        }
-    
-    // Ship Updates
-    } else if (ship.updated) {
-        
-        // Ship sent
-        if (ship.nextPlanet && !ship.traveling) {
-            msg.push(ship.nextPlanet.id);
-            
-            // Ship has just arrived
-            if (ship.traveled) {
-                msg.push(ship.planet.id);
-                msg.push(ship.r);
-            }
-        
-        // Ship starts travel
-        } else if (ship.nextPlanet && ship.traveling) {
-            msg.push(ship.nextPlanet.id);
-            msg.push(ship.r);
-            msg.push(ship.arriveTick);   
-            msg.push(ship.travelTicks);
-        
-        // Ship finishes travel
-        } else {
-            msg.push(ship.planet.id);
-            msg.push(ship.r);
-        }
-    
-    } else {
-        msg.push(ship.r);
-    }
-    return msg;
 };
 
 
@@ -448,7 +362,15 @@ Game.prototype.loadMap = function() {
 // Core ------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 Game.prototype.coreInit = function() {
+    
+    // General
+    this.lastPlayingTick = 0;
+    this.tickTimer = null;
     this.tickCount = 1;
+    
+    // Ships
+    this.shipID = 0;
+    this.ships = [];
     this.shipOrbits = {def: 5, fight: 15, bomb: 10};
     this.shipToOrbitSpeed = {def: 0.125, fight: 0.5, bomb: 0.25};
     this.shipTypes = ['def', 'fight', 'bomb'];
@@ -456,20 +378,32 @@ Game.prototype.coreInit = function() {
     this.shipHealth = {def: 40, fight: 20, bomb: 15};
     this.shipDamage = {def: 5, fight: 5, bomb: 20};
     
-    this.combatTickRate = 6;
-    this.shipID = 0;
-    this.ships = [];
+    // Planets
     this.planets = [];
+    this.combatTickRate = 6;
+    
+    // Players
+    this.playerID = 0;
     this.players = {};
+    this.playerCount = 0;
+    this.clients = {};
+    this.clientCount = 0;
+    this.maxPlayers = 0;
+    this.playerColors = [-2, -1, -1, -1, -1, -1, -1, -1];
     this.neutralPlayer = new Player(this, {id: 0, name: 'Foo'}, 0);
+    
+    // Map
+    this.width = 0;
+    this.height = 0;
+    this.maxDistance = 0;
     this.loadMap();
     
+    // Paths
     this.coreBuildPath(); 
 };
 
 
-// Pathfinding -----------------------------------------------------------------
-// -----------------------------------------------------------------------------
+// Path Finding ----------------------------------------------------------------
 Game.prototype.coreBuildPath = function(player) {
     this.planetNodes = [];
     
@@ -501,9 +435,6 @@ Game.prototype.corePath = function(planet, target, player) {
         Q[i] = i;
     }
     distance[this.planets.indexOf(planet)] = 0;
-    
-    // remove non player and non neutral unless Q = target
-    // if planet != player and target != player and list.length == 1, don't move
     
     while (Q.length > 0) {
         var min = 100000000;
@@ -547,6 +478,8 @@ Game.prototype.corePath = function(planet, target, player) {
     return [];
 };
 
+
+// Helpers ---------------------------------------------------------------------
 Game.prototype.coreAngle = function(from, to) {
     var dx = from.x - to.x;
     var dy = from.y - to.y;

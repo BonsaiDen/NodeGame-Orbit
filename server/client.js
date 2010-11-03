@@ -30,6 +30,7 @@ function Client(server, conn, name) {
     this.id = this.$$.clientID;
     this.gameID = -1;
     this.name = name;
+    this.player = null;
 }
 
 exports.Client = Client;
@@ -40,8 +41,8 @@ Client.prototype.onJoin = function(game, watch) {
     this.$ = game;
     this.gameID = this.$.id;
     this.$$.log('++', this.info, 'joined Game #' + this.gameID);
-    this.$.addPlayer(this, watch);
-}
+    this.$.addClient(this, watch);
+};
 
 Client.prototype.onMessage = function(msg) {
 
@@ -58,8 +59,8 @@ Client.prototype.onMessage = function(msg) {
 };
 
 Client.prototype.onRemove = function() {
-    this.$$.log('++ ', this.info, ' left Game #' + this.gameID);
-    this.$.removePlayer(this.id);
+    this.$$.log('++', this.info, 'left Game #' + this.gameID);
+    this.$.removeClient(this);
 };
 
 

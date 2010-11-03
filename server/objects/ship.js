@@ -57,10 +57,19 @@ function Ship(game, type, planet, player, r, orbit) {
 }
 exports.Ship = Ship;
 
+
+// General ---------------------------------------------------------------------
 Ship.prototype.destroy = function() {
     this.player.shipCount--;
     this.health = 0;
     this.planet.removeShip(this);
+};
+
+Ship.prototype.attack = function(other) {
+    other.health -= this.$.shipDamage[this.type];
+    if (other.health <= 0) {
+        other.destroy();
+    }
 };
 
 
@@ -87,13 +96,6 @@ Ship.prototype.stop = function() {
     if (this.nextPlanet) {
         this.nextPlanet = this.targetPlanet = null;
         this.updated = true;
-    }
-};
-
-Ship.prototype.attack = function(other) {
-    other.health -= this.$.shipDamage[this.type];
-    if (other.health <= 0) {
-        other.destroy();
     }
 };
 
@@ -165,5 +167,73 @@ Ship.prototype.tick = function() {
 // Helpers ---------------------------------------------------------------------
 Ship.prototype.getTick = function() {
     return this.$.getTick();
+};
+
+Ship.prototype.toMessage = function(create) {
+    var msg = [];
+    
+    // Ship Flags
+    var flags = 0;
+    flags += create ? 1 : 0;
+    flags += this.traveling ? 2: 0;
+    flags += this.inOrbit ? 4 : 0;
+    flags += this.updated ? 8 : 0;
+    flags += this.nextPlanet ? 16 : 0;
+    flags += this.traveled ? 32 : 0;
+    flags += this.direction === 1 ? 64 : 0;
+    
+    // Basic fields
+    msg.push(flags);
+    msg.push(this.id);
+    
+    // Ship created
+    if (create) {
+        msg.push(this.typeID);
+        msg.push(this.planet.id);
+        msg.push(this.player.id);
+        msg.push(this.tickInit);
+        msg.push(this.r);
+        
+        // Ship created in travel
+        if (this.nextPlanet && this.traveling) {
+            msg.push(this.nextPlanet.id);
+            msg.push(this.arriveTick);
+            msg.push(this.travelTicks);
+        
+        // Ship created and already sent
+        } else if (this.nextPlanet) {
+            msg.push(this.nextPlanet.id);
+        }
+    
+    // Ship Updates
+    } else if (this.updated) {
+        
+        // Ship sent
+        if (this.nextPlanet && !this.traveling) {
+            msg.push(this.nextPlanet.id);
+            
+            // Ship has just arrived
+            if (this.traveled) {
+                msg.push(this.planet.id);
+                msg.push(this.r);
+            }
+        
+        // Ship starts travel
+        } else if (this.nextPlanet && this.traveling) {
+            msg.push(this.nextPlanet.id);
+            msg.push(this.r);
+            msg.push(this.arriveTick);   
+            msg.push(this.travelTicks);
+        
+        // Ship finishes travel
+        } else {
+            msg.push(this.planet.id);
+            msg.push(this.r);
+        }
+    
+    } else {
+        msg.push(this.r);
+    }
+    return msg;
 };
 
