@@ -64,7 +64,7 @@ Planet.prototype.initPlayer = function(player, start) {
     }
     this.player = player;
     this.rateStep = 0;
-    this.rate = Math.floor((this.start ? 4000 : 6000) / this.size * 0.5);
+    this.rate = Math.floor((this.start ? 4000 : 9000) / this.size * 0.5);
     this.maxCount = Math.floor(this.size * 0.65);
     if (start) {
         this.removeNeutral();
@@ -140,7 +140,7 @@ Planet.prototype.tick = function() {
         
         var rate = this.rate;
         if (this.player !== this.$.neutralPlayer) {
-            var mod = [1.0, 0.55, 0.9, 1.15, 1.30, 1.5, 1.8, 2.2, 2.5, 3.0];
+            var mod = [1.0, 0.50, 1, 1.20, 1.4, 1.7, 2, 2.5, 3, 3.5];
             if (this.player.planetCount < mod.length) {
                 rate = this.rate * mod[this.player.planetCount];
             

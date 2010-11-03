@@ -213,13 +213,13 @@ Game.prototype.addPlayer = function(client) {
     
     var player = null;
     if (freeColor !== -1) {
-        player = new Player(this, client, freeColor);
-        this.playerCount++;
-        this.$$.log('++', player.name, 'joined Game #' + this.id);
-        this.broadcast(MSG_PLAYER_ADD, [player.id, player.name, player.color]);
-        
-        var planet = this.getStartPlanet()
+        var planet = this.getStartPlanet();
         if (planet !== null) {
+            player = new Player(this, client, freeColor);
+            this.playerCount++;
+            this.$$.log('++', player.name, 'joined Game #' + this.id);
+            this.broadcast(MSG_PLAYER_ADD, [player.id, player.name, player.color]);
+            
             planet.initPlayer(player, true);
             player.startPlanet = planet;
         }
@@ -270,6 +270,9 @@ Game.prototype.initPlanets = function(client) {
     for (var i = 0, l = this.planets.length; i < l; i++) {
         var p = this.planets[i];
         planets.push([p.id, p.x, p.y, p.size, p.player ? p.player.id : 0]);
+        if (client.player && !p.ships[client.player.id]) {
+            p.ships[client.player.id] = {fight: [], bomb: [], def: []};
+        }
     }
     client.send(MSG_PLANETS_INIT, [planets]);
 };
@@ -288,7 +291,6 @@ Game.prototype.updatePlanets = function() {
     }
     this.broadcast(MSG_PLANETS_UPDATE, [planets]);
 };
-
 
 Game.prototype.getStartPlanet = function() {
     for (var i = 0, l = this.planets.length; i < l; i++) {
