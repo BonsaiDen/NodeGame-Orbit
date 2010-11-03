@@ -32,16 +32,20 @@ Game.prototype.drawInit = function() {
     this.effects = [];
     this.effectsClear = [];
     
+    // Foreground
     this.canvas = $('bg');
-    this.bg = this.canvas.getContext('2d');
-    this.bg.globalCompositeOperation = 'lighter'; 
+    this.fbg = this.canvas.getContext('2d');
+    this.fbg.globalCompositeOperation = 'lighter'; 
     
+    // Background
     this.canvasBack = $('bgg');
-    this.bgg= this.canvasBack.getContext('2d');
+    this.bbg = this.canvasBack.getContext('2d');
     this.updateBackground = true;
     this.clearBackground = false;
-    this.curBG = this.bg;
     
+    this.cbg = this.fbg;
+    
+    // Stuff
     this.scale = 2;
     this.mouseX = -1;
     this.mouseY = -1;
@@ -60,14 +64,14 @@ Game.prototype.drawTick = function() {
         || (this.getTick() % 4 === 0
         && (this.inputHover || (this.player && this.player.selectPlanet)))) {
         
-        this.bgg.save();
-        this.bgg.scale(this.scale, this.scale);    
-        this.bgg.translate(-this.cameraX, -this.cameraY);
+        this.bbg.save();
+        this.bbg.scale(this.scale, this.scale);    
+        this.bbg.translate(-this.cameraX, -this.cameraY);
         if (this.sendPath.length > 0 && (sx !== 0 || sy !== 0)) {
             this.clearBackground = true;
         }
         if (this.clearBackground) {
-            this.bgg.clearRect(this.cameraX, this.cameraY, 320, 240);
+            this.bbg.clearRect(this.cameraX, this.cameraY, 320, 240);
             this.clearBackground = false;
         
         } else {
@@ -78,26 +82,26 @@ Game.prototype.drawTick = function() {
         
         if (this.sendPath.length > 0) {
             this.drawBack();
-            this.bgg.lineCap = 'round';
+            this.bbg.lineCap = 'round';
             this.drawShaded(this.player.color);
             var from = this.player.selectPlanet;
             if (from) {
                 for(var i = 0, l = this.sendPath.length; i < l; i++) {
                     this.drawWidth(4);
-                    this.bgg.beginPath();
+                    this.bbg.beginPath();
                     
                     var to = this.sendPath[i];
                     var dx = to.x - from.x;
                     var dy = to.y - from.y;
                     var r = Math.atan2(dy, dx);
-                    this.bgg.moveTo(from.x + Math.cos(r) * (from.size + 1),
+                    this.bbg.moveTo(from.x + Math.cos(r) * (from.size + 1),
                                    from.y + Math.sin(r) * (from.size + 1));
                     
-                    this.bgg.lineTo(to.x - Math.cos(r) * (to.size + 1),
+                    this.bbg.lineTo(to.x - Math.cos(r) * (to.size + 1),
                                    to.y - Math.sin(r) * (to.size + 1));
                     
-                    this.bgg.closePath();
-                    this.bgg.stroke();
+                    this.bbg.closePath();
+                    this.bbg.stroke();
                     
                     if (to === this.sendPath[this.sendPath.length - 1]) {
                         this.drawColor(this.player.color);
@@ -115,26 +119,33 @@ Game.prototype.drawTick = function() {
         for(var i in this.planets) {
             this.planets[i].draw();
         }
-        this.bgg.restore();
+        this.bbg.restore();
     }
     
     // Foreground
-    this.bg.save();
-    this.bg.scale(this.scale, this.scale);    
-    this.bg.translate(-this.cameraX, -this.cameraY);
+    this.fbg.save();
+    this.fbg.scale(this.scale, this.scale);    
+    this.fbg.translate(-this.cameraX, -this.cameraY);
     for(var i in this.ships) {
         this.ships[i].clear(sx, sy);
     }
     this.effectClear(sx, sy);
     
-    this.bg.globalCompositeOperation = 'lighter';
+    this.fbg.globalCompositeOperation = 'lighter';
     for(var i in this.ships) {
         this.ships[i].draw(sx, sy);
     }
     this.effectDraw();
-    this.bg.restore();
+    this.fbg.restore();
     this.cameraOldX = this.cameraX;
     this.cameraOldY = this.cameraY;
+};
+
+Game.prototype.drawBackground = function(clear) {
+    this.updateBackground = true;
+    if (clear) {
+        this.clearBackground = true;
+    }
 };
 
 
@@ -172,66 +183,66 @@ Game.prototype.effectVisible = function(x, y, s) {
 
 // Basic Drawing ---------------------------------------------------------------
 Game.prototype.drawBack = function() {
-    this.curBG = this.bgg;
+    this.cbg = this.bbg;
 };
 
 Game.prototype.drawFront = function() {
-    this.curBG = this.bg;
+    this.cbg = this.fbg;
 };
 
 Game.prototype.drawColor = function(color) {
-    if (this.curBG.fillStyle !== this.colors[color]) {
-        this.curBG.fillStyle = this.colors[color];
-        this.curBG.strokeStyle = this.colors[color];
+    if (this.cbg.fillStyle !== this.colors[color]) {
+        this.cbg.fillStyle = this.colors[color];
+        this.cbg.strokeStyle = this.colors[color];
     }
 };
 
 Game.prototype.drawShaded = function(color) {
-    if (this.curBG.fillStyle !== this.colorsShaded[color]) {
-        this.curBG.fillStyle = this.colorsShaded[color];
-        this.curBG.strokeStyle = this.colorsShaded[color];
+    if (this.cbg.fillStyle !== this.colorsShaded[color]) {
+        this.cbg.fillStyle = this.colorsShaded[color];
+        this.cbg.strokeStyle = this.colorsShaded[color];
     }
 };
 
 Game.prototype.drawCircle = function(x, y, size, filled) {
-    this.curBG.beginPath();
-    this.curBG.arc(x, y, size, 0, Math.PI * 2, true);
-    this.curBG.closePath();
+    this.cbg.beginPath();
+    this.cbg.arc(x, y, size, 0, Math.PI * 2, true);
+    this.cbg.closePath();
     
     if (filled) {
-        this.curBG.fill();
+        this.cbg.fill();
     
     } else {
-        this.curBG.stroke();
+        this.cbg.stroke();
     }
 };
 
 Game.prototype.drawText = function(x, y, text, align, baseline, scale) {
-    this.curBG.save();
-    this.curBG.translate(x, y);
-    this.curBG.scale(scale, scale);
-    this.curBG.textAlign = align;
-    this.curBG.textBaseline = baseline;
-    this.curBG.fillText(text, 0, 0);
-    this.curBG.restore();
+    this.cbg.save();
+    this.cbg.translate(x, y);
+    this.cbg.scale(scale, scale);
+    this.cbg.textAlign = align;
+    this.cbg.textBaseline = baseline;
+    this.cbg.fillText(text, 0, 0);
+    this.cbg.restore();
 };
 
 Game.prototype.drawLine = function(ox, oy, tx, ty) {
-    this.curBG.beginPath();
-    this.curBG.moveTo(ox, oy);
-    this.curBG.lineTo(tx, ty);
-    this.curBG.closePath();
-    this.curBG.stroke();
+    this.cbg.beginPath();
+    this.cbg.moveTo(ox, oy);
+    this.cbg.lineTo(tx, ty);
+    this.cbg.closePath();
+    this.cbg.stroke();
 };
 
 Game.prototype.drawWidth = function(width) {
-    if (this.curBG.lineWidth !== width) {
-        this.curBG.lineWidth = width;
+    if (this.cbg.lineWidth !== width) {
+        this.cbg.lineWidth = width;
     }
 };
 
 Game.prototype.drawAlpha = function(value) {
-    this.curBG.globalAlpha = value;
+    this.cbg.globalAlpha = value;
 };
 
 
@@ -271,7 +282,7 @@ Game.prototype.effectDraw = function() {
 Game.prototype.effectClear = function(sx, sy) {
     for(var i = 0, l = this.effectsClear.length; i < l; i++) {
         var e = this.effectsClear[i];
-        this.bg.clearRect(e[0] - e[2] * 2 - sx,
+        this.fbg.clearRect(e[0] - e[2] * 2 - sx,
                           e[1] - e[2] * 2 - sy,
                           e[2] * 4, e[2] * 4);
     }

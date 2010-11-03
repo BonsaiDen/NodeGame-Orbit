@@ -131,7 +131,7 @@ Game.prototype.netPlanetsInit = function(data) {
     
     for(var i = 0; i < data.length; i++) {
         var d = data[i];
-        var p = new Planet(this, d[0], d[1], d[2], d[3], this.players[d[4]] || null);
+        var p = new Planet(this, d[0], d[1], d[2], d[3], this.players[d[4]]);
         this.planets[d[0]] = p;
         this.planetList.push(p);
         
@@ -148,7 +148,7 @@ Game.prototype.netPlanetsInit = function(data) {
 Game.prototype.netPlanetsUpdate = function(data) {
     for(var i = 0; i < data.length; i++) {
         var d = data[i];
-        this.planets[d[0]].player = this.players[d[1]] || null;
+        this.planets[d[0]].player = this.players[d[1]];
     }
     this.updateBackground = true;
 };
@@ -157,96 +157,12 @@ Game.prototype.netPlanetsUpdate = function(data) {
 // Ships -----------------------------------------------------------------------
 Game.prototype.netShipsUpdate = function(data) {
     for(var i = 0; i < data.length; i++) {
-        var d = data[i];
-        var id = d[1];
+        var id = data[i][1];
         var ship = this.ships[id];
         if (!ship) {
             ship = this.ships[id] = new Ship(this, id);
         }
-        
-        ship.traveling = !!(d[0] & 2);
-        ship.inOrbit = !!(d[0] & 4);
-        ship.next = !!(d[0] & 16);
-        ship.traveled = !!(d[0] & 32);
-        ship.direction = (d[0] & 64) ? 1 : -1;
-        
-        // Create
-        if (d[0] & 1) {
-            ship.type = this.shipTypes[d[2]];
-            ship.planet = this.planets[d[3]];
-            ship.player = this.players[d[4]];
-            ship.player.shipCount++;
-            
-            ship.tickInit = d[5];
-            ship.tickAngle = this.getTick();
-            ship.or = d[6];
-            ship.planet.addShip(ship);
-            
-            // Already traveling
-            if (ship.next && ship.traveling) {
-                ship.planet.removeShip(ship);
-                ship.orbit = this.shipOrbits[ship.type];
-                ship.nextPlanet = this.planets[d[7]];
-                ship.r = ship.or;
-                ship.arriveTick = d[8];
-                ship.travelTicks = d[9];
-                ship.travelDistance = this.coreOrbit(ship, ship.planet, ship.nextPlanet);
-                ship.travelAngle = Math.round(this.coreAngle(ship.planet, ship.nextPlanet));
-            
-            // Already sent
-            } else if (ship.next) {
-                ship.nextPlanet = this.planets[d[7]];
-            }
-        
-        // Send // Arrive
-        } else if (d[0] & 8) {
-            
-            // Sent
-            if (ship.next && !ship.traveling) {
-                ship.planet.addShip(ship);
-                ship.nextPlanet = this.planets[d[2]];
-                
-                // Has just finished traveling
-                if (ship.traveled) {
-                    ship.planet.removeShip(ship);
-                    ship.planet = this.planets[d[3]];
-                    ship.planet.addShip(ship);
-                    ship.or = d[4];
-                    ship.tickAngle = this.getTick();
-                    if (!ship.next) {
-                        ship.nextPlanet = null;
-                    }
-                }
-            
-            // Start Travel
-            } else if (ship.next && ship.traveling) {
-                ship.planet.removeShip(ship);
-                ship.orbit = this.shipOrbits[ship.type];
-                ship.nextPlanet = this.planets[d[2]];
-                ship.r = ship.or = d[3];
-                ship.tickAngle = this.getTick();
-                ship.arriveTick = d[4];
-                ship.travelTicks = d[5];
-                ship.travelDistance = this.coreOrbit(ship, ship.planet, ship.nextPlanet);
-                ship.travelAngle = Math.round(this.coreAngle(ship.planet, ship.nextPlanet));
-            
-            // Finish travel
-            } else {
-                ship.planet.removeShip(ship);
-                ship.planet = this.planets[d[2]];
-                ship.planet.addShip(ship);
-                ship.or = d[3];
-                ship.tickAngle = this.getTick();
-                if (!ship.next) {
-                    ship.nextPlanet = null;
-                }
-            }
-        
-        // Sync
-        } else {
-            ship.or = d[2];
-            ship.tickAngle = this.getTick();
-        }
+        ship.update(data[i]);
     }
 };
 

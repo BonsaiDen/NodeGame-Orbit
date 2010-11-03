@@ -113,7 +113,7 @@ Planet.prototype.getPlayerShipCount = function(player) {
 // Drawing ---------------------------------------------------------------------
 Planet.prototype.clear = function(sx, sy) {
     if (this.$.planetVisbile(this, sx, sy)) {
-        this.$.bgg.clearRect(this.x - this.size - sx - 8,
+        this.$.bbg.clearRect(this.x - this.size - sx - 8,
                              this.y - this.size - sy - 8,
                              this.size * 2 + 16, this.size * 2 + 16);
     }
@@ -124,7 +124,7 @@ Planet.prototype.draw = function(sx, sy) {
         return false;
     }
     
-    // Draw Planet
+    // Draw Planet Shape
     this.$.drawBack();
     this.$.drawWidth(4);
     this.$.drawColor(this.player ? this.player.color : 0);
@@ -149,15 +149,22 @@ Planet.prototype.draw = function(sx, sy) {
         }
         
         // Select
+        var selected = this.$.player.selectPlanet;
         var size = (100 / 15) * this.size / 100;
-        if (this === this.$.player.selectPlanet && this.$.player.selectCount > 0) {
+        if (this === selected && this.$.player.selectCount > 0) {
             this.drawSelect();
-            var playerCount = this.$.player.selectPlanet.getPlayerShipCount(this.$.player);
+            var playerCount = selected.getPlayerShipCount(this.$.player);
             if (playerCount > 0) {
                 this.$.drawColor(this.$.player.color);
-                this.$.drawText(this.x, this.y + 1 * size, this.$.player.selectCount, 'center', 'bottom', size);
-                this.$.drawText(this.x, this.y + 1 * size, '_', 'center', 'bottom', size);
-                this.$.drawText(this.x, this.y - 1 * size, playerCount, 'center', 'top', size);                
+                this.$.drawText(this.x, this.y + 1 * size,
+                                this.$.player.selectCount, 'center', 'bottom',
+                                size);
+                
+                this.$.drawText(this.x, this.y + 1 * size,
+                                '_', 'center', 'bottom', size);
+                
+                this.$.drawText(this.x, this.y - 1 * size,
+                                playerCount, 'center', 'top', size);                
             }
         
         // Info
@@ -168,30 +175,41 @@ Planet.prototype.draw = function(sx, sy) {
             
             var playerCount = this.getPlayerShipCount(this.$.player);
             var localCount = this.getPlayerShipCount(this.player);
+            
+            // Enemy Planet
             if (playerCount > 0 && this.player !== this.$.player) {
                 this.$.drawShaded(this.$.player.color);
-                this.$.drawText(this.x, this.y + 1 * size, playerCount, 'center', 'bottom', size);
+                this.$.drawText(this.x, this.y + 1 * size,
+                                playerCount, 'center', 'bottom', size);
+                
                 this.$.drawShaded(this.player.color);
-                this.$.drawText(this.x, this.y - 4.5 * size, '_', 'center', 'middle', size);
-                this.$.drawText(this.x, this.y - 1 * size, localCount, 'center', 'top', size);
+                this.$.drawText(this.x, this.y - 4.5 * size,
+                                '_', 'center', 'middle', size);
+                
+                this.$.drawText(this.x, this.y - 1 * size,
+                                localCount, 'center', 'top', size);
             
+            // Own Planet
             } else {
                 this.$.drawShaded(this.player ? this.player.color : 0);
-                this.$.drawText(this.x, this.y + 1 * size, localCount, 'center', 'bottom', size);
-                this.$.drawText(this.x, this.y + 1 * size, '_', 'center', 'bottom', size);
-                this.$.drawText(this.x, this.y - 1 * size, this.maxCount, 'center', 'top', size);
+                this.$.drawText(this.x, this.y + 1 * size,
+                                localCount, 'center', 'bottom', size);
+                
+                this.$.drawText(this.x, this.y + 1 * size,
+                                '_', 'center', 'bottom', size);
+                
+                this.$.drawText(this.x, this.y - 1 * size,
+                                this.maxCount, 'center', 'top', size);
             }
         }
         
         // Clear send path when all ships on the planet get destroyed
-        if (this === this.$.player.selectPlanet && this.$.player.selectCount === 0) {
+        if (this === selected && this.$.player.selectCount === 0) {
             if (this.$.sendPath.length > 0) {
-                this.$.sendPath = 0;
-                this.$.updateBackground = true;
-                this.$.clearBackground = true;
+                this.$.sendPath = [];
+                this.$.drawBackground(true);
             }
-        }
-        
+        }   
     }
     this.$.drawFront();
 };

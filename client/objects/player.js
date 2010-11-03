@@ -81,7 +81,7 @@ Player.prototype.tick = function() {
         }
         
         if (this.selectCount !== oldCount) {
-            this.$.updateBackground = true;
+            this.$.drawBackground();
         }
     }
 }

@@ -105,6 +105,8 @@ Game.prototype.inputInit = function(full) {
 
 // Keyboard --------------------------------------------------------------------
 Game.prototype.inputKeyboard = function() {
+
+    // Camera Controls
     if (this.keys[39] || this.keys[68]) {
         this.cameraX += 8;
         this.inputMove(this.mouseX, this.mouseY);
@@ -128,6 +130,7 @@ Game.prototype.inputKeyboard = function() {
     this.cameraY = Math.min(this.cameraY, this.height - this.height / this.scale);
     this.cameraY = Math.max(this.cameraY, 0);
     
+    // Reset Key States
     for(var i in this.keys) {
         if (this.keys[i] === 2) {
             this.keys[i] = 0;
@@ -144,23 +147,10 @@ Game.prototype.inputMove = function(x, y) {
     
     // Mouse Dragging
     if (this.mouseDrag) {
-        if (x === -1) {
-            this.mouseDrag = false;
-            return;
-        }
-    
-        var mx = this.mouseDragX - x;
-        var my = this.mouseDragY - y;
-        
-        this.updateBackground = true;
-        this.cameraX = this.mouseDragCX + mx * 1.25 / this.scale;
-        this.cameraY = this.mouseDragCY + my * 1.25 / this.scale;
-        this.cameraX = Math.min(this.cameraX, this.width - this.width / this.scale);
-        this.cameraX = Math.max(this.cameraX, 0);
-        this.cameraY = Math.min(this.cameraY, this.height - this.height / this.scale);
-        this.cameraY = Math.max(this.cameraY, 0);
-        return;
+        return this.inputDragMouse(x, y);
     }
+    
+    // World Position
     x = this.cameraX + (x / this.scale);
     y = this.cameraY + (y / this.scale);
     
@@ -178,9 +168,9 @@ Game.prototype.inputMove = function(x, y) {
         }
     }
     
-    // Calculate path and stuff
+    // Calculate paths
     if (oldHover !== newHover) {
-        this.updateBackground = true;
+        this.drawBackground();
         if (this.oldHover) {
             this.player.selectStop();
         }
@@ -191,7 +181,7 @@ Game.prototype.inputMove = function(x, y) {
             
             } else {
                 if (this.sendPath.length > 0) {
-                    this.clearBackground = true;
+                    this.drawBackground(true);
                 }
                 this.sendPath = [];
             }
@@ -205,7 +195,7 @@ Game.prototype.inputDown = function(e) {
         if (e.button === 0) {
             if (this.player.selectPlanet) {
                 this.sendPath = [];
-                this.clearBackground = true;
+                this.drawBackground(true);
             }
             if (this.player.selectPlanet
                 && this.inputHover !== this.player.selectPlanet
@@ -234,7 +224,7 @@ Game.prototype.inputUp = function(e) {
             this.player.selectStop();
         }
         this.inputSend = false;
-        this.updateBackground = true;
+        this.drawBackground();
     }
     this.mouseDrag = false;
 };
@@ -245,14 +235,32 @@ Game.prototype.inputClick = function(e) {
     
     } else if (!this.inputHover) {
         this.player.selectCancel();
-        this.updateBackground = true;
+        this.drawBackground();
     }
 };
 
 Game.prototype.inputDoubleClick = function(e) {
     if (this.inputHover) {
         this.player.selectAll();
-        this.updateBackground = true;
+        this.drawBackground();
     }
 };
+
+Game.prototype.inputDragMouse = function(x, y) {
+    if (x === -1) {
+        this.mouseDrag = false;
+        return;
+    }
+
+    var mx = this.mouseDragX - x;
+    var my = this.mouseDragY - y;
+    
+    this.drawBackground();
+    this.cameraX = this.mouseDragCX + mx * 1.25 / this.scale;
+    this.cameraY = this.mouseDragCY + my * 1.25 / this.scale;
+    this.cameraX = Math.min(this.cameraX, this.width - 320);
+    this.cameraX = Math.max(this.cameraX, 0);
+    this.cameraY = Math.min(this.cameraY, this.height - 240);
+    this.cameraY = Math.max(this.cameraY, 0);
+}
 
