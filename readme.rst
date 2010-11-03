@@ -8,10 +8,9 @@ Todo
 ----
 
 - Different Ship types
-- Conquer planets
 - Build factories
-- Rework the graphics
-- Better controls
+- Rework the graphics(partly done)
+- Better controls(partly done)
 
 
 License
