@@ -22,20 +22,15 @@
 
 
 var ws = require('./libs/ws');
-var util = require('util');
-
 var BISON = require('./libs/bison');
 var Client = require('./client').Client;
+var Game = require('./game').Game;
+var Status = require('./status').Status;
 
 
 // Server ----------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Server(port) {
-    
-    // Logs
-    this.showStatus = true;
-    this.logs = [];
-    
+function Server(port, status) {
     
     // Clients
     this.maxClients = 8;
@@ -51,7 +46,6 @@ function Server(port) {
     var that = this;
     this.port = port;
     this.bytesSend = 0;
-    this.bytesSendLast = 0;
     
     this.$ = new ws.Server(this.flash);
     this.$.onConnect = function(conn) {
@@ -69,122 +63,26 @@ function Server(port) {
         that.removeClient(conn.$clientID);
     };
     
-    
-    // Info and Start
-    this.startTime = this.getTime();
-    this.status();
     process.addListener('SIGINT', function(){that.onShutdown()})
     this.$.listen(port);
+    
+    
+    // Status
+    this.status = null;
+    if (status) {
+        this.status = new Status(this);
+        this.status.update();
+    }
 }
 
-
-// Helpers ---------------------------------------------------------------------
-Server.prototype.getTime = function() {
-    return new Date().getTime();
-};
-
-Server.prototype.timeDiff = function(time) {
-    return this.time - time;
-};
-
-Server.prototype.log = function(str) {
-    if (this.showStatus) {
-        this.logs.push([this.getTime(), str]);
-        if (this.logs.length > 18) {
-            this.logs.shift();
-        }
-
-    } else {
-        console.log(str);
-    }
-};
-
-Server.prototype.toSize = function(size) {
-    var t = 0;
-    while(size >= 1024 && t < 2) {
-        size = size / 1024;
-        t++;
-    }
-    return Math.round(size * 100) / 100 + [' bytes', ' kib', ' mib'][t];
-};
-
-Server.prototype.toTime = function(time) {
-    var t = Math.round((time - this.startTime) / 1000);
-    var m = Math.floor(t / 60);
-    var s = t % 60;
-    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
-};
-
-Server.prototype.status = function(end) {
-    var that = this;
-    if (!this.showStatus) {
-        return;
-    }
-    
-    var stats = '    Running ' + this.toTime(this.getTime()) + ' | '
-                + this.clientCount
-                + ' Clients(s) | '
-                + this.gameCount
-                + ' Game(s) | Traffic '
-                + this.toSize(this.bytesSend)
-                + ' | '
-                + this.toSize((this.bytesSend - this.bytesSendLast) * 2)
-                + '/s\n';
-    
-    this.bytesSendLast = this.bytesSend;
-    for(var i = this.logs.length - 1; i >= 0; i--) {
-        stats += '\n      ' + this.toTime(this.logs[i][0])
-                            + ' ' + this.logs[i][1];
-    }
-    util.print('\x1b[H\x1b[J# NodeGame: Orbit at port '
-              + this.port + '\n' + stats + '\n\x1b[s\x1b[H');
-    
-    if (!end) {
-        setTimeout(function() {that.status(false)}, 500);
+Server.prototype.log = function() {
+    if (this.status) {
+        this.status.log.apply(this.status, arguments);
     
     } else {
-        util.print('\x1b[u\n');
+        console.log.apply(console, arguments);
     }
 };
-
-
-// Login -----------------------------------------------------------------------
-Server.prototype.checkLogin = function(msg) {
-    if (msg instanceof Array && msg.length >= 3
-        && msg[0] === 'init' && typeof msg[1] === 'string') {
-        
-        return true;
-    
-    } else {
-        return false;
-    }
-};
-
-Server.prototype.checkName = function(name) {
-    name = name.trim();
-    if (name.length >= 2 && name.length <= 15) {
-        return name;
-        
-    } else {
-        return null;
-    }
-};
-
-Server.prototype.checkGame = function(game) {
-    if (typeof game === 'number') {
-        if (game >= 0 && game <= 12) {
-            return game;
-        }
-    }
-    return 0;
-}
-
-Server.prototype.checkWatch = function(watch) {
-    if (typeof watch === 'boolean') {
-        return watch;
-    }
-    return false;
-}
 
 
 // Events ----------------------------------------------------------------------
@@ -218,17 +116,67 @@ Server.prototype.onMessage = function(conn, msg) {
 };
 
 Server.prototype.onShutdown = function() {
-    this.status(true);
+    if (this.status) {
+        this.status.update(true);
+    }
     process.exit(0);
 };
 
 
-// Clients ---------------------------------------------------------------------
-Server.prototype.addClient = function(conn, name, game, watch) {
+// Validation -------------------------------------------------------------------
+Server.prototype.checkLogin = function(msg) {
+    if (msg instanceof Array && msg.length >= 3
+        && msg[0] === 'init' && typeof msg[1] === 'string') {
+        
+        return true;
+    
+    } else {
+        return false;
+    }
+};
+
+Server.prototype.checkName = function(name) {
+    name = name.trim();
+    if (name.length >= 2 && name.length <= 15) {
+        return name;
+        
+    } else {
+        return null;
+    }
+};
+
+Server.prototype.checkGame = function(game) {
+    if (typeof game === 'number') {
+        if (game >= 0 && game <= 12) {
+            return game;
+        }
+    }
+    return 0;
+};
+
+Server.prototype.checkWatch = function(watch) {
+    if (typeof watch === 'boolean') {
+        return watch;
+    }
+    return false;
+};
+
+
+// Clients & Players -----------------------------------------------------------
+Server.prototype.addClient = function(conn, name, gameID, watch) {
     this.clientID++;
-    this.clients[this.clientID] = new Client(this, conn, name, game, watch);
+    this.clients[this.clientID] = new Client(this, conn, name);
     this.clientCount++;
+    this.addClientToGame(this.clients[this.clientID], gameID, watch);
     return this.clientID;
+};
+
+Server.prototype.addClientToGame = function(client, gameID, watch) {
+    if (!this.games[gameID]) {
+        this.games[gameID] = new Game(this, gameID);
+        this.gameCount++;
+    }
+    client.onJoin(this.games[gameID], watch);
 };
 
 Server.prototype.removeClient = function(id) {
@@ -257,6 +205,6 @@ Server.prototype.send = function(conn, type, msg) {
 
 // Start the Server ------------------------------------------------------------
 // -----------------------------------------------------------------------------
-new Server(28785);
+new Server(28785, true);
 
 

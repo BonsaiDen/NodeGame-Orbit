@@ -20,65 +20,67 @@
   
 */
 
-var Game = require('./game').Game;
-
 
 // Clients ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Client(server, conn, name, gameID, watch) {
+function Client(server, conn, name) {
     this.$$ = server;
-    
-    // Create a new game or join an existing one
-    if (!this.$$.games[gameID]) {
-        this.$ = this.$$.games[gameID] = new Game(this.$$, gameID);
-        this.$$.gameCount++;
-    
-    } else {
-        this.$ = this.$$.games[gameID];
-    }
-    
-    // Stuff
     this.$conn = conn;
     this.info = name + ' [' + conn.id + ']';
     this.id = this.$$.clientID;
-    this.gameID = gameID;
+    this.gameID = -1;
     this.name = name;
-    
-    this.$$.log('++ ' + this.info + ' joined Game #' + this.gameID);
-    this.$.addPlayer(this, watch);
 }
 
 exports.Client = Client;
 
 
 // Events ----------------------------------------------------------------------
+Client.prototype.onJoin = function(game, watch) {
+    this.$ = game;
+    this.gameID = this.$.id;
+    this.$$.log('++', this.info, 'joined Game #' + this.gameID);
+    this.$.addPlayer(this, watch);
+}
+
 Client.prototype.onMessage = function(msg) {
 
     // Send Ships
-    if (msg.send && msg.send instanceof Array && msg.send.length === 4) {
-        var data = msg.send;
-        if (typeof data[0] === 'number' && typeof data[1] === 'number'
-            && typeof data[2] === 'string' && typeof data[3] === 'number') {
-            
-            this.$.onMessage('send', data, this);
-        }
+    if (msg.send && this.validateMessage(msg.send, ['number', 'number',
+                                                    'string', 'number'])) {
+        
+        this.$.onMessage('send', msg.send, this);
     
     // Stop ships
-    } else if (msg.stop && msg.stop instanceof Array && msg.stop.length === 2) {
-        var data = msg.stop;
-        if (typeof data[0] === 'number' && typeof data[1] === 'string') {
-            this.$.onMessage('stop', data, this);
-        }
+    } else if (msg.stop && this.validateMessage(msg.stop, ['number', 'string'])) {
+        this.$.onMessage('stop', msg.stop, this);
     }
 };
 
 Client.prototype.onRemove = function() {
-    this.$$.log('++ ' + this.info + ' left Game #' + this.gameID);
+    this.$$.log('++ ', this.info, ' left Game #' + this.gameID);
     this.$.removePlayer(this.id);
 };
 
 
 // Network ---------------------------------------------------------------------
+Client.prototype.validateMessage = function(msg, types) {
+    if (!msg instanceof Array) {
+        return false;
+    }
+    
+    if (msg.length !== types.length) {
+        return false;
+    }
+    
+    for(var i = 0, l = msg.length; i < l; i++) {
+        if (typeof msg[i] !== types[i]) {
+            return false;
+        }
+    }
+    return true;
+};
+
 Client.prototype.send = function(type, msg) {
     this.$$.send(this.$conn, type, msg);
 };
