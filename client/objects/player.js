@@ -59,20 +59,18 @@ Player.prototype.remove = function() {
 
 // Tick the GUI ----------------------------------------------------------------
 Player.prototype.tick = function() {
-    if (this.selectPlanet && this.selectType && this.getTick() % 2 === 0) {
+    var tick = Math.floor(this.getTick());
+    if (this.selectPlanet && this.selectType && tick % 2 === 0) {
         var maxCount = this.selectPlanet.ships[this.id][this.selectType].length;
         var oldCount = this.selectCount;
         if (this.select) {
             var ticks = this.getTick() - this.selectTick;
             var add = 0;
-            if (ticks > 30) {
+            if (ticks > 100) {
                 add = 2;
             
-            } else if (ticks > 60) {
+            } else if (ticks > 200) {
                 add = 5;
-            
-            } else if (ticks > 90) {
-                add = 10;
             
             } else if (ticks > 0) {
                 add = 1;
@@ -107,9 +105,7 @@ Player.prototype.send = function(target) {
 };
 
 Player.prototype.stop = function(planet) {
-    if (planet.player === this) {
-        this.$.send({'stop': [planet.id, 'fight']}); // TODO make this work later
-    }
+    this.$.send({'stop': [planet.id, 'fight']}); // TODO make this work later
 };
 
 

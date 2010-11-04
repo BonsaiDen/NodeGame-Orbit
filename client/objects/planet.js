@@ -31,6 +31,7 @@ function Planet(game, id, x, y, size, player, maxCount, nodes) {
     this.ships = {};
     this.shipCount = 0;
     
+    this.ressources = 1;
     this.size = size;
     this.maxCount = maxCount;
     this.x = x;
@@ -39,6 +40,7 @@ function Planet(game, id, x, y, size, player, maxCount, nodes) {
     this.nodes = nodes;
     this.localCount = 0;
     this.playerCount = 0;
+    this.oldPlayer = this.player;
 }
 
 
@@ -65,7 +67,11 @@ Planet.prototype.tick = function() {
                 
                 this.$.drawBackground();
             }
+        
+        } else if (this.oldPlayer !== this.player) {
+            this.$.drawBackground();
         }
+        this.oldPlayer = this.player;
     }
 };
 
@@ -87,7 +93,7 @@ Planet.prototype.tickCombat = function() {
     
     for(var i = 0, l = ships.length; i < l; i++) {
         var c = ships[i];
-        if (c.inOrbit) {
+        if (c.inOrbit && !c.traveling) {
             for(var e = i + 1;; e++) {
                 if (e === l) {
                     e = 0;
@@ -96,10 +102,10 @@ Planet.prototype.tickCombat = function() {
                     break;
                 }
                 
-                var rs = Math.round(Math.PI / this.size * this.$.shipSpeeds[c.type] * 100) / 100 * 2;
+                var rs = Math.round(Math.PI / this.size * this.$.shipSpeeds[c.type] * 100) / 100 * 2.5;
                 var s = ships[e];
                 var ds = Math.abs(this.$.coreDifference(s.r, c.r));
-                if (ds <= rs * 3) {
+                if (!s.traveling && ds <= rs * 3) {
                     if (s.player !== c.player) {
                         c.attack(s);
                         s.attack(c);
@@ -154,19 +160,22 @@ Planet.prototype.draw = function(sx, sy) {
     }
     
     // Draw Planet Shape
+    var ringScale = this.size / 20;
+    var resScale = 0.25 + this.ressources * 0.75;
+    
     this.$.drawBack();
-    this.$.drawWidth(4);
+    this.$.drawWidth(5 * (ringScale * resScale));
     this.$.drawColor(this.player ? this.player.color : 0);
     this.$.drawAlpha(0.35);
-    this.$.drawCircle(this.x, this.y, this.size - 2.5, false);
-    this.$.drawWidth(5);
+    this.$.drawCircle(this.x, this.y, this.size - 4 * (ringScale * resScale), false);
+    this.$.drawWidth(7 * (ringScale * resScale));
     this.$.drawAlpha(0.20);
-    this.$.drawCircle(this.x, this.y, this.size - 7, false);
+    this.$.drawCircle(this.x, this.y, this.size - 10 * (ringScale * resScale), false);
     
     this.$.drawAlpha(1);
-    this.$.drawWidth(3);
+    this.$.drawWidth(3 * ringScale);
     this.$.drawColor(this.player ? this.player.color : 0);
-    this.$.drawCircle(this.x, this.y, this.size, false);
+    this.$.drawCircle(this.x, this.y, this.size - 1 * ringScale + 1, false);
     
     // Selected
     if (this.player === this.$.player) {
@@ -195,7 +204,7 @@ Planet.prototype.draw = function(sx, sy) {
         }
     
     // Info
-    } else if (this === this.$.inputHover) {
+    } else if (this === this.$.inputHover || this === selected) {
         if (this.$.sendPath.length === 0) {
             this.drawSelect();
         }

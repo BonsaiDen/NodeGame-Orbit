@@ -44,7 +44,7 @@ function Planet(game, id, x, y, size, start, nodes) {
     // Production
     this.rateStep = 0;
     this.rate = 100;
-    this.maxCount = 5;
+    this.maxCount = Math.floor(this.size * 0.65);
     this.nodes = nodes;
     
     this.initNeutral(true, true);
@@ -56,7 +56,6 @@ exports.Planet = Planet;
 Planet.prototype.reset = function() {
     this.rateStep = 0;
     this.rate = 100;
-    this.maxCount = 5;
 };
 
 Planet.prototype.initPlayer = function(player, start) {
@@ -66,7 +65,7 @@ Planet.prototype.initPlayer = function(player, start) {
     this.player = player;
     this.rateStep = 0;
     this.rate = Math.floor((this.start ? 4000 : 9000) / this.size * 0.5);
-    this.maxCount = Math.floor(this.size * 0.65);
+    
     if (start) {
         this.removeNeutral();
         this.createShips('fight', this.player, 3, false);
@@ -77,10 +76,9 @@ Planet.prototype.initNeutral = function(ships, orbit) {
     this.player = this.$.neutralPlayer;
     this.rateStep = 0;
     this.rate = Math.floor(8000 / this.size);
-    this.maxCount = Math.floor(this.size / 2.5);
     
     if (ships) {
-        var count = Math.ceil(this.maxCount / 2);
+        var count = Math.ceil(this.maxCount / 5);
         this.createShips('fight', this.player, count, orbit);
     }
 };
@@ -139,22 +137,11 @@ Planet.prototype.tick = function() {
     if (this.player) {
         this.rateStep++;
         
-        var rate = this.rate;
-        if (this.player !== this.$.neutralPlayer) {
-            var mod = [1.0, 0.50, 1, 1.20, 1.4, 1.7, 2, 2.5, 3, 3.5];
-            if (this.player.planetCount < mod.length) {
-                rate = this.rate * mod[this.player.planetCount];
-            
-            } else {
-                rate = 3.0;
-            }
-        }
-        
-        if (this.rateStep > rate) {
-            if (this.player.shipCount < this.player.shipMaxCount
-                || this.player.id === 0) {
+        var maxCount = this.player.id === 0 ? this.maxCount * 0.5 : this.maxCount;
+        if (this.rateStep > this.rate) {
+            if (this.player.shipCount < this.player.shipMaxCount) {
                 
-                if (this.getPlayerShipCount(this.player) < this.maxCount) {
+                if (this.getPlayerShipCount(this.player) < maxCount) {
                     this.createShip('fight', this.player, false);
                 }
             }
@@ -183,7 +170,7 @@ Planet.prototype.tickCombat = function() {
     
     for(var i = 0, l = ships.length; i < l; i++) {
         var c = ships[i];
-        if (c.inOrbit && c.health > 0) {
+        if (c.inOrbit && c.health > 0 && !c.traveling) {
             for(var e = i + 1;; e++) {
                 if (e === l) {
                     e = 0;
@@ -192,10 +179,10 @@ Planet.prototype.tickCombat = function() {
                     break;
                 }
                 
-                var rs = Math.round(Math.PI / this.size * this.$.shipSpeeds[c.type] * 100) / 100 * 2;
+                var rs = Math.round(Math.PI / this.size * this.$.shipSpeeds[c.type] * 100) / 100 * 2.5;
                 var s = ships[e];
                 var ds = Math.abs(this.$.coreDifference(s.r, c.r));
-                if (s.health > 0 && ds <= rs * 3) {
+                if (!s.traveling && s.health > 0 && ds <= rs * 3) {
                     if (s.player !== c.player) {
                         c.attack(s);
                         s.attack(c);
@@ -265,7 +252,7 @@ Planet.prototype.send = function(player, target, type, amount) {
     
     for(var i = 0; i < ships.length; i++) {
         var ship = ships[i];
-        if (amount > 0 && ship.targetPlanet === null && ship.inOrbit) {
+        if (amount > 0 && !ship.traveling && ship.targetPlanet === null && ship.inOrbit) {
             ship.send(target);
             amount--;
         }
@@ -273,7 +260,7 @@ Planet.prototype.send = function(player, target, type, amount) {
     
     for(var i = 0; i < ships.length; i++) {
         var ship = ships[i];
-        if (amount > 0 && (ship.targetPlanet !== null || !ship.inOrbit)) {
+        if (amount > 0 && !ship.traveling && (ship.targetPlanet !== null || !ship.inOrbit)) {
             ship.send(target);
             amount--;
         }
