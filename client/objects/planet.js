@@ -99,7 +99,7 @@ Planet.prototype.tickCombat = function() {
                 
                 var s = ships[e];
                 var ds = Math.abs(this.$.coreDifference(s.r, c.r));
-                if (ds <= fightDistance ) {
+                if (ds <= fightDistance) {
                     if (s.player !== c.player) {
                         c.attack(s);
                         s.attack(c);

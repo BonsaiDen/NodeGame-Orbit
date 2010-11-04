@@ -343,9 +343,9 @@ Game.prototype.effectClear = function(sx, sy) {
     this.effectsClear = [];
 };
 
-Game.prototype.effectExplosion = function(color, planet, orbit, r, size) {
-    r = r + (Math.random() * 2 - 1);
-    orbit = orbit + (Math.random() * 2.5 - 1.25);
+Game.prototype.effectExplosion = function(color, planet, orbit, r, rs, size) {
+    r = r + (Math.random() * rs * 2 - rs);
+    orbit = orbit + (Math.random() * 1.5 - 0.75);
     this.effects.push({i: EFFECT_EXPLOSION, t: new Date().getTime(), l: 2000,
                        s: size, c: color, p: planet, o: orbit, r: r});
 };

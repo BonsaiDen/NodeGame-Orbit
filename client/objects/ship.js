@@ -36,6 +36,7 @@ function Ship(game, id) {
     this.direction = 0;
     this.tickInit = 0;
     this.tickAngle = 0;
+    this.attacked = false;
     
     this.or = 0;
     this.r = 0;
@@ -52,18 +53,21 @@ function Ship(game, id) {
 
 Ship.prototype.destroy = function() {
     this.player.shipCount--;
-    this.$.effectExplosion(this.player.color, this.planet, this.orbit, this.r, 8);
+    this.$.effectExplosion(this.player.color, this.planet, this.orbit, this.r, this.rs, 8);
     this.planet.removeShip(this);
 };
 
 
 // Interpolation ---------------------------------------------------------------
 Ship.prototype.tick = function() {
+    this.attacked = false;
     if (!this.traveling) {
         var tickDiff = this.getTick() - this.tickAngle;
-        var rs = Math.round(Math.PI / this.planet.size * this.$.shipSpeed * 100) / 100;
-        this.r = (this.or + this.direction * rs * tickDiff + 360) % 360;
-        
+        this.rs = Math.round(Math.PI / this.planet.size * this.$.shipSpeed * 100) / 100;
+        this.r = (this.or + this.direction * this.rs * tickDiff + 360) % 360;
+        if (this.r < 0) {
+            this.r += 360;
+        }
         tickDiff = this.getTick() - this.tickInit;
         if (!this.inOrbit) {
             this.orbit = tickDiff * this.$.shipToOrbitSpeed[this.type];
@@ -104,9 +108,11 @@ Ship.prototype.draw = function(sx, sy) {
 };
 
 Ship.prototype.attack = function(other) {
-    this.$.effectExplosion(this.player.color, this.planet,
-                           other.orbit, other.r, 4);
-    
+    if (!this.attacked) {
+        this.$.effectExplosion(this.player.color, this.planet,
+                               other.orbit, other.r, other.rs, 4);
+    }
+    this.attacked = false;
 };
 
 

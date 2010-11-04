@@ -54,6 +54,9 @@ function Ship(game, type, planet, player, r, orbit) {
     this.traveled = false;
     this.travelTicks = 0;
     this.arriveTick = 0;
+    
+    this.updated = false;
+    this.attacked = false;
 }
 exports.Ship = Ship;
 
@@ -66,10 +69,13 @@ Ship.prototype.destroy = function() {
 };
 
 Ship.prototype.attack = function(other) {
-    other.health -= this.$.shipDamage[this.type];
-    if (other.health <= 0) {
-        other.destroy();
+    if (!this.attacked && this.health > 0) {
+        other.health -= this.$.shipDamage[this.type];
+        if (other.health <= 0) {
+            other.destroy();
+        }
     }
+    this.attacked = true;
 };
 
 
@@ -102,6 +108,7 @@ Ship.prototype.stop = function() {
 
 // Updates ---------------------------------------------------------------------
 Ship.prototype.tick = function() {
+    this.attacked = false;
     
     // Orbit & Angle
     if (!this.traveling) {
@@ -118,6 +125,9 @@ Ship.prototype.tick = function() {
         var tickDiff = this.getTick() - this.tickAngle;
         this.rs = Math.round(Math.PI / this.planet.size * this.$.shipSpeed * 100) / 100;
         this.r = (this.or + this.direction * this.rs * tickDiff + 360) % 360;
+        if (this.r < 0) {
+            this.r += 360;
+        }
     }
     
     // Start Traveling
