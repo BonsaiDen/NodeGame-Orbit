@@ -44,6 +44,9 @@ Game.prototype.drawInit = function() {
     this.fbg = this.canvas.getContext('2d');
     this.fbg.globalCompositeOperation = 'lighter'; 
     
+    this.viewWidth = this.canvas.width / 2;
+    this.viewHeight = this.canvas.height / 2;
+    
     // Background
     this.canvasBack = $('bgg');
     this.bbg = this.canvasBack.getContext('2d');
@@ -71,7 +74,7 @@ Game.prototype.drawTick = function() {
         this.bbg.scale(this.scale, this.scale);    
         this.bbg.translate(-this.cameraX, -this.cameraY);
         if (this.clearBackground) {
-            this.bbg.clearRect(this.cameraX, this.cameraY, 320, 240);
+            this.bbg.clearRect(this.cameraX, this.cameraY, this.viewWidth, this.viewHeight);
             this.clearBackground = false;
         
         } else {
@@ -173,10 +176,10 @@ Game.prototype.shipVisbile = function(ship, sx, sy) {
     sx = sx || 0;
     sy = sy || 0;
     if (ship.x >= this.cameraX - 8 + sx
-        && ship.x <= this.cameraX + 320 + sx + 8) {
+        && ship.x <= this.cameraX + this.viewWidth + sx + 8) {
         
         if (ship.y >= this.cameraY - 8 + sy
-            && ship.y <= this.cameraY + 240 + sy + 8) {
+            && ship.y <= this.cameraY + this.viewHeight + sy + 8) {
             return true;
         }
     }
@@ -187,10 +190,10 @@ Game.prototype.planetVisbile = function(p, sx, sy) {
     sx = sx || 0;
     sy = sy || 0;
     if (p.x >= this.cameraX - 8 - p.size + sx
-        && p.x <= this.cameraX + 320 + sx + p.size + 8) {
+        && p.x <= this.cameraX + this.viewWidth + sx + p.size + 8) {
         
         if (p.y >= this.cameraY - 8 - p.size + sy
-            && p.y <= this.cameraY + 240 + sy + p.size + 8) {
+            && p.y <= this.cameraY + this.viewHeight + sy + p.size + 8) {
             return true;
         }
     }
@@ -198,8 +201,8 @@ Game.prototype.planetVisbile = function(p, sx, sy) {
 };
 
 Game.prototype.effectVisible = function(x, y, s) {
-    if (x >= this.cameraX - 8 - s && x <= this.cameraX + 320 + s + 8) {
-        if (y >= this.cameraY - 8 - s && y <= this.cameraY + 240 + s + 8) {
+    if (x >= this.cameraX - 8 - s && x <= this.cameraX + this.viewWidth + s + 8) {
+        if (y >= this.cameraY - 8 - s && y <= this.cameraY + this.viewHeight + s + 8) {
             return true;
         }
     }

@@ -36,7 +36,6 @@ Game.prototype.inputInit = function(full) {
     this.mouseDragY = 0;
     this.mouseDragDown = false;
     
-
     this.canvas.addEventListener('mousemove', function(e) {
         e = e || window.event;
         clearTimeout(that.moveTimeout);
@@ -126,9 +125,9 @@ Game.prototype.inputKeyboard = function() {
         this.inputMove(this.mouseX, this.mouseY);
     }
     
-    this.cameraX = Math.min(this.cameraX, this.width - this.width / this.scale);
+    this.cameraX = Math.min(this.cameraX, this.width - this.viewWidth);
     this.cameraX = Math.max(this.cameraX, 0);
-    this.cameraY = Math.min(this.cameraY, this.height - this.height / this.scale);
+    this.cameraY = Math.min(this.cameraY, this.height - this.viewHeight);
     this.cameraY = Math.max(this.cameraY, 0);
     
     // Reset Key States
@@ -265,9 +264,9 @@ Game.prototype.inputDragMouse = function(x, y) {
     this.drawBackground();
     this.cameraX = this.mouseDragCX + mx * 1.25 / this.scale;
     this.cameraY = this.mouseDragCY + my * 1.25 / this.scale;
-    this.cameraX = Math.min(this.cameraX, this.width - 320);
+    this.cameraX = Math.min(this.cameraX, this.width - this.viewWidth);
     this.cameraX = Math.max(this.cameraX, 0);
-    this.cameraY = Math.min(this.cameraY, this.height - 240);
+    this.cameraY = Math.min(this.cameraY, this.height - this.viewHeight);
     this.cameraY = Math.max(this.cameraY, 0);
 }
 

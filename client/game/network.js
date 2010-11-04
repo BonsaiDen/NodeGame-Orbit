@@ -46,9 +46,13 @@ Game.prototype.onConnect = function(succes) {
     }
     
     this.$$.send(['init', 'Bonsai', gameID, watch, hash]);
+    
+    // Reset
+    this.planetList = [];
     this.planets = {};
     this.players = {};
     this.ships = {};
+    this.shipList = [];
 };
 
 Game.prototype.onMessage = function(msg) {
@@ -66,6 +70,11 @@ Game.prototype.send = function(msg) {
 
 Game.prototype.onClose = function(msg) {
     this.running = false;
+    this.planets = {};
+    this.players = {};
+    this.ships = {};
+    this.shipList = [];
+    this.player = null;
 };
 
 
@@ -96,9 +105,7 @@ Game.prototype.netMessage = function(msg) {
         this.netShipsDestroy(msg[0]);
     
     } else if (type === MSG_GAME_TICK) {
-        if (msg[0] != Math.floor(this.tickCount)) {
-            this.tickCount = msg[0];
-        }
+        this.tickCount = msg[0];
     
     } else if (type === MSG_PLAYER_ADD) {
         new Player(this, msg[0], msg[1], msg[2], false);
@@ -150,10 +157,6 @@ Game.prototype.netMessage = function(msg) {
 
 // Planets ---------------------------------------------------------------------
 Game.prototype.netPlanetsInit = function(data) {
-    this.planetNodes = [];
-    this.planetList = [];
-    this.planets = {};
-    
     for(var i = 0; i < data.length; i++) {
         var d = data[i];
         var p = new Planet(this, d[0], d[1], d[2], d[3], this.players[d[4]], d[5], d[6]);

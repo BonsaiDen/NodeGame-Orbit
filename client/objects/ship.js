@@ -49,12 +49,18 @@ function Ship(game, id) {
     this.travelTicks = 0;
     this.travelDistance = 0;
     this.arriveTick = 0;
+    
+    this.$.shipList.push(this);
 }
 
 Ship.prototype.destroy = function() {
-    this.player.shipCount--;
-    this.$.effectExplosion(this.player.color, this.planet, this.orbit, this.r, this.rs, 8);
-    this.planet.removeShip(this);
+    var index = this.$.shipList.indexOf(this);
+    if (index !== -1) {
+        this.player.shipCount--;
+        this.$.effectExplosion(this.player.color, this.planet, this.orbit, this.r, this.rs, 8);
+        this.planet.removeShip(this);
+        this.$.shipList.splice(index, 1);
+    }
 };
 
 

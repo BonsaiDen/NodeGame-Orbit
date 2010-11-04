@@ -44,18 +44,20 @@ Game.prototype.run = function() {
             this.netMessage(this.messageQueue.shift());
         }
         
-        // Tick the Game
-        for(var i in this.planets) {
-            this.planets[i].tick();
+        // Update Planets
+        for(var i = 0, l = this.planetList.length; i < l; i++) {
+            this.planetList[i].tick();
             if ((this.tickCount % this.combatTickRate) === 0) {
-                this.planets[i].tickCombat();
+                this.planetList[i].tickCombat();
             }
         }
         
-        for(var i in this.ships) {
-            this.ships[i].tick();
+        // Update Ships
+        for(var i = 0, l = this.shipList.length; i < l; i++) {
+            this.shipList[i].tick();
         }
         
+        // Update Players
         for(var i in this.players) {
             this.players[i].tick();
         }
