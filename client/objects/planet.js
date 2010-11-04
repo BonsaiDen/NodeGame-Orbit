@@ -23,7 +23,7 @@
 
 // Planets ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Planet(game, id, x, y, size, player) {
+function Planet(game, id, x, y, size, player, maxCount) {
     this.$ = game;
     this.id = id;
     this.player = player;
@@ -32,13 +32,42 @@ function Planet(game, id, x, y, size, player) {
     this.shipCount = 0;
     
     this.size = size;
-    this.maxCount = Math.floor(this.size * 0.65);
+    this.maxCount = maxCount;
     this.x = x;
     this.y = y;
+    
+    this.localCount = 0;
+    this.playerCount = 0;
 }
 
 
 // Combat ----------------------------------------------------------------------
+Planet.prototype.tick = function() {
+    if (this.$.player) {
+        var selected = this.$.player.selectPlanet;
+        if (this === selected && this.$.player.selectCount > 0) {
+            var oldPlayerCount = this.playerCount;
+            this.playerCount = selected.getPlayerShipCount(this.$.player);
+            if (oldPlayerCount != this.playerCount) {
+                this.$.drawBackground();
+            }
+        
+        } else if (this === this.$.inputHover) {
+            var oldPlayerCount = this.playerCount;
+            var oldLocalCount = this.localCount;
+            
+            this.playerCount = this.getPlayerShipCount(this.$.player);
+            this.localCount = this.getPlayerShipCount(this.player);
+            
+            if (oldPlayerCount != this.playerCount
+                || oldLocalCount != this.localCount) {
+                
+                this.$.drawBackground();
+            }
+        }
+    }
+};
+
 Planet.prototype.tickCombat = function() {
     if (this.shipCount === 0) {
         return;
@@ -140,75 +169,70 @@ Planet.prototype.draw = function(sx, sy) {
     this.$.drawCircle(this.x, this.y, this.size, false);
     
     // Selected
-    if (this.$.player) {
-        if (this.player === this.$.player) {
+
+    if (this.player === this.$.player) {
+        this.$.drawColor(this.$.player.color);
+    
+    } else {
+        this.$.drawShaded(this.$.player.color);
+    }
+    
+    // Select
+    var selected = this.$.player.selectPlanet;
+    var size = (100 / 15) * this.size / 100;
+    if (this === selected && this.$.player.selectCount > 0) {
+        this.drawSelect();
+        if (this.playerCount > 0) {
             this.$.drawColor(this.$.player.color);
-        
-        } else {
-            this.$.drawShaded(this.$.player.color);
+            this.$.drawText(this.x, this.y + 1 * size,
+                            this.$.player.selectCount, 'center', 'bottom',
+                            size);
+            
+            this.$.drawText(this.x, this.y + 1 * size,
+                            '_', 'center', 'bottom', size);
+            
+            this.$.drawText(this.x, this.y - 1 * size,
+                            this.playerCount, 'center', 'top', size);                
         }
-        
-        // Select
-        var selected = this.$.player.selectPlanet;
-        var size = (100 / 15) * this.size / 100;
-        if (this === selected && this.$.player.selectCount > 0) {
+    
+    // Info
+    } else if (this === this.$.inputHover) {
+        if (this.$.sendPath.length === 0) {
             this.drawSelect();
-            var playerCount = selected.getPlayerShipCount(this.$.player);
-            if (playerCount > 0) {
-                this.$.drawColor(this.$.player.color);
-                this.$.drawText(this.x, this.y + 1 * size,
-                                this.$.player.selectCount, 'center', 'bottom',
-                                size);
-                
-                this.$.drawText(this.x, this.y + 1 * size,
-                                '_', 'center', 'bottom', size);
-                
-                this.$.drawText(this.x, this.y - 1 * size,
-                                playerCount, 'center', 'top', size);                
-            }
-        
-        // Info
-        } else if (this === this.$.inputHover) {
-            if (this.$.sendPath.length === 0) {
-                this.drawSelect();
-            }
-            
-            var playerCount = this.getPlayerShipCount(this.$.player);
-            var localCount = this.getPlayerShipCount(this.player);
-            
-            // Enemy Planet
-            if (playerCount > 0 && this.player !== this.$.player) {
-                this.$.drawShaded(this.$.player.color);
-                this.$.drawText(this.x, this.y + 1 * size,
-                                playerCount, 'center', 'bottom', size);
-                
-                this.$.drawShaded(this.player.color);
-                this.$.drawText(this.x, this.y - 4.5 * size,
-                                '_', 'center', 'middle', size);
-                
-                this.$.drawText(this.x, this.y - 1 * size,
-                                localCount, 'center', 'top', size);
-            
-            // Own Planet
-            } else {
-                this.$.drawShaded(this.player ? this.player.color : 0);
-                this.$.drawText(this.x, this.y + 1 * size,
-                                localCount, 'center', 'bottom', size);
-                
-                this.$.drawText(this.x, this.y + 1 * size,
-                                '_', 'center', 'bottom', size);
-                
-                this.$.drawText(this.x, this.y - 1 * size,
-                                this.maxCount, 'center', 'top', size);
-            }
         }
         
-        // Clear send path when all ships on the planet get destroyed
-        if (this === selected && this.$.player.selectCount === 0) {
-            if (this.$.sendPath.length > 0) {
-                this.$.sendPath = [];
-                this.$.drawBackground(true);
-            }
+        // Enemy Planet
+        if (this.playerCount > 0 && this.player !== this.$.player) {
+            this.$.drawShaded(this.$.player.color);
+            this.$.drawText(this.x, this.y + 1 * size,
+                            this.playerCount, 'center', 'bottom', size);
+            
+            this.$.drawShaded(this.player.color);
+            this.$.drawText(this.x, this.y - 4.5 * size,
+                            '_', 'center', 'middle', size);
+            
+            this.$.drawText(this.x, this.y - 1 * size,
+                            this.localCount, 'center', 'top', size);
+        
+        // Own Planet
+        } else {
+            this.$.drawShaded(this.player ? this.player.color : 0);
+            this.$.drawText(this.x, this.y + 1 * size,
+                            this.localCount, 'center', 'bottom', size);
+            
+            this.$.drawText(this.x, this.y + 1 * size,
+                            '_', 'center', 'bottom', size);
+            
+            this.$.drawText(this.x, this.y - 1 * size,
+                            this.maxCount, 'center', 'top', size);
+        }
+    }
+    
+    // Clear send path when all ships on the planet get destroyed
+    if (this === selected && this.$.player.selectCount === 0) {
+        if (this.$.sendPath.length > 0) {
+            this.$.sendPath = [];
+            this.$.drawBackground(true);
         }
     }
     this.$.drawFront();

@@ -24,17 +24,11 @@ function initGame() {
     Orbit = new Client(HOST, PORT);
 }
 
+
 // Game ------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 function Game(client) {
     this.$$ = client;
-    this.tickCount = 0;
-    this.messageQueue = [];
-    this.width = 0;
-    this.height = 0;
-    this.maxDistance = 0;
-    this.shipSpeed = 0;
-    this.combatTickRate = 0;
     this.coreInit();
 }
 
@@ -51,8 +45,10 @@ Game.prototype.run = function() {
         }
         
         // Tick the Game
-        if (this.tickCount % 5 === 0) {
-            for(var i in this.planets) {
+        
+        for(var i in this.planets) {
+            this.planets[i].tick();
+            if ((this.tickCount % this.combatTickRate) === 0) {
                 this.planets[i].tickCombat();
             }
         }

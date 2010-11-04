@@ -103,7 +103,7 @@ Planet.prototype.checkPlayer = function() {
         }
         if (master) {
             this.initPlayer(master);
-            this.$.updatePlanets();
+            this.$.updatePlanets(this);
             return true;
         }
     }
@@ -230,8 +230,8 @@ Planet.prototype.addShip = function(ship) {
         this.ships[ship.player.id][ship.type].push(ship);
         if (this.shipCount === 0 && this.player !== ship.player) {
             this.initPlayer(ship.player);
-            this.$.updatePlanets();
-        } 
+            this.$.updatePlanets(this);
+        }
         this.shipCount++;
     }
 };
@@ -254,18 +254,18 @@ Planet.prototype.send = function(player, target, type, amount) {
     var ships = this.ships[player.id][type];
     var travelAngle = this.$.coreAngle(this, target);
     ships.sort(function(a, b) {
-        var ra = a.direction === 1 ? (a.r - travelAngle + 360) % 360
-                                   : (travelAngle - a.r + 360) % 360;
+        var ra = a.direction === 1 ? ((a.r + a.rs) - travelAngle + 360) % 360
+                                   : (travelAngle - (a.r - a.rs) + 360) % 360;
     
-        var rb = b.direction === 1 ? (b.r - travelAngle + 360) % 360
-                                   : (travelAngle - b.r + 360) % 360;
+        var rb = b.direction === 1 ? ((b.r + b.rs) - travelAngle + 360) % 360
+                                   : (travelAngle - (b.r - b.rs) + 360) % 360;
         
         return rb - ra;
     });
     
     for(var i = 0; i < ships.length; i++) {
         var ship = ships[i];
-        if (amount > 0 && ship.targetPlanet === null) {
+        if (amount > 0 && ship.targetPlanet === null && ship.inOrbit) {
             ship.send(target);
             amount--;
         }
@@ -273,7 +273,7 @@ Planet.prototype.send = function(player, target, type, amount) {
     
     for(var i = 0; i < ships.length; i++) {
         var ship = ships[i];
-        if (amount > 0 && ship.targetPlanet !== null) {
+        if (amount > 0 && (ship.targetPlanet !== null || !ship.inOrbit)) {
             ship.send(target);
             amount--;
         }

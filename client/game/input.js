@@ -36,50 +36,49 @@ Game.prototype.inputInit = function(full) {
     this.mouseDragY = 0;
     this.mouseDragDown = false;
     
-    if (full) {
-        this.canvas.addEventListener('mousemove', function(e) {
-            e = e || window.event;
-            clearTimeout(that.moveTimeout);
-            that.moveTimeout = setTimeout(function() {
-                var x = e.clientX - that.canvas.offsetLeft + window.scrollX;
-                var y = e.clientY - that.canvas.offsetTop + window.scrollY;
-                that.mouseX = x;
-                that.mouseY = y;
-                that.inputMove(x, y);
-            }, 5);
-        
-        }, false);
-        
-        this.canvas.addEventListener('mouseout', function(e) {
-            clearTimeout(that.moveTimeout);
-            that.moveTimeout = setTimeout(function() {
-                that.inputMove(-1, -1);
-            }, 5);
-        
-        }, false);
-        
-        this.canvas.addEventListener('contextmenu', function(e) {
-            that.inputClick(e || window.event);
-            e.preventDefault();
-            return false;
-        }, false);  
-        
-        this.canvas.addEventListener('mousedown', function(e) {
-            that.inputDown(e || window.event);
-        }, false);
-        
-        this.canvas.addEventListener('mouseup', function(e) {
-            that.inputUp(e || window.event);
-        }, false);
-        
-        this.canvas.addEventListener('click', function(e) {
-            that.inputClick(e || window.event);
-        }, false); 
-        
-        this.canvas.addEventListener('dblclick', function(e) {
-            that.inputDoubleClick(e || window.event);
-        }, false); 
-    }
+
+    this.canvas.addEventListener('mousemove', function(e) {
+        e = e || window.event;
+        clearTimeout(that.moveTimeout);
+        that.moveTimeout = setTimeout(function() {
+            var x = e.clientX - that.canvas.offsetLeft + window.scrollX;
+            var y = e.clientY - that.canvas.offsetTop + window.scrollY;
+            that.mouseX = x;
+            that.mouseY = y;
+            that.inputMove(x, y);
+        }, 5);
+    
+    }, false);
+    
+    this.canvas.addEventListener('mouseout', function(e) {
+        clearTimeout(that.moveTimeout);
+        that.moveTimeout = setTimeout(function() {
+            that.inputMove(-1, -1);
+        }, 5);
+    
+    }, false);
+    
+    this.canvas.addEventListener('contextmenu', function(e) {
+        that.inputClick(e || window.event);
+        e.preventDefault();
+        return false;
+    }, false);
+    
+    this.canvas.addEventListener('mousedown', function(e) {
+        that.inputDown(e || window.event);
+    }, false);
+    
+    this.canvas.addEventListener('mouseup', function(e) {
+        that.inputUp(e || window.event);
+    }, false);
+    
+    this.canvas.addEventListener('click', function(e) {
+        that.inputClick(e || window.event);
+    }, false);
+    
+    this.canvas.addEventListener('dblclick', function(e) {
+        that.inputDoubleClick(e || window.event);
+    }, false);
         
     // Keyboard Input
     this.keys = {};
@@ -141,11 +140,7 @@ Game.prototype.inputKeyboard = function() {
 
 
 // Mouse -----------------------------------------------------------------------
-Game.prototype.inputMove = function(x, y) {
-    if (!this.player) {
-        return;
-    }
-    
+Game.prototype.inputMove = function(ox, oy) {
     // Mouse Dragging
     if (this.mouseDragDown) {
         if (Math.abs(this.mouseDragX - this.mouseX) > 2
@@ -154,19 +149,18 @@ Game.prototype.inputMove = function(x, y) {
             this.mouseDrag = true;
         }
     }
-    
     if (this.mouseDrag) {
-        return this.inputDragMouse(x, y);
+        return this.inputDragMouse(ox, oy);
     }
     
     // World Position
-    x = this.cameraX + (x / this.scale);
-    y = this.cameraY + (y / this.scale);
+    var x = this.cameraX + (ox / this.scale);
+    var y = this.cameraY + (oy / this.scale);
     
     // Select Planet
     var oldHover = this.inputHover;
     var newHover = null;
-    if (this.x !== -1) {
+    if (ox !== -1) {
         for(var i in this.planets) {
             var p = this.planets[i];
             var dx = p.x - x;

@@ -23,13 +23,16 @@
 
 // Player ----------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Player(game, id, name, color) {
+function Player(game, id, name, color, watch) {
     this.$ = game;
     this.name = name;
     this.color = color;
     this.id = id;
-    this.$.players[id] = this;
+    this.watch = watch;
     this.shipCount = 0;
+    if (!this.watch) {
+        this.$.players[id] = this;
+    }
     
     // GUI
     this.selectTick = 0;

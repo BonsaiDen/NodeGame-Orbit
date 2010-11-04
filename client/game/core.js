@@ -25,8 +25,22 @@
 // -----------------------------------------------------------------------------
 Game.prototype.coreInit = function() {
     this.tickCount = 1;
+    this.gameID = 0;
+    this.messageQueue = [];
     
+    // Map
+    this.width = 0;
+    this.height = 0;
+    this.maxDistance = 0;
+    
+    // Planets
+    this.combatTickRate = 0;
+    
+    // UI
     this.sendPath = [];
+    
+    // Ships
+    this.shipSpeed = 0;
     this.shipTypes = ['fight', 'bomb', 'def'];
     this.shipOrbits = {def: 5, fight: 15, bomb: 10};
     this.shipToOrbitSpeed = {def: 0.125, fight: 0.5, bomb: 0.25};  

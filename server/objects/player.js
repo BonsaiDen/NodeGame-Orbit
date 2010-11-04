@@ -21,6 +21,9 @@
 */
 
 
+var crypto = require('crypto');
+
+
 // Player ----------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 function Player(game, client, color) {
@@ -39,6 +42,18 @@ function Player(game, client, color) {
     this.shipCount = 0;
     this.shipMaxCount = 0;
     this.$.players[this.id] = this;
+    
+    // Client Hash
+    if (this.id !== 0) {
+        var hash = crypto.createHash('md5');
+        hash.update(new Date().getTime() + '-' + this.getTick() + '-'
+                    + this.client.conn.id);
+        
+        this.clientHash = hash.digest('hex');
+    
+    } else {
+        this.clientHash = null;
+    }
 }
 
 exports.Player = Player;

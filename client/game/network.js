@@ -23,8 +23,8 @@
 
 var MSG_PLAYER_ADD = 1;
 var MSG_PLAYER_REMOVE = 2;
-var MSG_GAME_START = 3;
-var MSG_GAME_SIZE = 4;
+var MSG_GAME_JOIN = 3;
+var MSG_GAME_INIT = 4;
 var MSG_PLANETS_INIT = 5;
 var MSG_PLANETS_UPDATE = 6;
 var MSG_GAME_TICK = 7;
@@ -36,9 +36,16 @@ var MSG_SHIPS_DESTROY = 9;
 // -----------------------------------------------------------------------------
 Game.prototype.onConnect = function(succes) {
     var options = document.location.search.substr(1).split('&');
-    var gameID = parseInt(options[0]);
+    var gameID = parseInt(options[0]) || 0;
     var watch = options.length > 1 ? options[1] === 'watch' : false;
-    this.$$.send(['init', 'Bonsai', gameID, watch]);
+    
+    var hash = '';
+    try {
+        hash = (localStorage.getItem('clientHash-' + gameID) || '') + '';
+    } catch(e) {   
+    }
+    
+    this.$$.send(['init', 'Bonsai', gameID, watch, hash]);
     this.planets = {};
     this.players = {};
     this.ships = {};
@@ -65,12 +72,13 @@ Game.prototype.onClose = function(msg) {
 // Messages --------------------------------------------------------------------
 Game.prototype.netMessage = function(msg) {
     var type = msg.shift();
-    if (type === MSG_GAME_SIZE) {
-        this.width = msg[0];
-        this.height = msg[1];
-        this.maxDistance = msg[2];
-        this.shipSpeed = msg[3];
-        this.combatTickRate = msg[4];
+    if (type === MSG_GAME_INIT) {
+        this.gameID = msg[0];
+        this.width = msg[1];
+        this.height = msg[2];
+        this.maxDistance = msg[3];
+        this.shipSpeed = msg[4];
+        this.combatTickRate = msg[5];
     
     } else if (type === MSG_PLANETS_INIT) {
         this.netPlanetsInit(msg[0]);
@@ -88,24 +96,37 @@ Game.prototype.netMessage = function(msg) {
         this.tickCount = msg[0];
     
     } else if (type === MSG_PLAYER_ADD) {
-        new Player(this, msg[0], msg[1], msg[2]);
+        new Player(this, msg[0], msg[1], msg[2], false);
     
     } else if (type === MSG_PLAYER_REMOVE) {
         this.players[msg[0]].remove();
     
-    } else if (type === MSG_GAME_START) {
+    } else if (type === MSG_GAME_JOIN) {
+    
+        // Player
         if (msg[0] !== null) {
             this.player = this.players[msg[0]];
         
         } else {
-            this.player = null;
+            this.player = new Player(this, -1, '', -1, true);
         }
         
+        // Hash
+        try {
+            if (msg[2] !== null) {
+                localStorage.setItem('clientHash-' + this.gameID, msg[2]);
+            }
+        
+        } catch(e) {
+        }
+        
+        // Stuff
         this.drawInit();
         this.cameraOldX = this.cameraX;
         this.cameraOldY = this.cameraY;
-        if (this.player) {
-            this.inputInit(true);
+        this.inputInit();
+        
+        if (!this.player.watch) {
             $('bgs').style.borderColor = this.colorsShaded[this.player.color];
             if (this.planets[msg[1]]) {
                 this.cameraX = this.planets[msg[1]].x - this.width / 4;
@@ -113,7 +134,6 @@ Game.prototype.netMessage = function(msg) {
             }
         
         } else {
-            this.inputInit(false);
             this.cameraX = this.width / 2 - this.width / 4;
             this.cameraY = this.height / 2 - this.height / 4;
         }
@@ -131,7 +151,7 @@ Game.prototype.netPlanetsInit = function(data) {
     
     for(var i = 0; i < data.length; i++) {
         var d = data[i];
-        var p = new Planet(this, d[0], d[1], d[2], d[3], this.players[d[4]]);
+        var p = new Planet(this, d[0], d[1], d[2], d[3], this.players[d[4]], d[5]);
         this.planets[d[0]] = p;
         this.planetList.push(p);
         
@@ -149,6 +169,7 @@ Game.prototype.netPlanetsUpdate = function(data) {
     for(var i = 0; i < data.length; i++) {
         var d = data[i];
         this.planets[d[0]].player = this.players[d[1]];
+        this.planets[d[0]].maxCount = d[2];
     }
     this.updateBackground = true;
 };

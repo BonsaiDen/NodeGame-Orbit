@@ -72,7 +72,7 @@ Status.prototype.update = function(end) {
 Status.prototype.log = function() {
     var str = [];
     for(var i = 0; i < arguments.length; i++) {
-        str.push(arguments[i].toString());
+        str.push('' + arguments[i]);
     }
     
     this.logs.push([this.getTime(), str.join(' ')]);

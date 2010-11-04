@@ -100,8 +100,10 @@ Server.prototype.onMessage = function(conn, msg) {
                 var name = this.checkName(msg[1]);
                 var game = this.checkGame(msg[2]);
                 var watch = this.checkWatch(msg[3]);
+                var hash = this.checkHash(msg[4]);
                 if (name !== null) {
-                    conn.$clientID = this.addClient(conn, name, game, watch);
+                    conn.$clientID = this.addClient(conn, name, game,
+                                                    watch, hash);
                 }
             
             } else if (conn.$clientID) {
@@ -166,11 +168,18 @@ Server.prototype.checkWatch = function(watch) {
     return false;
 };
 
+Server.prototype.checkHash = function(hash) {
+    if (typeof hash === 'string' && hash.length === 32) {
+        return hash;
+    }
+    return null;
+};
+
 
 // Clients & Players -----------------------------------------------------------
-Server.prototype.addClient = function(conn, name, gameID, watch) {
+Server.prototype.addClient = function(conn, name, gameID, watch, hash) {
     this.clientID++;
-    this.clients[this.clientID] = new Client(this, conn, name);
+    this.clients[this.clientID] = new Client(this, conn, name, hash);
     this.clientCount++;
     this.addClientToGame(this.clients[this.clientID], gameID, watch);
     return this.clientID;
@@ -198,7 +207,7 @@ Server.prototype.broadcast = function(type, msg, clients) {
     msg.unshift(type);
     msg = BISON.encode(msg);
     for(var i in clients) {
-        this.bytesSend += clients[i].$conn.send(msg);
+        this.bytesSend += clients[i].conn.send(msg);
     }
 };
 

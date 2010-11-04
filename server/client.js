@@ -23,11 +23,12 @@
 
 // Clients ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Client(server, conn, name) {
+function Client(server, conn, name, hash) {
     this.$$ = server;
-    this.$conn = conn;
+    this.conn = conn;
     this.info = '[' + conn.id + ']';
     this.id = this.$$.clientID;
+    this.playerHash = hash;
     this.gameID = -1;
     this.name = name;
     this.player = null;
@@ -42,6 +43,10 @@ Client.prototype.onJoin = function(game, watch) {
     this.gameID = this.$.id;
     this.$$.log('++', this.info, 'joined Game #' + this.gameID);
     this.$.addClient(this, watch);
+};
+
+Client.prototype.onRejoin = function() {
+    this.$$.log('++', this.info, 're-joined Game #' + this.gameID);
 };
 
 Client.prototype.onMessage = function(msg) {
@@ -83,10 +88,10 @@ Client.prototype.validateMessage = function(msg, types) {
 };
 
 Client.prototype.send = function(type, msg) {
-    this.$$.send(this.$conn, type, msg);
+    this.$$.send(this.conn, type, msg);
 };
 
 Client.prototype.close = function() {
-    this.$conn.close();
+    this.conn.close();
 };
 

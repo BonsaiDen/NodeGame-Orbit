@@ -28,8 +28,8 @@ var Planet = require('./objects/planet').Planet;
 var MSG_PLANETS_INIT = 0;
 var MSG_PLAYER_ADD = 1;
 var MSG_PLAYER_REMOVE = 2;
-var MSG_GAME_START = 3;
-var MSG_GAME_SIZE = 4;
+var MSG_GAME_JOIN = 3;
+var MSG_GAME_INIT = 4;
 var MSG_PLANETS_INIT = 5;
 var MSG_PLANETS_UPDATE = 6;
 var MSG_GAME_TICK = 7;
@@ -127,6 +127,7 @@ Game.prototype.stop = function() {
     delete this.$$.games[this.id];
 };
 
+
 // Helpers ---------------------------------------------------------------------
 Game.prototype.getTick = function() {
     return this.tickCount;
@@ -168,13 +169,22 @@ Game.prototype.addClient = function(client, watch) {
     
     // Create player
     if (!watch) {
-        // Create player
+        
+        // Find existing player with clients hash
+        for(var i in this.players) {
+            var p = this.players[i];
+            if (!p.client && p.clientHash === client.playerHash) {
+                p.clientDropTick = -1;
+                p.client = client;
+                client.player = p;
+                client.onRejoin();
+                break;
+            }
+        }
+        
+        // Create new player
         if (!client.player) {
             this.addPlayer(client);
-        
-        // Re-init player
-        } else {
-            
         }
     }
     
@@ -186,8 +196,9 @@ Game.prototype.addClient = function(client, watch) {
     
     // Init the client
     client.send(MSG_GAME_TICK, [this.tickCount]);
-    client.send(MSG_GAME_SIZE, [this.width, this.height, this.maxDistance,
-                                this.shipSpeed, this.combatTickRate]);
+    client.send(MSG_GAME_INIT, [this.id, this.width, this.height,
+                                this.maxDistance, this.shipSpeed,
+                                this.combatTickRate]);
     
     this.initPlanets(client);
     this.updatePlanets();
@@ -196,10 +207,12 @@ Game.prototype.addClient = function(client, watch) {
     // Send Start
     var pid = client.player !== null ? client.player.id : null;
     var sid = 0;
+    var hash = null;
     if (client.player) {
         sid = client.player.startPlanet !== null ? client.player.startPlanet.id : 0;
+        hash = client.player.clientHash;
     }
-    client.send(MSG_GAME_START, [pid, sid]);
+    client.send(MSG_GAME_JOIN, [pid, sid, hash]);
 };
 
 Game.prototype.addPlayer = function(client) {
@@ -269,7 +282,9 @@ Game.prototype.initPlanets = function(client) {
     var planets = [];
     for (var i = 0, l = this.planets.length; i < l; i++) {
         var p = this.planets[i];
-        planets.push([p.id, p.x, p.y, p.size, p.player ? p.player.id : 0]);
+        planets.push([p.id, p.x, p.y, p.size,
+                      p.player ? p.player.id : 0, p.maxCount]);
+        
         if (client.player && !p.ships[client.player.id]) {
             p.ships[client.player.id] = {fight: [], bomb: [], def: []};
         }
@@ -277,7 +292,7 @@ Game.prototype.initPlanets = function(client) {
     client.send(MSG_PLANETS_INIT, [planets]);
 };
 
-Game.prototype.updatePlanets = function() {
+Game.prototype.updatePlanets = function(planet) {
     for(var i in this.players) {
         this.players[i].shipMaxCount = 0;
         this.players[i].planetCount = 0;
@@ -287,7 +302,9 @@ Game.prototype.updatePlanets = function() {
     for (var i = 0, l = this.planets.length; i < l; i++) {
         var p = this.planets[i];
         p.updatePlayer();
-        planets.push([p.id, p.player ? p.player.id : 0]); 
+        if (!planet || planet === p) {
+            planets.push([p.id, p.player ? p.player.id : 0, p.maxCount]); 
+        }
     }
     this.broadcast(MSG_PLANETS_UPDATE, [planets]);
 };

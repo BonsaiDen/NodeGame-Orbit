@@ -27,9 +27,14 @@ var EFFECT_LASER = 2;
 // Drawing ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 Game.prototype.drawInit = function() {
-    this.colors = ['#777777', '#f00000', '#0080ff', '#f0f000', '#00f000', '#9000ff'];
-    this.colorsShaded = ['#203030', '#700000', '#004080', '#707000', '#007000', '#500080'];
-    this.colorsDark = ['#202020', '#500000', '#002060', '#505000', '#005000', '#300060'];
+    this.colors = ['#777777', '#f00000', '#0080ff',
+                   '#f0f000', '#00f000', '#9000ff'];
+    
+    this.colorsShaded = ['#404040', '#800000', '#005090',
+                         '#808000', '#008000', '#600090'];
+    
+    this.colorsDark = ['#202020', '#500000', '#002060',
+                       '#505000', '#005000', '#300060'];
     
     this.effects = [];
     this.effectsClear = [];
@@ -61,10 +66,7 @@ Game.prototype.drawTick = function() {
     var sy = this.cameraOldY - this.cameraY;
     
     // Background
-    if (this.updateBackground || sx !== 0 || sy !== 0
-        || (Math.floor(this.getTick()) % 4 === 0
-        && (this.inputHover || (this.player && this.player.selectPlanet)))) {
-        
+    if (this.updateBackground || (sx !== 0 || sy !== 0)) {
         this.bbg.save();
         this.bbg.scale(this.scale, this.scale);    
         this.bbg.translate(-this.cameraX, -this.cameraY);
@@ -77,7 +79,7 @@ Game.prototype.drawTick = function() {
                 this.planets[i].clear(sx, sy);
             }
         }
-
+        
         if (this.sendPath.length > 0) {
             this.drawBack();
             this.bbg.lineCap = 'round';
@@ -170,8 +172,11 @@ Game.prototype.drawBackground = function(clear) {
 Game.prototype.shipVisbile = function(ship, sx, sy) {
     sx = sx || 0;
     sy = sy || 0;
-    if (ship.x >= this.cameraX - 8 + sx && ship.x <= this.cameraX + 320 + sx + 8) {
-        if (ship.y >= this.cameraY - 8 + sy && ship.y <= this.cameraY + 240 + sy + 8) {
+    if (ship.x >= this.cameraX - 8 + sx
+        && ship.x <= this.cameraX + 320 + sx + 8) {
+        
+        if (ship.y >= this.cameraY - 8 + sy
+            && ship.y <= this.cameraY + 240 + sy + 8) {
             return true;
         }
     }
@@ -181,8 +186,11 @@ Game.prototype.shipVisbile = function(ship, sx, sy) {
 Game.prototype.planetVisbile = function(p, sx, sy) {
     sx = sx || 0;
     sy = sy || 0;
-    if (p.x >= this.cameraX - 8 - p.size + sx && p.x <= this.cameraX + 320 + sx + p.size + 8) {
-        if (p.y >= this.cameraY - 8 - p.size + sy && p.y <= this.cameraY + 240 + sy + p.size + 8) {
+    if (p.x >= this.cameraX - 8 - p.size + sx
+        && p.x <= this.cameraX + 320 + sx + p.size + 8) {
+        
+        if (p.y >= this.cameraY - 8 - p.size + sy
+            && p.y <= this.cameraY + 240 + sy + p.size + 8) {
             return true;
         }
     }
