@@ -23,7 +23,7 @@
 
 // Planets ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Planet(game, id, x, y, size, player, maxCount) {
+function Planet(game, id, x, y, size, player, maxCount, nodes) {
     this.$ = game;
     this.id = id;
     this.player = player;
@@ -36,6 +36,7 @@ function Planet(game, id, x, y, size, player, maxCount) {
     this.x = x;
     this.y = y;
     
+    this.nodes = nodes;
     this.localCount = 0;
     this.playerCount = 0;
 }
@@ -169,13 +170,16 @@ Planet.prototype.draw = function(sx, sy) {
     this.$.drawCircle(this.x, this.y, this.size, false);
     
     // Selected
-
     if (this.player === this.$.player) {
         this.$.drawColor(this.$.player.color);
     
     } else {
         this.$.drawShaded(this.$.player.color);
     }
+    
+            this.$.drawText(this.x, this.y,
+                            this.id, 'center', 'bottom',
+                            1);
     
     // Select
     var selected = this.$.player.selectPlanet;

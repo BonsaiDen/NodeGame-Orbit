@@ -76,9 +76,8 @@ Game.prototype.netMessage = function(msg) {
         this.gameID = msg[0];
         this.width = msg[1];
         this.height = msg[2];
-        this.maxDistance = msg[3];
-        this.shipSpeed = msg[4];
-        this.combatTickRate = msg[5];
+        this.shipSpeed = msg[3];
+        this.combatTickRate = msg[4];
     
     } else if (type === MSG_PLANETS_INIT) {
         this.netPlanetsInit(msg[0]);
@@ -153,7 +152,7 @@ Game.prototype.netPlanetsInit = function(data) {
     
     for(var i = 0; i < data.length; i++) {
         var d = data[i];
-        var p = new Planet(this, d[0], d[1], d[2], d[3], this.players[d[4]], d[5]);
+        var p = new Planet(this, d[0], d[1], d[2], d[3], this.players[d[4]], d[5], d[6]);
         this.planets[d[0]] = p;
         this.planetList.push(p);
         
@@ -163,7 +162,6 @@ Game.prototype.netPlanetsInit = function(data) {
             }
         }
     }
-    this.coreBuildPath(); 
     this.updateBackground = true;
 };
 

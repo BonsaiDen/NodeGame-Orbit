@@ -26,7 +26,7 @@ var Ship = require('./ship').Ship;
 
 // Planets ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Planet(game, x, y, size, start, id) {
+function Planet(game, id, x, y, size, start, nodes) {
     this.$ = game;
     this.id = id;
     this.player = this.$.neutralPlayer;
@@ -45,6 +45,7 @@ function Planet(game, x, y, size, start, id) {
     this.rateStep = 0;
     this.rate = 100;
     this.maxCount = 5;
+    this.nodes = nodes;
     
     this.initNeutral(true, true);
 }

@@ -75,7 +75,7 @@ Game.prototype.update = function() {
     this.tickCount++;
     
     // Planets
-    for(var i = 0, l = this.planets.length; i < l; i++) {
+    for(var i in this.planets) {
         this.planets[i].tick();
         if (this.tickCount % this.combatTickRate === 0) {
             this.planets[i].tickCombat();
@@ -197,8 +197,7 @@ Game.prototype.addClient = function(client, watch) {
     // Init the client
     client.send(MSG_GAME_TICK, [this.tickCount]);
     client.send(MSG_GAME_INIT, [this.id, this.width, this.height,
-                                this.maxDistance, this.shipSpeed,
-                                this.combatTickRate]);
+                                this.shipSpeed, this.combatTickRate]);
     
     this.initPlanets(client);
     this.updatePlanets();
@@ -262,7 +261,7 @@ Game.prototype.removePlayer = function(player) {
     this.updateAllShips();
     
     // Updates planets
-    for (var i = 0, l = this.planets.length; i < l; i++) {
+    for(var i in this.planets) {
         var p = this.planets[i];
         p.removePlayer(player)
     }
@@ -280,10 +279,10 @@ Game.prototype.removePlayer = function(player) {
 // -----------------------------------------------------------------------------
 Game.prototype.initPlanets = function(client) {
     var planets = [];
-    for (var i = 0, l = this.planets.length; i < l; i++) {
+    for(var i in this.planets) {
         var p = this.planets[i];
         planets.push([p.id, p.x, p.y, p.size,
-                      p.player ? p.player.id : 0, p.maxCount]);
+                      p.player ? p.player.id : 0, p.maxCount, p.nodes]);
         
         if (client.player && !p.ships[client.player.id]) {
             p.ships[client.player.id] = {fight: [], bomb: [], def: []};
@@ -299,7 +298,7 @@ Game.prototype.updatePlanets = function(planet) {
     }
     
     var planets = [];
-    for (var i = 0, l = this.planets.length; i < l; i++) {
+    for(var i in this.planets) {
         var p = this.planets[i];
         p.updatePlayer();
         if (!planet || planet === p) {
@@ -310,7 +309,7 @@ Game.prototype.updatePlanets = function(planet) {
 };
 
 Game.prototype.getStartPlanet = function() {
-    for (var i = 0, l = this.planets.length; i < l; i++) {
+    for(var i in this.planets) {
         var p = this.planets[i];
         if (p.start && (!p.player || p.player === this.neutralPlayer)) {
             return p;
@@ -368,43 +367,44 @@ Game.prototype.updateShips = function(client) {
 Game.prototype.loadMap = function() { 
     var planets = [
         // Top Left
-        [48, 64, 22, true],
-        [176, 112, 40, false],
+        [1, 48, 64, 22, true, [2]],
+        [2, 176, 112, 40, false, [11, 9, 1]],
         
         // Bottom Right
-        [592, 416, 22, true],
-        [464, 368, 40, false],  
+        [5, 592, 416, 22, true, [6]],
+        [6, 464, 368, 40, false, [12, 10, 5]],
         
         // Top Right
-        [592, 64, 22, true],
-        [464, 112, 40, false], 
+        [3, 592, 64, 22, true, [4]],
+        [4, 464, 112, 40, false, [12, 9, 3]],
         
-        // Top Left
-        [48, 416, 22, true],
-        [176, 368, 40, false],      
+        // Bottom Left
+        [7, 48, 416, 22, true, [8]],
+        [8, 176, 368, 40, false, [11, 10, 7]],
         
         // Center
-        [320, 56, 27, false],
-        [320, 424, 27, false],
+        [9, 320, 56, 27, false, [2, 4]],
+        [10, 320, 424, 27, false, [6, 8]],
          
         // Sides
-        [112, 240, 17, false],
-        [528, 240, 17, false]
-    ];       
+        [11, 112, 240, 17, false, [2, 8]],
+        [12, 528, 240, 17, false, [4, 6]]
+    ];
     
-    this.maxDistance = 90;
     this.width = 640;
     this.height = 480;
-    
     this.maxPlayers = 0;
+    
+    this.planetCount = 0;
     for(var i = 0; i < planets.length; i++) {
         var p = planets[i];
-        this.planets.push(new Planet(this, p[0], p[1], p[2], p[3],
-                                     this.planets.length));
+        var planet = this.planets[p[0]] = new Planet(this, p[0], p[1], p[2],
+                                                     p[3], p[4], p[5]);
         
-        if (p[3] === true) {
+        if (p[4] === true) {
             this.maxPlayers++;
         }
+        this.planetList.push(planet);
     }
 };
 
@@ -429,7 +429,8 @@ Game.prototype.coreInit = function() {
     this.shipDamage = {def: 5, fight: 5, bomb: 20};
     
     // Planets
-    this.planets = [];
+    this.planetList = [];
+    this.planets = {};
     this.combatTickRate = 6;
     
     // Players
@@ -447,35 +448,12 @@ Game.prototype.coreInit = function() {
     this.height = 0;
     this.maxDistance = 0;
     this.loadMap();
-    
-    // Paths
-    this.coreBuildPath(); 
 };
 
 
 // Path Finding ----------------------------------------------------------------
-Game.prototype.coreBuildPath = function(player) {
-    this.planetNodes = [];
-    
-    var l = this.planets.length;
-    for(var i = 0; i < l; i++) {
-        this.planetNodes.push([]);
-    }
-    for(var i = 0; i < l; i++) {
-        for(var e = i + 1; e < l; e++) {
-            var a = this.planets[i];
-            var b = this.planets[e];
-            var dist = this.coreSurfaceDistance(a, b);
-            if (dist <= this.maxDistance) {
-                this.planetNodes[i].push(b);
-                this.planetNodes[e].push(a);
-            }
-        }
-    }
-};
-
-Game.prototype.corePath = function(planet, target, player) {
-    var l = this.planets.length;
+Game.prototype.corePath = function(planet, target, player) {   
+    var l = this.planetList.length;
     var distance = new Array(l);
     var previous = new Array(l);
     var Q = new Array(l);
@@ -484,8 +462,7 @@ Game.prototype.corePath = function(planet, target, player) {
         previous[i] = null;
         Q[i] = i;
     }
-    distance[this.planets.indexOf(planet)] = 0;
-    
+    distance[this.planetList.indexOf(planet)] = 0;
     while (Q.length > 0) {
         var min = 100000000;
         var u = 0;
@@ -502,22 +479,23 @@ Game.prototype.corePath = function(planet, target, player) {
         }
         Q.splice(Q.indexOf(u), 1);
         
-        if (this.planets[u] === target) {
+        if (this.planetList[u] === target) {
             var list = [];
             while (previous[u] !== null) {
-                list.unshift(this.planets[u]);
+                list.unshift(this.planetList[u]);
                 u = previous[u];
             }
             return list;
         }
         
-        for(var i = 0, l = this.planetNodes[u].length; i < l; i++) {
-            var v = this.planetNodes[u][i];
-            var e = this.planets.indexOf(v);
+        for(var i = 0, l = this.planetList[u].nodes.length; i < l; i++) {
+            var v = this.planets[this.planetList[u].nodes[i]];
+            var e = this.planetList.indexOf(v);
             if (Q.indexOf(e) !== -1
-                && (this.planets[u].player === player || v.player === player)) {
+                && (this.planetList[u].player === player
+                    || v.player === player)) {
                 
-                var alt = distance[u] + this.coreDistance(this.planets[u], v);
+                var alt = distance[u] + this.coreDistance(this.planetList[u], v);
                 if (alt < distance[e]) {
                     distance[e] = alt;
                     previous[e] = u;
