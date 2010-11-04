@@ -99,6 +99,7 @@ Game.prototype.inputInit = function(full) {
     window.onblur = function(e) {
         that.keys = {};
         that.mouseDrag = false;
+        that.mouseDragDown = false;
     };
 };
 
@@ -142,6 +143,11 @@ Game.prototype.inputKeyboard = function() {
 // Mouse -----------------------------------------------------------------------
 Game.prototype.inputMove = function(ox, oy) {
     // Mouse Dragging
+    if (ox === -1 || oy === -1) {
+        this.mouseDragDown = false;
+        this.mouseDrag = false;
+    }
+    
     if (this.mouseDragDown) {
         if (Math.abs(this.mouseDragX - this.mouseX) > 2
             || Math.abs(this.mouseDragY - this.mouseY) > 2) {
