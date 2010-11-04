@@ -176,10 +176,6 @@ Planet.prototype.draw = function(sx, sy) {
         this.$.drawShaded(this.$.player.color);
     }
     
-            this.$.drawText(this.x, this.y,
-                            this.id, 'center', 'bottom',
-                            1);
-    
     // Select
     var selected = this.$.player.selectPlanet;
     var size = (100 / 15) * this.size / 100;
