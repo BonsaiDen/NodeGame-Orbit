@@ -41,7 +41,6 @@ function Planet(game, id, x, y, size, player, maxCount, nodes) {
     this.localCount = 0;
     this.playerCount = 0;
     this.oldPlayer = this.player;
-    this.selectShips = false;
 }
 
 
@@ -49,8 +48,7 @@ function Planet(game, id, x, y, size, player, maxCount, nodes) {
 Planet.prototype.tick = function() {
     if (this.$.player) {
         var selected = this.$.player.selectPlanet;
-        this.selectShips = this === selected && (this.player === this.$.player || this.playerCount > 0);
-        if (this.selectShips) {
+        if (this === selected && this.player === this.$.player) {
             var oldPlayerCount = this.playerCount;
             this.playerCount = selected.getPlayerShipCount(this.$.player);
             if (oldPlayerCount != this.playerCount) {
@@ -163,6 +161,7 @@ Planet.prototype.draw = function(sx, sy) {
     
     // Select
     var selected = this.$.player.selectPlanet;
+    var selectShips = this === selected && (this.player === this.$.player || this.playerCount > 0);
     
     // Draw Planet Shape
     var ringScale = this.size / 20;
@@ -171,10 +170,10 @@ Planet.prototype.draw = function(sx, sy) {
     this.$.drawBack();
     this.$.drawWidth(5 * (ringScale * resScale));
     this.$.drawColor(this.player ? this.player.color : 0);
-    this.$.drawAlpha(this.selectShips ? 0.17 : 0.35);
+    this.$.drawAlpha(selectShips ? 0.17 : 0.35);
     this.$.drawCircle(this.x, this.y, this.size - 4 * (ringScale * resScale), false);
     this.$.drawWidth(7 * (ringScale * resScale));
-    this.$.drawAlpha(this.selectShips ? 0.10 : 0.20);
+    this.$.drawAlpha(selectShips ? 0.10 : 0.20);
     this.$.drawCircle(this.x, this.y, this.size - 10 * (ringScale * resScale), false);
     
     this.$.drawAlpha(1);
@@ -192,7 +191,7 @@ Planet.prototype.draw = function(sx, sy) {
     
     // Select
     var size = (100 / 15) * this.size / 100;
-    if (this.selectShips) {
+    if (selectShips) {
         size = size * 0.5;
         this.drawSelect();
         this.$.drawColor(this.$.player.color);

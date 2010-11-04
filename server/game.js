@@ -265,7 +265,7 @@ Game.prototype.removePlayer = function(player) {
     // Updates planets
     for(var i in this.planets) {
         var p = this.planets[i];
-        p.removePlayer(player)
+        p.removePlayer(player);
     }
     this.updatePlanets();
     

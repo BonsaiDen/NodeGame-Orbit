@@ -77,6 +77,7 @@ Game.prototype.drawTick = function() {
             }
         }
         
+        // Path
         if (this.sendPath.length > 0) {
             var from = this.player.selectPlanet;
             if (from) {
@@ -93,9 +94,8 @@ Game.prototype.drawTick = function() {
                                        (to.y > from.y ? from.y : to.y) - sy,
                                        Math.abs(dx), Math.abs(dy));
                     
-                    var r = Math.atan2(dy, dx);
-                    
                     // Arrows
+                    var r = Math.atan2(dy, dx);
                     var d = (Math.sqrt(dx * dx + dy * dy) - from.size - 22 - to.size) / 4;
                     for(var e = 1; e < 4; e++) {
                         this.bbg.save();
