@@ -133,12 +133,12 @@ Ship.prototype.getTick = function() {
 
 
 // Newtwork --------------------------------------------------------------------
-Ship.prototype.initTravel = function(pid, r, arrive, travel) {
+Ship.prototype.initTravel = function(pid, or, tick, arrive, travel) {
     this.planet.removeShip(this);
     this.orbit = this.$.shipOrbits[this.type];
     this.nextPlanet = this.$.planets[pid];
-    this.r = this.or = r;
-    this.tickAngle = this.getTick();
+    this.r = this.or = or;
+    this.tickAngle = tick;
 
     this.arriveTick = arrive;
     this.travelTicks = travel;
@@ -147,12 +147,12 @@ Ship.prototype.initTravel = function(pid, r, arrive, travel) {
     this.direction = 0;
 };
 
-Ship.prototype.finishTravel = function(pid, or) {
+Ship.prototype.finishTravel = function(pid, or, tick) {
     this.planet.removeShip(this);
     this.planet = this.$.planets[pid];
     this.planet.addShip(this);
     this.r = this.or = or;
-    this.tickAngle = this.getTick();
+    this.tickAngle = tick;
     if (!this.next) {
         this.nextPlanet = null;
     }
@@ -173,17 +173,17 @@ Ship.prototype.update = function(d) {
         this.player.shipCount++;
         
         this.tickInit = d[5];
-        this.tickAngle = this.getTick();
-        this.or = d[6];
+        this.r = this.or = d[6];
+        this.tickAngle = d[7];
         this.planet.addShip(this);
         
         // Already traveling
         if (this.next && this.traveling) {
-            this.initTravel(d[7], d[6], d[8], d[9]);
+            this.initTravel(d[8], d[6], d[7], d[9], d[10]);
         
         // Already sent
         } else if (this.next) {
-            this.nextPlanet = this.$.planets[d[7]];
+            this.nextPlanet = this.$.planets[d[8]];
         }
     
     // Send // Arrive
@@ -194,24 +194,19 @@ Ship.prototype.update = function(d) {
             this.planet.addShip(this);
             this.nextPlanet = this.$.planets[d[2]];
             
-            // Has just finished traveling
+            // Has just finished arrived
             if (this.traveled) {
-                this.finishTravel(d[3], d[4]);
+                this.finishTravel(d[3], d[4], d[5]);
             }
         
         // Start Travel
         } else if (this.next && this.traveling) {
-            this.initTravel(d[2], d[3], d[4], d[5]);
+            this.initTravel(d[2], d[3], d[4], d[5], d[6]);
         
         // Finish travel
         } else {
-            this.finishTravel(d[2], d[3]);
+            this.finishTravel(d[2], d[3], d[4]);
         }
-    
-    // Sync
-    } else {
-        this.or = d[2];
-        this.tickAngle = this.getTick();
     }
 };
 

@@ -33,11 +33,11 @@ function Ship(game, type, planet, player, r, orbit) {
     this.typeID = {fight: 0, bomb: 1, def: 2}[this.type];
     this.health = this.$.shipHealth[this.type];
     this.tickInit = this.getTick();
+    this.tickAngle = this.getTick();
     
-    this.x = 0;
-    this.y = 0;
-    this.rs = 0;
+    this.or = r;
     this.r = r;
+    this.rs = 0;
     this.orbit = orbit ? this.$.shipOrbits[this.type] : 0;
     
     this.inOrbit = orbit;
@@ -114,8 +114,10 @@ Ship.prototype.tick = function() {
             }
         }
         
+        
+        var tickDiff = this.getTick() - this.tickAngle;
         this.rs = Math.round(Math.PI / this.planet.size * this.$.shipSpeed * 100) / 100;
-        this.r = (this.r + this.direction * this.rs + 360) % 360;
+        this.r = (this.or + this.direction * this.rs * tickDiff + 360) % 360;
     }
     
     // Start Traveling
@@ -123,7 +125,8 @@ Ship.prototype.tick = function() {
         if (Math.abs(this.$.coreDifference(this.r, this.travelAngle)) < this.rs * 0.75) {
             this.updated = true;
             this.planet.removeShip(this);
-            this.r = this.travelAngle;
+            this.r = this.or = this.travelAngle;
+            this.tickAngle = this.getTick();
             
             this.travelTicks = Math.ceil(this.$.coreOrbit(this, this.planet,
                                                           this.nextPlanet));
@@ -141,7 +144,8 @@ Ship.prototype.tick = function() {
         this.traveled = true;
         this.planet = this.nextPlanet;
         
-        this.r = (this.r + 180) % 360;
+        this.tickAngle = this.getTick();
+        this.r = this.or = (this.r + 180) % 360;
         this.direction = this.planet.getPreferedDirection(this.player, this.type);
         
         this.nextPlanet.addShip(this);
@@ -155,11 +159,6 @@ Ship.prototype.tick = function() {
             var dr = this.$.coreDifference(this.r, this.travelAngle);
             this.direction = dr >= 0 ? 1 : -1;
         }
-    }
-    
-    // Fight
-    if (!this.traveling) {
-        // this.planet.getNearbyShip
     }
 };
 
@@ -177,7 +176,7 @@ Ship.prototype.toMessage = function(create) {
     flags += create ? 1 : 0;
     flags += this.traveling ? 2: 0;
     flags += this.inOrbit ? 4 : 0;
-    flags += this.updated ? 8 : 0;
+    flags += this.updated ? 8 : 0; // TODO can be removed?
     flags += this.nextPlanet ? 16 : 0;
     flags += this.traveled ? 32 : 0;
     flags += this.direction === 1 ? 64 : 0;
@@ -192,7 +191,8 @@ Ship.prototype.toMessage = function(create) {
         msg.push(this.planet.id);
         msg.push(this.player.id);
         msg.push(this.tickInit);
-        msg.push(this.r);
+        msg.push(this.or);
+        msg.push(this.tickAngle);
         
         // Ship created in travel
         if (this.nextPlanet && this.traveling) {
@@ -215,24 +215,24 @@ Ship.prototype.toMessage = function(create) {
             // Ship has just arrived
             if (this.traveled) {
                 msg.push(this.planet.id);
-                msg.push(this.r);
+                msg.push(this.or);
+                msg.push(this.tickAngle);
             }
         
         // Ship starts travel
         } else if (this.nextPlanet && this.traveling) {
             msg.push(this.nextPlanet.id);
-            msg.push(this.r);
+            msg.push(this.or);
+            msg.push(this.tickAngle);
             msg.push(this.arriveTick);   
             msg.push(this.travelTicks);
         
         // Ship finishes travel
         } else {
             msg.push(this.planet.id);
-            msg.push(this.r);
+            msg.push(this.or);
+            msg.push(this.tickAngle);
         }
-    
-    } else {
-        msg.push(this.r);
     }
     return msg;
 };

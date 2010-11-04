@@ -45,7 +45,6 @@ Game.prototype.run = function() {
         }
         
         // Tick the Game
-        
         for(var i in this.planets) {
             this.planets[i].tick();
             if ((this.tickCount % this.combatTickRate) === 0) {

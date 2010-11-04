@@ -102,7 +102,7 @@ Game.prototype.update = function() {
     }
     
     // Sync Tick count
-    if (this.tickCount % 20 === 0) {
+    if (this.tickCount % 30 === 0) {
         this.broadcast(MSG_GAME_TICK, [this.tickCount]);
     }
     this.updateAllShips();
@@ -350,10 +350,7 @@ Game.prototype.updateShips = function(client) {
             delete client.ships[ship.id];
         
         } else {
-            if (!client.ships[ship.id]
-                || this.tickCount - client.ships[ship.id][0] > 140
-                || ship.updated) {
-                
+            if (!client.ships[ship.id] || ship.updated) {
                 updates.push(ship.toMessage(!client.ships[ship.id]));
                 client.ships[ship.id] = [this.tickCount, ship];
             }
