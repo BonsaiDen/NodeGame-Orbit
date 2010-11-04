@@ -50,18 +50,12 @@ Game.prototype.drawInit = function() {
     // Background
     this.canvasBack = $('bgg');
     this.bbg = this.canvasBack.getContext('2d');
+    this.bbg.lineCap = 'round';
+    this.bbg.font = '10px sans-serif';
+    
     this.updateBackground = true;
     this.clearBackground = false;    
     this.cbg = this.fbg;
-    
-    // Stuff
-    this.scale = 2;
-    this.mouseX = -1;
-    this.mouseY = -1;
-    this.cameraX = 0;
-    this.cameraY = 0;
-    this.cameraOldX = 0;
-    this.cameraOldY = 0;
 };
 
 Game.prototype.drawTick = function() {
@@ -84,11 +78,9 @@ Game.prototype.drawTick = function() {
         }
         
         if (this.sendPath.length > 0) {
-            this.drawBack();
-            this.bbg.lineCap = 'round';
-            
             var from = this.player.selectPlanet;
             if (from) {
+                this.drawBack();
                 this.drawShaded(this.player.color);
                 this.bbg.globalCompositeOperation = 'lighter';
                 for(var i = 0, l = this.sendPath.length; i < l; i++) {
@@ -130,14 +122,15 @@ Game.prototype.drawTick = function() {
                     }
                     p.drawSelect();
                 }
+                this.drawFront();
             
             } else {
                 this.clearBackground = true;
             }
-            this.drawFront();
         }
-        
         this.updateBackground = false;
+        
+        // Planets
         for(var i in this.planets) {
             this.planets[i].draw();
         }
@@ -152,8 +145,6 @@ Game.prototype.drawTick = function() {
         this.ships[i].clear(sx, sy);
     }
     this.effectClear(sx, sy);
-    
-    this.fbg.globalCompositeOperation = 'lighter';
     for(var i in this.ships) {
         this.ships[i].draw(sx, sy);
     }

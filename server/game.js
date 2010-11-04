@@ -421,7 +421,7 @@ Game.prototype.coreInit = function() {
     // Ships
     this.shipID = 0;
     this.ships = [];
-    this.shipTypes = ['def', 'fight', 'bomb'];
+    this.shipTypes = ['fight', 'bomb', 'def'];
     this.shipSpeeds = {def: 9.54, fight: 9.54, bomb: 9.54};
     this.shipOrbits = {def: 5, fight: 15, bomb: 10};
     this.shipToOrbitSpeed = {def: 0.125, fight: 0.5, bomb: 0.25};

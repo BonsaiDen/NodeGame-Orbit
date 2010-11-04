@@ -41,6 +41,7 @@ function Planet(game, id, x, y, size, player, maxCount, nodes) {
     this.localCount = 0;
     this.playerCount = 0;
     this.oldPlayer = this.player;
+    this.selectShips = false;
 }
 
 
@@ -48,7 +49,8 @@ function Planet(game, id, x, y, size, player, maxCount, nodes) {
 Planet.prototype.tick = function() {
     if (this.$.player) {
         var selected = this.$.player.selectPlanet;
-        if (this === selected && this.$.player.selectCount > 0) {
+        this.selectShips = this === selected && (this.player === this.$.player || this.playerCount > 0);
+        if (this.selectShips) {
             var oldPlayerCount = this.playerCount;
             this.playerCount = selected.getPlayerShipCount(this.$.player);
             if (oldPlayerCount != this.playerCount) {
@@ -159,6 +161,9 @@ Planet.prototype.draw = function(sx, sy) {
         return false;
     }
     
+    // Select
+    var selected = this.$.player.selectPlanet;
+    
     // Draw Planet Shape
     var ringScale = this.size / 20;
     var resScale = 0.25 + this.ressources * 0.75;
@@ -166,10 +171,10 @@ Planet.prototype.draw = function(sx, sy) {
     this.$.drawBack();
     this.$.drawWidth(5 * (ringScale * resScale));
     this.$.drawColor(this.player ? this.player.color : 0);
-    this.$.drawAlpha(0.35);
+    this.$.drawAlpha(this.selectShips ? 0.17 : 0.35);
     this.$.drawCircle(this.x, this.y, this.size - 4 * (ringScale * resScale), false);
     this.$.drawWidth(7 * (ringScale * resScale));
-    this.$.drawAlpha(0.20);
+    this.$.drawAlpha(this.selectShips ? 0.10 : 0.20);
     this.$.drawCircle(this.x, this.y, this.size - 10 * (ringScale * resScale), false);
     
     this.$.drawAlpha(1);
@@ -186,21 +191,28 @@ Planet.prototype.draw = function(sx, sy) {
     }
     
     // Select
-    var selected = this.$.player.selectPlanet;
     var size = (100 / 15) * this.size / 100;
-    if (this === selected && this.$.player.selectCount > 0) {
+    if (this.selectShips) {
+        size = size * 0.5;
         this.drawSelect();
-        if (this.playerCount > 0) {
-            this.$.drawColor(this.$.player.color);
-            this.$.drawText(this.x, this.y + 1 * size,
-                            this.$.player.selectCount, 'center', 'bottom',
+        this.$.drawColor(this.$.player.color);
+        for(var i = 0, l = this.$.shipTypes.length; i < l; i++) {
+            var type = this.$.shipTypes[i];
+            var r = (0 - Math.PI / 2) + Math.PI * 2 / l * i;
+            var x = this.x + Math.cos(r) * this.size * 0.5;
+            var y = this.y + Math.sin(r) * this.size * 0.5;  
+            
+            this.$.drawText(x, y + 1 * size,
+                            this.$.player.selectCount[type], 'center', 'bottom',
                             size);
             
-            this.$.drawText(this.x, this.y + 1 * size,
+            this.$.drawText(x, y + 1 * size,
                             '_', 'center', 'bottom', size);
             
-            this.$.drawText(this.x, this.y - 1 * size,
-                            this.playerCount, 'center', 'top', size);                
+            this.$.drawText(x, y - 1 * size,
+                            this.ships[this.$.player.id][type].length,
+                            'center', 'top', size);         
+            
         }
     
     // Info

@@ -122,6 +122,7 @@ Game.prototype.netMessage = function(msg) {
         } else {
             this.player = new Player(this, -1, '', -1, true);
         }
+        this.player.initInput();
         
         // Hash
         try {

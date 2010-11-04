@@ -36,6 +36,16 @@ Game.prototype.inputInit = function(full) {
     this.mouseDragY = 0;
     this.mouseDragDown = false;
     
+    this.scale = 2;
+    this.mouseX = -1;
+    this.mouseY = -1;
+    this.worldX = 0;
+    this.worldY = 0;
+    this.cameraX = 0;
+    this.cameraY = 0;
+    this.cameraOldX = 0;
+    this.cameraOldY = 0;
+    
     this.canvas.addEventListener('mousemove', function(e) {
         e = e || window.event;
         clearTimeout(that.moveTimeout);
@@ -159,8 +169,8 @@ Game.prototype.inputMove = function(ox, oy) {
     }
     
     // World Position
-    var x = this.cameraX + (ox / this.scale);
-    var y = this.cameraY + (oy / this.scale);
+    this.worldX = this.cameraX + (ox / this.scale);
+    this.worldY = this.cameraY + (oy / this.scale);
     
     // Select Planet
     var oldHover = this.inputHover;
@@ -168,9 +178,9 @@ Game.prototype.inputMove = function(ox, oy) {
     if (ox !== -1) {
         for(var i in this.planets) {
             var p = this.planets[i];
-            var dx = p.x - x;
-            var dy = p.y - y;
-            if (Math.sqrt(dx * dx + dy * dy) < p.size) {
+            var dx = p.x - this.worldX;
+            var dy = p.y - this.worldY;
+            if (Math.sqrt(dx * dx + dy * dy) < p.size + 2) {
                 newHover = p;
             }
         }
@@ -182,7 +192,7 @@ Game.prototype.inputMove = function(ox, oy) {
         if (this.oldHover) {
             this.player.selectStop();
         }
-        if (this.player.selectPlanet && this.player.selectCount > 0) {
+        if (this.player.selectPlanet && this.player.selectCountAll() > 0) {
             if (newHover) {
                 this.sendPath = this.corePath(this.player.selectPlanet,
                                               newHover, this.player);
@@ -204,13 +214,13 @@ Game.prototype.inputDown = function(e) {
             }
             if (this.player.selectPlanet
                 && this.inputHover !== this.player.selectPlanet
-                && this.player.selectCount > 0) {
+                && this.player.selectCountAll() > 0) {
                 
                 this.player.send(this.inputHover);
                 this.inputSend = true;
             
             } else {
-                this.player.selectStart(this.inputHover, 'fight');
+                this.player.selectStart(this.inputHover);
             }
         }
     
@@ -250,6 +260,8 @@ Game.prototype.inputDoubleClick = function(e) {
         this.player.selectAll();
         this.drawBackground();
     }
+    this.mouseDrag = false;
+    this.mouseDragDown = false;
 };
 
 Game.prototype.inputDragMouse = function(x, y) {
@@ -268,5 +280,5 @@ Game.prototype.inputDragMouse = function(x, y) {
     this.cameraX = Math.max(this.cameraX, 0);
     this.cameraY = Math.min(this.cameraY, this.height - this.viewHeight);
     this.cameraY = Math.max(this.cameraY, 0);
-}
+};
 

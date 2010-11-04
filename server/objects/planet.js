@@ -224,11 +224,13 @@ Planet.prototype.addShip = function(ship) {
 };
 
 Planet.prototype.removeShip = function(ship) {
-    var ships = this.ships[ship.player.id][ship.type];
-    var index = ships.indexOf(ship);
-    if (index !== -1) {
-        ships.splice(index, 1);
-        this.shipCount--;
+    if (this.ships[ship.player.id]) {
+        var ships = this.ships[ship.player.id][ship.type];
+        var index = ships.indexOf(ship);
+        if (index !== -1) {
+            ships.splice(index, 1);
+            this.shipCount--;
+        }
     }
     
     // Take over planets
