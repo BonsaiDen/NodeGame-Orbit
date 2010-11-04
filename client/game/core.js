@@ -40,10 +40,10 @@ Game.prototype.coreInit = function() {
     this.sendPath = [];
     
     // Ships
-    this.shipSpeed = 0;
-    this.shipTypes = ['fight', 'bomb', 'def'];
-    this.shipOrbits = {def: 5, fight: 15, bomb: 10};
-    this.shipToOrbitSpeed = {def: 0.125, fight: 0.5, bomb: 0.25};  
+    this.shipSpeeds = null;
+    this.shipTypes = null;
+    this.shipOrbits = null;
+    this.shipToOrbitSpeed = null;
 };
 
 

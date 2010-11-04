@@ -76,8 +76,12 @@ Game.prototype.netMessage = function(msg) {
         this.gameID = msg[0];
         this.width = msg[1];
         this.height = msg[2];
-        this.shipSpeed = msg[3];
-        this.combatTickRate = msg[4];
+        this.combatTickRate = msg[3];
+        
+        this.shipTypes = msg[4];
+        this.shipSpeeds = msg[5];
+        this.shipOrbits = msg[6];
+        this.shipToOrbitSpeed = msg[7];
     
     } else if (type === MSG_PLANETS_INIT) {
         this.netPlanetsInit(msg[0]);

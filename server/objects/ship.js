@@ -30,7 +30,7 @@ function Ship(game, type, planet, player, r, orbit) {
     this.player.shipCount++;
     
     this.type = type;
-    this.typeID = {fight: 0, bomb: 1, def: 2}[this.type];
+    this.typeID = this.$.shipTypes.indexOf(type);
     this.health = this.$.shipHealth[this.type];
     this.tickInit = this.getTick();
     this.tickAngle = this.getTick();
@@ -121,9 +121,8 @@ Ship.prototype.tick = function() {
             }
         }
         
-        
         var tickDiff = this.getTick() - this.tickAngle;
-        this.rs = Math.round(Math.PI / this.planet.size * this.$.shipSpeed * 100) / 100;
+        this.rs = Math.round(Math.PI / this.planet.size * this.$.shipSpeeds[this.type] * 100) / 100;
         this.r = (this.or + this.direction * this.rs * tickDiff + 360) % 360;
         if (this.r < 0) {
             this.r += 360;

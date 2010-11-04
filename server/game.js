@@ -197,7 +197,9 @@ Game.prototype.addClient = function(client, watch) {
     // Init the client
     client.send(MSG_GAME_TICK, [this.tickCount]);
     client.send(MSG_GAME_INIT, [this.id, this.width, this.height,
-                                this.shipSpeed, this.combatTickRate]);
+                                this.combatTickRate,
+                                this.shipTypes, this.shipSpeeds ,
+                                this.shipOrbits, this.shipToOrbitSpeed]);
     
     this.initPlanets(client);
     this.updatePlanets();
@@ -421,10 +423,11 @@ Game.prototype.coreInit = function() {
     // Ships
     this.shipID = 0;
     this.ships = [];
+    this.shipTypes = ['def', 'fight', 'bomb'];
+    this.shipSpeeds = {def: 9.54, fight: 9.54, bomb: 9.54};
     this.shipOrbits = {def: 5, fight: 15, bomb: 10};
     this.shipToOrbitSpeed = {def: 0.125, fight: 0.5, bomb: 0.25};
-    this.shipTypes = ['def', 'fight', 'bomb'];
-    this.shipSpeed = 9.54;
+    
     this.shipHealth = {def: 40, fight: 20, bomb: 15};
     this.shipDamage = {def: 5, fight: 5, bomb: 20};
     

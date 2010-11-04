@@ -181,8 +181,6 @@ Planet.prototype.tickCombat = function() {
         return a.r < b.r;
     });
     
-    var rs = Math.round(Math.PI / this.size * this.$.shipSpeed * 100) / 100 * 2;
-    var fightDistance = rs * 3;
     for(var i = 0, l = ships.length; i < l; i++) {
         var c = ships[i];
         if (c.inOrbit && c.health > 0) {
@@ -194,9 +192,10 @@ Planet.prototype.tickCombat = function() {
                     break;
                 }
                 
+                var rs = Math.round(Math.PI / this.size * this.$.shipSpeeds[c.type] * 100) / 100 * 2;
                 var s = ships[e];
                 var ds = Math.abs(this.$.coreDifference(s.r, c.r));
-                if (s.health > 0 && ds <= fightDistance) {
+                if (s.health > 0 && ds <= rs * 3) {
                     if (s.player !== c.player) {
                         c.attack(s);
                         s.attack(c);
