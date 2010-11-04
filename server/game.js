@@ -218,7 +218,7 @@ Game.prototype.addClient = function(client, watch) {
 
 Game.prototype.addPlayer = function(client) {
     var freeColor = -1;
-    for(var i = 1; i < this.maxPlayers + 1; i++) {
+    for(var i = 1; i < this.startPlanets.length + 1; i++) {
         if(this.playerColors[i] === -1) {
             freeColor = i;
             break;
@@ -311,8 +311,8 @@ Game.prototype.updatePlanets = function(planet) {
 };
 
 Game.prototype.getStartPlanet = function() {
-    for(var i in this.planets) {
-        var p = this.planets[i];
+    for(var i = 0; i < this.startPlanets.length; i++) {
+        var p = this.planets[this.startPlanets[i]];
         if (p.start && (!p.player || p.player === this.neutralPlayer)) {
             return p;
         }
@@ -369,43 +369,41 @@ Game.prototype.updateShips = function(client) {
 Game.prototype.loadMap = function() { 
     var planets = [
         // Top Left
-        [1, 48, 64, 22, true, [2]],
-        [2, 176, 112, 40, false, [11, 9, 1]],
-        
-        // Bottom Right
-        [5, 592, 416, 22, true, [6]],
-        [6, 464, 368, 40, false, [12, 10, 5]],
+        [1, 48, 64, 22, [2]],
+        [2, 176, 112, 40, [11, 9, 1]],
         
         // Top Right
-        [3, 592, 64, 22, true, [4]],
-        [4, 464, 112, 40, false, [12, 9, 3]],
+        [3, 592, 64, 22, [4]],
+        [4, 464, 112, 40, [12, 9, 3]],  
         
+        // Bottom Right
+        [5, 592, 416, 22, [6]],
+        [6, 464, 368, 40, [12, 10, 5]],
+    
         // Bottom Left
-        [7, 48, 416, 22, true, [8]],
-        [8, 176, 368, 40, false, [11, 10, 7]],
+        [7, 48, 416, 22, [8]],
+        [8, 176, 368, 40, [11, 10, 7]],
         
         // Center
-        [9, 320, 56, 27, false, [2, 4]],
-        [10, 320, 424, 27, false, [6, 8]],
+        [9, 320, 56, 27, [2, 4]],
+        [10, 320, 424, 27, [6, 8]],
          
         // Sides
-        [11, 112, 240, 17, false, [2, 8]],
-        [12, 528, 240, 17, false, [4, 6]]
+        [11, 112, 240, 17, [2, 8]],
+        [12, 528, 240, 17, [4, 6]]
     ];
     
+    this.startPlanets = [1, 5, 3, 7];
     this.width = 640;
     this.height = 480;
-    this.maxPlayers = 0;
     
     this.planetCount = 0;
     for(var i = 0; i < planets.length; i++) {
         var p = planets[i];
-        var planet = this.planets[p[0]] = new Planet(this, p[0], p[1], p[2],
-                                                     p[3], p[4], p[5]);
+        var planet = new Planet(this, p[0], p[1], p[2], p[3],
+                                this.startPlanets.indexOf(p[0]) !== -1, p[4]);
         
-        if (p[4] === true) {
-            this.maxPlayers++;
-        }
+        this.planets[p[0]] = planet;
         this.planetList.push(planet);
     }
 };
@@ -432,6 +430,7 @@ Game.prototype.coreInit = function() {
     this.shipDamage = {def: 5, fight: 5, bomb: 20};
     
     // Planets
+    this.startPlanets = [];
     this.planetList = [];
     this.planets = {};
     this.combatTickRate = 6;
@@ -442,7 +441,6 @@ Game.prototype.coreInit = function() {
     this.playerCount = 0;
     this.clients = {};
     this.clientCount = 0;
-    this.maxPlayers = 0;
     this.playerColors = [-2, -1, -1, -1, -1, -1, -1, -1];
     this.neutralPlayer = new Player(this, {id: 0, name: 'Foo'}, 0);
     
