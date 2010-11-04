@@ -59,7 +59,8 @@ Status.prototype.update = function(end) {
                             + '' + this.logs[i][1];
     }
     util.print('\x1b[H\x1b[J# NodeGame: Orbit at port '
-              + this.$$.port + '\n' + stats + '\n\x1b[s\x1b[H');
+              + this.$$.port + (this.$$.flash ? ' / 843' : '')
+              + '\n' + stats + '\n\x1b[s\x1b[H');
     
     if (!end) {
         setTimeout(function() {that.update(false)}, 500);

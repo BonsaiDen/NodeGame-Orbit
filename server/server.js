@@ -30,7 +30,7 @@ var Status = require('./status').Status;
 
 // Server ----------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Server(port, status) {
+function Server(port, status, flash) {
     
     // Clients
     this.maxClients = 8;
@@ -46,6 +46,7 @@ function Server(port, status) {
     var that = this;
     this.port = port;
     this.bytesSend = 0;
+    this.flash = flash;
     
     this.$ = new ws.Server(this.flash);
     this.$.onConnect = function(conn) {
@@ -64,7 +65,7 @@ function Server(port, status) {
     };
     
     process.addListener('SIGINT', function(){that.onShutdown()})
-    this.$.listen(port);
+    this.flash = this.$.listen(port);
     
     
     // Status
@@ -219,6 +220,6 @@ Server.prototype.send = function(conn, type, msg) {
 
 // Start the Server ------------------------------------------------------------
 // -----------------------------------------------------------------------------
-new Server(28785, true);
+new Server(28785, true, true);
 
 

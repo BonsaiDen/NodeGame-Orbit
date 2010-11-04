@@ -2,20 +2,27 @@
 <html>
     <head>
         <title>NodeGame: Orbit</title>
+        <script type="text/javascript">
+            WEB_SOCKET_SWF_LOCATION = 'flash/WebSocketMain.swf';
+        </script>
+        
+        <script type="text/javascript" src="flash/swfobject.js"></script>
+        <script type="text/javascript" src="flash/FABridge.js"></script>
+        <script type="text/javascript" src="flash/web_socket.js"></script> 
+        
         <script type="text/javascript" src="game.js"></script>
-        <script type="text/javascript" src="./game/core.js"></script>
-        <script type="text/javascript" src="./game/draw.js"></script>
-        <script type="text/javascript" src="./game/input.js"></script>
-        <script type="text/javascript" src="./game/network.js"></script>
+        <script type="text/javascript" src="game/core.js"></script>
+        <script type="text/javascript" src="game/draw.js"></script>
+        <script type="text/javascript" src="game/input.js"></script>
+        <script type="text/javascript" src="game/network.js"></script>
         
-        <script type="text/javascript" src="./objects/player.js"></script>
-        <script type="text/javascript" src="./objects/planet.js"></script>
-        <script type="text/javascript" src="./objects/ship.js"></script>
+        <script type="text/javascript" src="objects/player.js"></script>
+        <script type="text/javascript" src="objects/planet.js"></script>
+        <script type="text/javascript" src="objects/ship.js"></script>
         
-        <script type="text/javascript" src="./libs/bison.js"></script>
+        <script type="text/javascript" src="libs/bison.js"></script>
         
         <script type="text/javascript" src="config.js"></script>
-        
         
         <style type="text/css">
         body {
@@ -48,9 +55,9 @@
         
         #bgs {
             margin: 8px auto 4px;
-            border: 3px #f0f0f0 solid;
-            width: 640px;
-            height: 480px;
+            border: 4px #f0f0f0 solid;
+            width: 600px;
+            height: 450px;
         }
         
         #bg {
@@ -70,8 +77,8 @@
     
     <body onload="initGame()">
         <div id="bgs">
-            <canvas id="bgg" width="640" height="480"></canvas>
-            <canvas id="bg" width="640" height="480"></canvas>
+            <canvas id="bgg" width="600" height="450"></canvas>
+            <canvas id="bg" width="600" height="450"></canvas>
         <div>
         <div id="about">
             Copyright (c) 2010 by Ivo Wetzel |
