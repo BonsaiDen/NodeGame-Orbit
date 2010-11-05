@@ -32,7 +32,6 @@ function Planet(game, id, x, y, size, start, nodes, maxCount) {
     this.player = this.$.neutralPlayer;
     
     this.start = start;
-    
     this.size = size;
     this.x = x;
     this.y = y;
@@ -290,19 +289,28 @@ Planet.prototype.send = function(player, target, type, amount) {
     for(var i = 0; i < ships.length; i++) {
         var ship = ships[i];
         if (amount > 0 && !ship.traveling && !ship.nextPlanet) {
-            
             ship.send(target);
             amount--;
         }
     }
 };
 
-Planet.prototype.stop = function(player, type) {
-    var ships = this.ships[player.id][type];
-    for(var i = 0, l = ships.length; i < l; i++) {
-        ships[i].stop();
+Planet.prototype.stop = function(player, type, to) {
+    if (to) {
+        for(var i = 0, l = this.$.ships.length; i < l; i++) {
+            var ship = this.$.ships[i];
+            if (ship.nextPlanet === this || ship.targetPlanet === this) {
+                ship.stop();
+            }
+        }
+    
+    } else {
+        var ships = this.ships[player.id][type];
+        for(var i = 0, l = ships.length; i < l; i++) {
+            ships[i].stop();
+        }
     }
-}
+};
 
 
 // Helpers ---------------------------------------------------------------------

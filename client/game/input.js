@@ -95,13 +95,14 @@ Game.prototype.inputInit = function(full) {
     this.keys = {};
     window.onkeydown = window.onkeyup = function(e) {
         var key = e.keyCode;
+        if (e.type === "keydown") {
+            that.keys[key] = 1;
+        
+        } else {
+            that.keys[key] = 2;
+        }
+        
         if (key !== 116 && !e.shiftKey && !e.altKey && !e.ctrlKey) {
-            if (e.type === "keydown") {
-                that.keys[key] = 1;
-            
-            } else {
-                that.keys[key] = 2;
-            }
             e.preventDefault();
             return false;
         }

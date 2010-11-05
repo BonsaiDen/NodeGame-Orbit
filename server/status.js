@@ -111,7 +111,7 @@ Status.prototype.toTime = function(time) {
     if (time === -1) {
         return '';
     }
-
+    
     var t = Math.round((time - this.startTime) / 1000);
     var m = Math.floor(t / 60);
     var s = t % 60;

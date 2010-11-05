@@ -121,13 +121,14 @@ Player.prototype.send = function(target) {
 };
 
 Player.prototype.stop = function(planet) {
+    var to = !!this.$.keys[17];
     if (this.selectPlanet === planet) {
-        this.$.send({'stop': [planet.id, this.getSelectType()]});
+        this.$.send({'stop': [planet.id, this.getSelectType(), to]});
     
     } else {
         for(var i = 0; i < this.$.shipTypes.length; i++) {
             var type = this.$.shipTypes[i];
-            this.$.send({'stop': [planet.id, type]});
+            this.$.send({'stop': [planet.id, type, to]});
         }
     }
 };

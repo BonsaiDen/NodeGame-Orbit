@@ -74,7 +74,7 @@ Game.prototype.drawTick = function() {
 // Planets ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 Game.prototype.drawPlanets = function(sx, sy) {
-
+    
     // Clear and Planets
     this.bbg.save();
     this.bbg.scale(this.scale, this.scale);    

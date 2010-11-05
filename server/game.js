@@ -153,7 +153,7 @@ Game.prototype.onMessage = function(type, data, client) {
         } else if (type === 'stop') {
             var at = this.planets[data[0]];
             if (at && this.shipTypes.indexOf(data[1]) !== -1) {
-                at.stop(player, data[1]);
+                at.stop(player, data[1], data[2]);
             }
         }
     }
