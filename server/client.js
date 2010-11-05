@@ -21,6 +21,10 @@
 */
 
 
+var MSG_SEND = ['number', 'number', 'string', 'number'];
+var MSG_STOP = ['number', 'string'];
+
+
 // Clients ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 function Client(server, conn, name, hash) {
@@ -50,12 +54,10 @@ Client.prototype.onRejoin = function() {
 };
 
 Client.prototype.onMessage = function(msg) {
-    if (msg.send && this.validateMessage(msg.send, ['number', 'number',
-                                                    'string', 'number'])) {
-        
+    if (msg.send && this.validateMessage(msg.send, MSG_SEND)) {
         this.$.onMessage('send', msg.send, this);
     
-    } else if (msg.stop && this.validateMessage(msg.stop, ['number', 'string'])) {
+    } else if (msg.stop && this.validateMessage(msg.stop, MST_STOP)) {
         this.$.onMessage('stop', msg.stop, this);
     }
 };
