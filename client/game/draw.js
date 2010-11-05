@@ -354,8 +354,8 @@ Game.prototype.effectClear = function(sx, sy) {
 };
 
 Game.prototype.effectExplosion = function(color, planet, orbit, r, rs, size) {
-    r = r + (Math.random() * rs * 2 - rs);
-    orbit = orbit + (Math.random() * 1.5 - 0.75);
+    r = r + (this.random() * rs * 2 - rs);
+    orbit = orbit + (this.random() * 1.5 - 0.75);
     this.effects.push({i: EFFECT_EXPLOSION, t: new Date().getTime(), l: 2000,
                        s: size, c: color, p: planet, o: orbit, r: r});
 };

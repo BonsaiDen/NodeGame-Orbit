@@ -27,6 +27,7 @@ Game.prototype.coreInit = function() {
     this.tickCount = 1;
     this.gameID = 0;
     this.messageQueue = [];
+    this.randomState = 0;
     
     // Map
     this.width = 0;
@@ -131,5 +132,10 @@ Game.prototype.coreDifference = function(x, y) {
     var b = (x * Math.PI / 180) - Math.PI;
     var a = (y * Math.PI / 180) - Math.PI;
     return Math.atan2(Math.sin(a - b), Math.cos(a - b)) * (180 / Math.PI);
+};
+
+Game.prototype.random = function() {
+    this.randomState = (1103515245 * this.randomState + 12345) % 0x100000000;
+    return this.randomState / 0x100000000;
 };
 

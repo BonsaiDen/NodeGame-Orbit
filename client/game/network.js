@@ -106,7 +106,7 @@ Game.prototype.netMessage = function(msg) {
         this.netShipsDestroy(msg[0]);
     
     } else if (type === MSG_GAME_TICK) {
-        this.tickCount = msg[0];
+       this.randomState = this.tickCount = msg[0];
     
     } else if (type === MSG_PLAYER_ADD) {
         new Player(this, msg[0], msg[1], msg[2], false);
