@@ -370,7 +370,7 @@ Game.prototype.updateShips = function(client) {
 Game.prototype.loadMap = function() { 
     var planets = [
         // Top Left
-        [1, 48, 64, 15, [2]],
+        [1, 48, 64, 22, [2]],
         [2, 176, 112, 40, [11, 9, 1]],
         
         // Top Right
@@ -390,8 +390,8 @@ Game.prototype.loadMap = function() {
         [10, 320, 424, 27, [6, 8]],
          
         // Sides
-        [11, 112, 240, 17, [2, 8]],
-        [12, 528, 240, 17, [4, 6]]
+        [11, 96, 240, 21, [2, 8]],
+        [12, 544, 240, 21, [4, 6]]
     ];
     
     this.startPlanets = [1, 5, 3, 7];

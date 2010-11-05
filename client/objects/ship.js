@@ -184,12 +184,8 @@ Ship.prototype.calculatePosition = function() {
     var c = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180) % 360, 2);
     var d = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180 + 20 * this.direction) % 360, 0);
     
-//    var ts = this.getNextRotationSpeed();
     var step = 1 / this.travelTicks;
     var delta = Math.max(0, 1 - step * (this.arriveTick - this.getTick()));
-//    var l = this.bezierDistance(a, b, c, d, this.rs, ts, delta);
-//    
-//    delta = step * l;
     this.bezier(this, a, b, c, d, Math.max(0.00, Math.min(delta, 0.99)));
     
     var p = {x: 0, y: 0};
@@ -238,7 +234,7 @@ function linp(d, a, b, t) {
 }
 
 Ship.prototype.bezier = function(dest, a, b, c, d, delta) {
-    var ab = {x:0, y: 0}, bc = {x:0, y: 0}, cd = {x:0, y: 0};
+    var ab = {x: 0, y: 0}, bc = {x:0, y: 0}, cd = {x: 0, y: 0};
     var abbc = {x:0, y: 0}, bccd = {x:0, y: 0};
     linp(ab, a, b, delta);
     linp(bc, b, c, delta);

@@ -167,7 +167,7 @@ Ship.prototype.startTravel = function() {
     
     // Calculate travel time based on average planet speed and bezier length
     var ts = this.getNextRotationSpeed();
-    this.travelTicks = Math.ceil(this.bezierDistance(a, b, c, d) / (Math.abs(this.rs - ts) * 0.75));
+    this.travelTicks = Math.ceil(this.bezierDistance(a, b, c, d) * 1.05);
     this.planet.removeShip(this);
     
     // Calculate best direction on the next planet
