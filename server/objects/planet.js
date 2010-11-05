@@ -64,7 +64,7 @@ Planet.prototype.initPlayer = function(player, start) {
     
     if (start) {
         this.removeNeutral();
-        this.createShips('fight', this.player, 1, false);
+        this.createShips('fight', this.player, 3, false);
     }
 };
 
@@ -136,11 +136,16 @@ Planet.prototype.createShips = function(type, player, count, orbit) {
 Planet.prototype.addShip = function(ship) {
     if (this.ships[ship.player.id][ship.type].indexOf(ship) === -1) {
         this.ships[ship.player.id][ship.type].push(ship);
-        if (this.shipCount === 0 && this.player !== ship.player) {
-            this.initPlayer(ship.player);
-            this.$.updatePlanets(this);
-        }
         this.shipCount++;
+    }
+};
+
+Planet.prototype.checkAddShip = function(ship) {
+    if (this.getPlayerShipCount(this.player) === 0
+        && this.player !== ship.player) {
+        
+        this.initPlayer(ship.player);
+        this.$.updatePlanets(this);
     }
 };
 
@@ -219,10 +224,11 @@ Planet.prototype.tickCombat = function() {
                     break;
                 }
                 
-                var rs = Math.round(Math.PI / this.size * this.$.shipSpeeds[c.type] * 100) / 100 * 2.5;
                 var s = ships[e];
                 var ds = Math.abs(this.$.coreDifference(s.r, c.r));
-                if (!s.traveling && s.health > 0 && ds <= rs * 3) {
+                if (!s.traveling && s.health > 0
+                    && ds <= c.getRotationSpeed() * 7) {
+                    
                     if (s.player !== c.player) {
                         c.attack(s);
                         s.attack(c);
@@ -251,16 +257,22 @@ Planet.prototype.send = function(player, target, type, amount) {
         return rb - ra;
     });
     
+    // First get the ships that will leave the planet the soonest
     for(var i = 0; i < ships.length; i++) {
         var ship = ships[i];
         if (amount > 0 && !ship.traveling
             && ship.targetPlanet === null && ship.inOrbit) {
             
-            ship.send(target);
-            amount--;
+            var diff = this.$.coreDifference(ship.r, travelAngle);
+            if (Math.abs(diff) > ship.rs * 10) {
+                
+                ship.send(target);
+                amount--;
+            }
         }
     }
     
+    // If we still need more, then get some of the others
     for(var i = 0; i < ships.length; i++) {
         var ship = ships[i];
         if (amount > 0 && !ship.traveling

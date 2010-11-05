@@ -102,10 +102,9 @@ Planet.prototype.tickCombat = function() {
                     break;
                 }
                 
-                var rs = Math.round(Math.PI / this.size * this.$.shipSpeeds[c.type] * 100) / 100 * 2.5;
                 var s = ships[e];
                 var ds = Math.abs(this.$.coreDifference(s.r, c.r));
-                if (!s.traveling && ds <= rs * 3) {
+                if (!s.traveling && ds <= c.getRotationSpeed() * 7) {
                     if (s.player !== c.player) {
                         c.attack(s);
                         s.attack(c);
@@ -161,7 +160,8 @@ Planet.prototype.draw = function(sx, sy) {
     
     // Select
     var selected = this.$.player.selectPlanet;
-    var selectShips = this === selected && (this.player === this.$.player || this.playerCount > 0);
+    var selectShips = this === selected && (this.player === this.$.player
+                                            || this.playerCount > 0);
     
     // Draw Planet Shape
     var ringScale = this.size / 20;
@@ -181,7 +181,7 @@ Planet.prototype.draw = function(sx, sy) {
     this.$.drawColor(this.player ? this.player.color : 0);
     this.$.drawCircle(this.x, this.y, this.size - 1 * ringScale + 1, false);
     
-    // Selected
+    // Color
     if (this.player === this.$.player) {
         this.$.drawColor(this.$.player.color);
     
@@ -189,7 +189,7 @@ Planet.prototype.draw = function(sx, sy) {
         this.$.drawShaded(this.$.player.color);
     }
     
-    // Select
+    // Selected
     var size = (100 / 15) * this.size / 100;
     if (selectShips) {
         this.drawSelect();

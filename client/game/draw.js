@@ -33,8 +33,8 @@ Game.prototype.drawInit = function() {
     this.colorsShaded = ['#404040', '#800000', '#005090',
                          '#808000', '#008000', '#600090'];
     
-    this.colorsDark = ['#202020', '#500000', '#002060',
-                       '#505000', '#005000', '#300060'];
+    this.colorsDark = ['#272727', '#570000', '#002767',
+                       '#575700', '#005700', '#370067'];
     
     this.effects = [];
     this.effectsClear = [];

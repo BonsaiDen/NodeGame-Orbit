@@ -50,14 +50,11 @@ Client.prototype.onRejoin = function() {
 };
 
 Client.prototype.onMessage = function(msg) {
-
-    // Send Ships
     if (msg.send && this.validateMessage(msg.send, ['number', 'number',
                                                     'string', 'number'])) {
         
         this.$.onMessage('send', msg.send, this);
     
-    // Stop ships
     } else if (msg.stop && this.validateMessage(msg.stop, ['number', 'string'])) {
         this.$.onMessage('stop', msg.stop, this);
     }
@@ -71,11 +68,7 @@ Client.prototype.onRemove = function() {
 
 // Network ---------------------------------------------------------------------
 Client.prototype.validateMessage = function(msg, types) {
-    if (!msg instanceof Array) {
-        return false;
-    }
-    
-    if (msg.length !== types.length) {
+    if (!msg instanceof Array || msg.length !== types.length) {
         return false;
     }
     

@@ -130,11 +130,8 @@ Ship.prototype.tick = function() {
             this.orbit = this.$.shipOrbits[this.type];
         }  
         
-        this.rs = Math.round(Math.PI / this.planet.size * this.$.shipSpeeds[this.type] * 100) / 100;
-        this.r = (this.or + this.direction * this.rs * tickDiff + 360) % 360;
-        if (this.r < 0) {
-            this.r += 360;
-        }
+        this.rs = this.getRotationSpeed();
+        this.r = this.wrapAngle(this.or + this.direction * this.rs * tickDiff);
     }
     
     // Start Traveling
@@ -144,52 +141,60 @@ Ship.prototype.tick = function() {
             if (Math.abs(diff) < this.rs * 20 && Math.abs(diff) > this.rs * 10
                 && this.nextPlanet.getPlayerShipCount(this.player) < this.nextPlanet.maxCount) {
                 
-                this.updated = true;
-                this.r = this.or = this.r;
-                this.tickOffset = this.getTick();
-                this.travelTicks = Math.ceil(this.$.coreOrbit(this, this.planet, this.nextPlanet));
-                this.planet.removeShip(this);
-                
-                // Calculate best direction on the next planet
-                if (this.movePlanets.length > 1) {
-                    var travelAngle = Math.round(this.$.coreAngle(this.nextPlanet, this.movePlanets[1]));  
-                    var dr = this.$.coreDifference((this.traveAngle + 180) % 360, travelAngle);
-                    this.direction = dr >= 0 ? 1 : -1;
-                
-                } else {
-                    this.direction = this.nextPlanet.getPreferedDirection(this.player, this.type);
-                }
-                
-                this.nextPlanet.addShip(this);
-                this.arriveTick = this.getTick() + this.travelTicks;
-                this.traveling = true;
-                this.traveled = false;
+                this.startTravel();
             }
         }
     }
     
     // Finish Traveling
     if (this.traveling && this.getTick() === this.arriveTick) {
-        this.updated = true;
-        this.traveling = false;
-        this.traveled = true;
-        this.tickOffset = this.getTick();
-        this.r = this.or = (this.travelAngle + 180 + (this.rs * 15 * this.direction)) % 360;
-        if (this.r < 0) {
-            this.r += 360;
-        }
-        this.planet = this.nextPlanet;
-        
-        if (this.nextPlanet === this.targetPlanet) {
-            this.nextPlanet = this.targetPlanet = null;
-        
-        } else if (!this.send(this.targetPlanet, this.getTick())) {
-            this.nextPlanet = this.targetPlanet = null;
-        
-        } else {
-            var dr = this.$.coreDifference(this.r, this.travelAngle);
-            this.direction = dr >= 0 ? 1 : -1;
-        }
+        this.finishTravel();
+    }
+};
+
+Ship.prototype.startTravel = function() {
+    this.updated = true;
+    this.or = this.r;
+    this.tickOffset = this.getTick();
+    this.travelTicks = Math.ceil(this.$.coreOrbit(this, this.planet, this.nextPlanet));
+    this.planet.removeShip(this);
+    
+    // Calculate best direction on the next planet
+    if (this.movePlanets.length > 1) {
+        var travelAngle = Math.round(this.$.coreAngle(this.nextPlanet, this.movePlanets[1]));  
+        var r = this.wrapAngle(this.travelAngle + 180);
+        this.direction = this.$.coreDifference(r, travelAngle) >= 0 ? 1 : -1;
+    
+    } else {
+        this.direction = this.nextPlanet.getPreferedDirection(this.player, this.type);
+    }
+    
+    this.nextPlanet.addShip(this);
+    this.arriveTick = this.getTick() + this.travelTicks;
+    this.traveling = true;
+    this.traveled = false;
+};
+
+Ship.prototype.finishTravel = function() {
+    this.updated = true;
+    this.traveling = false;
+    this.traveled = true;
+    this.tickOffset = this.getTick();
+    
+    var r = this.travelAngle + 180 + (this.rs * 15 * this.direction);
+    this.r = this.or = this.wrapAngle(r);
+    this.planet = this.nextPlanet;
+    this.planet.checkAddShip(this);
+    
+    if (this.nextPlanet === this.targetPlanet) {
+        this.nextPlanet = this.targetPlanet = null;
+    
+    } else if (!this.send(this.targetPlanet, this.getTick())) {
+        this.nextPlanet = this.targetPlanet = null;
+    
+    } else {
+        var dr = this.$.coreDifference(this.r, this.travelAngle);
+        this.direction = dr >= 0 ? 1 : -1;
     }
 };
 
@@ -199,6 +204,21 @@ Ship.prototype.getTick = function() {
     return this.$.getTick();
 };
 
+Ship.prototype.getRotationSpeed = function() {
+    return Math.round(Math.PI / this.planet.size
+                      * this.$.shipSpeeds[this.type] * 100) / 100;
+    
+};
+
+Ship.prototype.wrapAngle = function(r) {
+    r = (r + 360) % 360;
+    if (r < 0) {
+        r += 360;
+    }
+    return r;
+};
+
+// Network ---------------------------------------------------------------------
 Ship.prototype.toMessage = function(create) {
     var msg = [];
     

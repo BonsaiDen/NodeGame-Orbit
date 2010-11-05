@@ -252,7 +252,11 @@ Game.prototype.inputClick = function(e) {
     } else if (!this.inputHover && !this.mouseDrag) {
         this.player.selectCancel();
         this.drawBackground();
+    
+    } else if (this.inputHover && e.button === 0 && this.player.selectPlanet) {
+        this.player.selectAdd();
     }
+    
     this.mouseDrag = false;
     this.mouseDragDown = false;
 };

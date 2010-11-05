@@ -44,6 +44,8 @@ function Player(game, id, name, color, watch) {
 
 Player.prototype.initInput = function() {
     this.selectTick = 0;
+    this.selectInitTick = 0;
+    this.selectAddTick = 0;
     this.selectCount = {};
     this.resetSelectCount();
     this.selectPlanet = null;
@@ -66,19 +68,19 @@ Player.prototype.tick = function() {
     if (this.selectPlanet && tick % 2 === 0) {
         var type = this.getSelectType();
         var oldCount = this.selectCount[type];
-        
-        if (this.select) {
+        if (this.select && this.getTick() - this.selectAddTick > 10) {
             var ticks = this.getTick() - this.selectTick;
             var add = 0;
-            if (ticks > 100) {
+            if (ticks > 25) {
                 add = 2;
             
             } else if (ticks > 200) {
                 add = 5;
             
-            } else if (ticks > 0) {
+            } else if (ticks > 2) {
                 add = 1;
             }
+            this.selectAddTick = this.getTick() - 8;
             this.addCount(type, add);
         
         } else {
@@ -119,7 +121,7 @@ Player.prototype.send = function(target) {
 };
 
 Player.prototype.stop = function(planet) {
-    if (this.selectPlanet === this.planet) {
+    if (this.selectPlanet === planet) {
         this.$.send({'stop': [planet.id, this.getSelectType()]});
     
     } else {
@@ -135,6 +137,7 @@ Player.prototype.stop = function(planet) {
 Player.prototype.selectStart = function(planet) {
     this.selectTick = this.getTick();
     if (this.selectPlanet !== planet) {
+        this.selectInitTick = this.getTick();
         this.resetSelectCount();
         this.selectPlanet = planet;
         this.$.drawBackground();
@@ -157,6 +160,14 @@ Player.prototype.selectAll = function() {
     if (this.selectPlanet) {
         var type = this.getSelectType();
         this.selectCount[type] = this.selectPlanet.ships[this.id][type].length;
+    }
+};
+
+Player.prototype.selectAdd = function() {
+    if (this.getTick() - this.selectInitTick > 2) {
+        this.addCount(this.getSelectType(), 1);
+        this.$.drawBackground();
+        this.selectAddTick = this.getTick();
     }
 };
 
