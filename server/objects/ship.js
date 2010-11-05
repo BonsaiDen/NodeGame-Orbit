@@ -140,7 +140,7 @@ Ship.prototype.tick = function() {
     if (this.inOrbit && this.nextPlanet !== null && !this.traveling) {
         var diff = this.$.coreDifference(this.r, this.travelAngle);
         if ((this.direction === 1 && diff > 0) || (this.direction === -1 && diff < 0)) {
-            if (Math.abs(diff) < this.rs * 20 && Math.abs(diff) > this.rs * 15
+            if (Math.abs(diff) < 20 && Math.abs(diff) > 15
                 && this.nextPlanet.getPlayerShipCount(this.player) < this.nextPlanet.maxCount) {
                 
                 this.startTravel();
@@ -163,11 +163,11 @@ Ship.prototype.startTravel = function() {
     var a = this.getPointInOrbit(this.planet, this.or, 0);
     var b = this.getPointInOrbit(this.planet, this.travelAngle, 2);
     var c = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180) % 360, 2);
-    var d = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180 + this.rs * 20 * this.direction) % 360, 0);
+    var d = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180 + 20 * this.direction) % 360, 0);
     
     // Calculate travel time based on average planet speed and bezier length
-    var os = this.getNextRotationSpeed();
-    this.travelTicks = Math.ceil(this.bezierDistance(a, b, c, d) / ((this.rs + os) * 0.5));
+    var ts = this.getNextRotationSpeed();
+    this.travelTicks = Math.ceil(this.bezierDistance(a, b, c, d) / (Math.abs(this.rs - ts) * 0.75));
     this.planet.removeShip(this);
     
     // Calculate best direction on the next planet
@@ -192,7 +192,7 @@ Ship.prototype.finishTravel = function() {
     this.traveled = true;
     this.tickOffset = this.getTick();
     
-    var r = this.travelAngle + 180 + (this.rs * 20 * this.direction);
+    var r = this.travelAngle + 180 + (20 * this.direction);
     this.r = this.or = this.wrapAngle(r);
     this.planet = this.nextPlanet;
     this.planet.checkAddShip(this);
@@ -266,7 +266,7 @@ Ship.prototype.bezierDistance = function(a, b, c, d) {
     this.bezier(o, a, b, c, d, 0);
     var e = {x: 0, y: 0};
     var l = 0;
-    for(var i = 0.05; i < 1; i += 0.05) {
+    for(var i = 0.1; i < 1; i += 0.1) {
         this.bezier(e, a, b, c, d, i);
         var dx = o.x - e.x, dy = o.y - e.y;
         l += Math.sqrt(dx * dx + dy * dy);
@@ -328,10 +328,8 @@ Ship.prototype.toMessage = function(create) {
         
         // Ship starts travel
         } else if (this.nextPlanet && this.traveling) {
-            msg.push(this.tickOffset);
-            msg.push(this.or); 
+            msg.push(this.or);
             msg.push(this.nextPlanet.id);
-            msg.push(this.arriveTick);   
             msg.push(this.travelTicks);
         
         // Ship finishes travel

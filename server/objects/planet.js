@@ -264,7 +264,7 @@ Planet.prototype.send = function(player, target, type, amount) {
             && ship.targetPlanet === null && ship.inOrbit) {
             
             var diff = this.$.coreDifference(ship.r, travelAngle);
-            if (Math.abs(diff) >= ship.rs * 15) {
+            if (Math.abs(diff) >= 15) {
                 
                 ship.send(target);
                 amount--;

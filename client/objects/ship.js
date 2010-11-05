@@ -182,10 +182,14 @@ Ship.prototype.calculatePosition = function() {
     var b = this.getPointInOrbit(this.planet, this.travelAngle, 2);
     
     var c = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180) % 360, 2);
-    var d = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180 + this.rs * 20 * this.direction) % 360, 0);
+    var d = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180 + 20 * this.direction) % 360, 0);
     
-    var step = 100 / this.travelTicks;
-    var delta = 1 - step * ((this.arriveTick - this.getTick()) / 100);
+//    var ts = this.getNextRotationSpeed();
+    var step = 1 / this.travelTicks;
+    var delta = Math.max(0, 1 - step * (this.arriveTick - this.getTick()));
+//    var l = this.bezierDistance(a, b, c, d, this.rs, ts, delta);
+//    
+//    delta = step * l;
     this.bezier(this, a, b, c, d, Math.max(0.00, Math.min(delta, 0.99)));
     
     var p = {x: 0, y: 0};
@@ -200,6 +204,12 @@ Ship.prototype.getPointInOrbit = function(planet, r, e) {
     r = r * Math.PI / 180;
     return {x: planet.x + Math.cos(r) * orbit,
             y: planet.y + Math.sin(r) * orbit};
+    
+};
+
+Ship.prototype.getNextRotationSpeed = function() {
+    return Math.round(Math.PI / this.nextPlanet.size
+                      * this.$.shipSpeeds[this.type] * 100) / 100;
     
 };
 
@@ -243,10 +253,10 @@ Ship.prototype.bezierDistance = function(a, b, c, d) {
     this.bezier(o, a, b, c, d, 0);
     var e = {x: 0, y: 0};
     var l = 0;
-    for(var i = 0.05; i < 1; i += 0.05) {
+    for(var i = 0.1; i < 1; i += 0.1) {
         this.bezier(e, a, b, c, d, i);
         var dx = o.x - e.x, dy = o.y - e.y;
-        l += Math.sqrt(dx * dx + dy * dy);
+        l += Math.sqrt(dx * dx + dy * dy) ;
         o.x = e.x, o.y = e.y;
     }
     return l;
@@ -264,7 +274,7 @@ Ship.prototype.initTravel = function(tick, or, pid, arrive, travel) {
     
     this.arriveTick = arrive;
     this.travelTicks = travel;
-    this.travelDistance = this.$.coreOrbit(this, this.planet, this.nextPlanet);
+    this.travelDistance = Math.round(this.$.coreOrbit(this, this.planet, this.nextPlanet));
     this.travelAngle = Math.round(this.$.coreAngle(this.planet, this.nextPlanet));
 };
 
@@ -321,7 +331,8 @@ Ship.prototype.update = function(d) {
         
         // Start Travel
         } else if (this.next && this.traveling) {
-            this.initTravel(d[2], d[3], d[4], d[5], d[6]);
+            var tick = Math.floor(this.$.tickCount);
+            this.initTravel(tick, d[2], d[3], tick + d[4], d[4]);
         
         // Stop
         } else if (this.stopped) {

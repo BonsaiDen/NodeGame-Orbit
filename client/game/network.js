@@ -81,6 +81,10 @@ Game.prototype.onClose = function(msg) {
 
 // Messages --------------------------------------------------------------------
 Game.prototype.netMessage = function(msg) {
+    if (!msg) {
+        return true;
+    }
+
     var type = msg.shift();
     if (type === MSG_GAME_INIT) {
         this.gameID = msg[0];

@@ -99,7 +99,13 @@ function Client(host, port) {
     };
     
     this.conn.onmessage = function(msg) {
-        that.$.onMessage(BISON.decode(msg.data));
+        var bison = BISON.decode(msg.data);
+        if (msg === undefined) {
+            console.log('Network ERROR: ' + msg.data);
+        
+        } else {
+            that.$.onMessage(bison);
+        }
     };
     
     this.conn.onerror = this.conn.onclose = function(e) {

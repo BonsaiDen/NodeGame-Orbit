@@ -370,7 +370,7 @@ Game.prototype.updateShips = function(client) {
 Game.prototype.loadMap = function() { 
     var planets = [
         // Top Left
-        [1, 48, 64, 22, [2]],
+        [1, 48, 64, 15, [2]],
         [2, 176, 112, 40, [11, 9, 1]],
         
         // Top Right
