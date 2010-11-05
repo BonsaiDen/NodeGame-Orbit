@@ -46,6 +46,8 @@ Game.prototype.inputInit = function(full) {
     this.cameraOldX = 0;
     this.cameraOldY = 0;
     
+    
+    // Mouse Events ------------------------------------------------------------
     this.canvas.addEventListener('mousemove', function(e) {
         e = e || window.event;
         clearTimeout(that.moveTimeout);

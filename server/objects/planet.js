@@ -52,12 +52,8 @@ function Planet(game, id, x, y, size, start, nodes) {
 exports.Planet = Planet;
 
 
-// Player Handling -------------------------------------------------------------
-Planet.prototype.reset = function() {
-    this.rateStep = 0;
-    this.rate = 100;
-};
-
+// Players ---------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 Planet.prototype.initPlayer = function(player, start) {
     if (!this.ships[player.id]) {
         this.ships[player.id] = {fight: [], bomb: [], def: []};
@@ -110,7 +106,7 @@ Planet.prototype.checkPlayer = function() {
 };
 
 Planet.prototype.removePlayer = function(player) {
-    this.removeShips(player);
+    this.removePlayerShips(player);
     if (this.player === player && !this.checkPlayer()) {
         this.initNeutral(true, false);
     }
@@ -118,11 +114,12 @@ Planet.prototype.removePlayer = function(player) {
 };
 
 Planet.prototype.removeNeutral = function() {
-    this.removeShips(this.$.neutralPlayer);
+    this.removePlayerShips(this.$.neutralPlayer);
 };
 
 
 // Ships -----------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 Planet.prototype.createShip = function(type, player, orbit) {
     var ship = new Ship(this.$, type, this,
                         player, Math.floor(Math.random() * 360), orbit);
@@ -161,7 +158,7 @@ Planet.prototype.removeShip = function(ship) {
     }
 };
 
-Planet.prototype.removeShips = function(player) {
+Planet.prototype.removePlayerShips = function(player) {
     var ships = this.ships[player.id];
     for(var t in ships) {
         for(var i = 0; i < ships[t].length; i++) {
@@ -194,6 +191,7 @@ Planet.prototype.tick = function() {
 
 
 // Combat ----------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 Planet.prototype.tickCombat = function() {
     if (this.shipCount === 0) {
         return;

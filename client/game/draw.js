@@ -61,88 +61,100 @@ Game.prototype.drawInit = function() {
 Game.prototype.drawTick = function() {
     var sx = this.cameraOldX - this.cameraX;
     var sy = this.cameraOldY - this.cameraY;
-    
-    // Background
     if (this.updateBackground || (sx !== 0 || sy !== 0)) {
-        this.bbg.save();
-        this.bbg.scale(this.scale, this.scale);    
-        this.bbg.translate(-this.cameraX, -this.cameraY);
-        if (this.clearBackground) {
-            this.bbg.clearRect(this.cameraX, this.cameraY, this.viewWidth, this.viewHeight);
-            this.clearBackground = false;
-        
-        } else {
-            for(var i in this.planets) {
-                this.planets[i].clear(sx, sy);
-            }
-        }
-        
-        // Path
-        if (this.sendPath.length > 0) {
-            var from = this.player.selectPlanet;
-            if (from) {
-                this.drawBack();
-                this.drawShaded(this.player.color);
-                this.bbg.globalCompositeOperation = 'lighter';
-                for(var i = 0, l = this.sendPath.length; i < l; i++) {
-                    var to = this.sendPath[i];
-                    var dx = to.x - from.x;
-                    var dy = to.y - from.y;
-                    
-                    // Clear
-                    this.bbg.clearRect((to.x > from.x ? from.x : to.x) - sx,
-                                       (to.y > from.y ? from.y : to.y) - sy,
-                                       Math.abs(dx), Math.abs(dy));
-                    
-                    // Arrows
-                    var r = Math.atan2(dy, dx);
-                    var d = (Math.sqrt(dx * dx + dy * dy) - from.size - 22 - to.size) / 4;
-                    for(var e = 1; e < 4; e++) {
-                        this.bbg.save();
-                        this.bbg.translate(from.x + (Math.cos(r) * (from.size + 11 + d * e)),
-                                           from.y + (Math.sin(r) * (from.size + 11 + d * e)));
-                        
-                        this.bbg.rotate(r + Math.PI / 2);
-                        this.drawDark(this.player.color);
-                        this.drawPathArrow(false);
-                        this.drawShaded(this.player.color);
-                        this.drawPathArrow(true);
-                        this.bbg.restore();
-                    }
-                    from = to;
-                }
-                
-                // Select Rings
-                this.bbg.globalCompositeOperation = 'source-over';
-                this.drawDark(this.player.color);
-                for(var i = 0, l = this.sendPath.length; i < l; i++) {
-                    var p = this.sendPath[i];  
-                    if (p === this.sendPath[this.sendPath.length - 1]) {
-                        this.drawColor(this.player.color);
-                    }
-                    p.drawSelect();
-                }
-                this.drawFront();
-            
-            } else {
-                this.clearBackground = true;
-            }
-        }
-        this.updateBackground = false;
-        
-        // Planets
+        this.drawPlanets(sx, sy);
+    }
+
+    this.drawShips(sx, sy);
+    this.cameraOldX = this.cameraX;
+    this.cameraOldY = this.cameraY;
+};
+
+    
+// Planets ---------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+Game.prototype.drawPlanets = function(sx, sy) {
+
+    // Clear and Planets
+    this.bbg.save();
+    this.bbg.scale(this.scale, this.scale);    
+    this.bbg.translate(-this.cameraX, -this.cameraY);
+    if (this.clearBackground) {
+        this.bbg.clearRect(this.cameraX, this.cameraY, this.viewWidth, this.viewHeight);
+        this.clearBackground = false;
+    
+    } else {
         for(var i in this.planets) {
-            this.planets[i].draw();
+            this.planets[i].clear(sx, sy);
         }
-        this.bbg.restore();
     }
     
-    // Foreground
+    // Path
+    if (this.sendPath.length > 0) {
+        var from = this.player.selectPlanet;
+        if (from) {
+            this.drawBack();
+            this.drawShaded(this.player.color);
+            this.bbg.globalCompositeOperation = 'lighter';
+            for(var i = 0, l = this.sendPath.length; i < l; i++) {
+                var to = this.sendPath[i];
+                var dx = to.x - from.x;
+                var dy = to.y - from.y;
+                
+                // Clear
+                this.bbg.clearRect((to.x > from.x ? from.x : to.x) - sx,
+                                   (to.y > from.y ? from.y : to.y) - sy,
+                                   Math.abs(dx), Math.abs(dy));
+                
+                // Arrows
+                var r = Math.atan2(dy, dx);
+                var d = (Math.sqrt(dx * dx + dy * dy) - from.size - 22 - to.size) / 4;
+                for(var e = 1; e < 4; e++) {
+                    this.bbg.save();
+                    this.bbg.translate(from.x + (Math.cos(r) * (from.size + 11 + d * e)),
+                                       from.y + (Math.sin(r) * (from.size + 11 + d * e)));
+                    
+                    this.bbg.rotate(r + Math.PI / 2);
+                    this.drawDark(this.player.color);
+                    this.drawPathArrow(false);
+                    this.drawShaded(this.player.color);
+                    this.drawPathArrow(true);
+                    this.bbg.restore();
+                }
+                from = to;
+            }
+            
+            // Select Rings
+            this.bbg.globalCompositeOperation = 'source-over';
+            this.drawDark(this.player.color);
+            for(var i = 0, l = this.sendPath.length; i < l; i++) {
+                var p = this.sendPath[i];  
+                if (p === this.sendPath[this.sendPath.length - 1]) {
+                    this.drawColor(this.player.color);
+                }
+                p.drawSelect();
+            }
+            this.drawFront();
+        
+        } else {
+            this.clearBackground = true;
+        }
+    }
+    this.updateBackground = false;
+    
+    // Planets
+    for(var i in this.planets) {
+        this.planets[i].draw();
+    }
+    this.bbg.restore();
+};
+
+// Ships & Effetcs -------------------------------------------------------------
+// -----------------------------------------------------------------------------
+Game.prototype.drawShips = function(sx, sy) {
     this.fbg.save();
     this.fbg.scale(this.scale, this.scale);    
     this.fbg.translate(-this.cameraX, -this.cameraY);
-    
-    // Clear
     for(var i in this.ships) {
         this.ships[i].clear(sx, sy);
     }
@@ -151,17 +163,11 @@ Game.prototype.drawTick = function() {
     }
     this.shipDestroyedList = [];
     this.effectClear(sx, sy);
-    
-    // Draw
     for(var i in this.ships) {
         this.ships[i].draw(sx, sy);
     }
-    this.effectDraw();
-    
-    
+    this.effectDraw();    
     this.fbg.restore();
-    this.cameraOldX = this.cameraX;
-    this.cameraOldY = this.cameraY;
 };
 
 Game.prototype.drawBackground = function(clear) {
