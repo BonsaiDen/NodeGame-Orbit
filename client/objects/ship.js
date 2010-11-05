@@ -56,9 +56,12 @@ Ship.prototype.destroy = function() {
     var index = this.$.shipList.indexOf(this);
     if (index !== -1) {
         this.player.shipCount--;
-        this.$.effectExplosion(this.player.color, this.planet, this.orbit, this.r, this.rs, 8);
-        this.planet.removeShip(this);
+        if (!this.traveling) {
+            this.$.effectExplosion(this.player.color, this.planet, this.orbit, this.r, this.rs, 8);
+            this.planet.removeShip(this);
+        }
         this.$.shipList.splice(index, 1);
+        this.$.shipDestroyedList.push(this);
     }
 };
 

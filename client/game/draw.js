@@ -141,14 +141,24 @@ Game.prototype.drawTick = function() {
     this.fbg.save();
     this.fbg.scale(this.scale, this.scale);    
     this.fbg.translate(-this.cameraX, -this.cameraY);
+    
+    // Clear
     for(var i in this.ships) {
         this.ships[i].clear(sx, sy);
     }
+    for(var i = 0, l = this.shipDestroyedList.length; i < l; i++) {
+        this.shipDestroyedList[i].clear(sx, sy);
+    }
+    this.shipDestroyedList = [];
     this.effectClear(sx, sy);
+    
+    // Draw
     for(var i in this.ships) {
         this.ships[i].draw(sx, sy);
     }
     this.effectDraw();
+    
+    
     this.fbg.restore();
     this.cameraOldX = this.cameraX;
     this.cameraOldY = this.cameraY;

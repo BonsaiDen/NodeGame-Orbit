@@ -53,6 +53,7 @@ Game.prototype.onConnect = function(succes) {
     this.players = {};
     this.ships = {};
     this.shipList = [];
+    this.shipDestroyedList = [];
 };
 
 Game.prototype.onMessage = function(msg) {

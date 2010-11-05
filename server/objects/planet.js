@@ -64,7 +64,7 @@ Planet.prototype.initPlayer = function(player, start) {
     }
     this.player = player;
     this.rateStep = 0;
-    this.rate = Math.floor((this.start ? 400 : 9000) / this.size * 0.5);
+    this.rate = Math.floor((this.start ? 4000 : 9000) / this.size * 0.5);
     
     if (start) {
         this.removeNeutral();
@@ -119,6 +119,46 @@ Planet.prototype.removePlayer = function(player) {
 
 Planet.prototype.removeNeutral = function() {
     this.removeShips(this.$.neutralPlayer);
+};
+
+
+// Ships -----------------------------------------------------------------------
+Planet.prototype.createShip = function(type, player, orbit) {
+    var ship = new Ship(this.$, type, this,
+                        player, Math.floor(Math.random() * 360), orbit);
+    
+    this.$.ships.push(ship);
+};
+
+Planet.prototype.createShips = function(type, player, count, orbit) {
+    for(var i = 0; i < count; i++) {
+        this.createShip(type, player, orbit);
+    }
+};
+
+Planet.prototype.addShip = function(ship) {
+    if (this.ships[ship.player.id][ship.type].indexOf(ship) === -1) {
+        this.ships[ship.player.id][ship.type].push(ship);
+        if (this.shipCount === 0 && this.player !== ship.player) {
+            this.initPlayer(ship.player);
+            this.$.updatePlanets(this);
+        }
+        this.shipCount++;
+    }
+};
+
+Planet.prototype.removeShip = function(ship) {
+    var ships = this.ships[ship.player.id][ship.type];
+    var index = ships.indexOf(ship);
+    if (index !== -1) {
+        ships.splice(index, 1);
+        this.shipCount--;
+    }
+    
+    // Take over planets
+    if (ship.player === this.player) {
+        this.checkPlayer();
+    }
 };
 
 Planet.prototype.removeShips = function(player) {
@@ -199,46 +239,7 @@ Planet.prototype.tickCombat = function() {
     }
 };
 
-
-// Ships -----------------------------------------------------------------------
-Planet.prototype.createShip = function(type, player, orbit) {
-    var ship = new Ship(this.$, type, this,
-                        player, Math.floor(Math.random() * 360), orbit);
-    
-    this.$.ships.push(ship);
-};
-
-Planet.prototype.createShips = function(type, player, count, orbit) {
-    for(var i = 0; i < count; i++) {
-        this.createShip(type, player, orbit);
-    }
-};
-
-Planet.prototype.addShip = function(ship) {
-    if (this.ships[ship.player.id][ship.type].indexOf(ship) === -1) {
-        this.ships[ship.player.id][ship.type].push(ship);
-        if (this.shipCount === 0 && this.player !== ship.player) {
-            this.initPlayer(ship.player);
-            this.$.updatePlanets(this);
-        }
-        this.shipCount++;
-    }
-};
-
-Planet.prototype.removeShip = function(ship) {
-    var ships = this.ships[ship.player.id][ship.type];
-    var index = ships.indexOf(ship);
-    if (index !== -1) {
-        ships.splice(index, 1);
-        this.shipCount--;
-    }
-    
-    // Take over planets
-    if (ship.player === this.player) {
-        this.checkPlayer();
-    }
-};
-
+// Commands --------------------------------------------------------------------
 Planet.prototype.send = function(player, target, type, amount) {
     var ships = this.ships[player.id][type];
     var travelAngle = this.$.coreAngle(this, target);
@@ -254,7 +255,9 @@ Planet.prototype.send = function(player, target, type, amount) {
     
     for(var i = 0; i < ships.length; i++) {
         var ship = ships[i];
-        if (amount > 0 && !ship.traveling && ship.targetPlanet === null && ship.inOrbit) {
+        if (amount > 0 && !ship.traveling
+            && ship.targetPlanet === null && ship.inOrbit) {
+            
             ship.send(target);
             amount--;
         }
@@ -262,7 +265,9 @@ Planet.prototype.send = function(player, target, type, amount) {
     
     for(var i = 0; i < ships.length; i++) {
         var ship = ships[i];
-        if (amount > 0 && !ship.traveling && (ship.targetPlanet !== null || !ship.inOrbit)) {
+        if (amount > 0 && !ship.traveling
+            && (ship.targetPlanet !== null || !ship.inOrbit)) {
+            
             ship.send(target);
             amount--;
         }
