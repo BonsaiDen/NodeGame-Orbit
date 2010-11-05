@@ -147,13 +147,13 @@ Game.prototype.netMessage = function(msg) {
         if (!this.player.watch) {
             $('bgs').style.borderColor = this.colorsShaded[this.player.color];
             if (this.planets[msg[1]]) {
-                this.cameraX = this.planets[msg[1]].x - this.width / 4;
-                this.cameraY = this.planets[msg[1]].y - this.height / 4;
+                this.cameraX = this.planets[msg[1]].x - this.viewWidth / 2;
+                this.cameraY = this.planets[msg[1]].y - this.viewHeight / 2;
             }
         
         } else {
-            this.cameraX = this.width / 2 - this.width / 4;
-            this.cameraY = this.height / 2 - this.height / 4;
+            this.cameraX = this.width / 2 - this.viewWidth / 2;
+            this.cameraY = this.height / 2 - this.viewHeight / 2;
         }
         this.running = true;
         this.run();

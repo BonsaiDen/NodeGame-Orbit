@@ -208,7 +208,7 @@ Game.prototype.inputMove = function(ox, oy) {
 };
 
 Game.prototype.inputDown = function(e) {
-    if (this.inputHover && !this.inputSend) {
+    if (this.inputHover && !this.inputSend && !this.mouseDrag) {
         if (e.button === 0) {
             if (this.player.selectPlanet) {
                 this.sendPath = [];
@@ -253,7 +253,9 @@ Game.prototype.inputClick = function(e) {
         this.player.selectCancel();
         this.drawBackground();
     
-    } else if (this.inputHover && e.button === 0 && this.player.selectPlanet) {
+    } else if (this.inputHover
+               && this.inputHover === this.player.selectPlanet && e.button === 0) {
+        
         this.player.selectAdd();
     }
     

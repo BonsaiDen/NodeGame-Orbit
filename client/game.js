@@ -19,6 +19,7 @@
   NodeGame: Orbit. If not, see <http://www.gnu.org/licenses/>.
   
 */
+var Orbit = null;
 
 function initGame() {
     Orbit = new Client(HOST, PORT);

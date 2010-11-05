@@ -26,7 +26,7 @@ var Ship = require('./ship').Ship;
 
 // Planets ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Planet(game, id, x, y, size, start, nodes) {
+function Planet(game, id, x, y, size, start, nodes, maxCount) {
     this.$ = game;
     this.id = id;
     this.player = this.$.neutralPlayer;
@@ -44,7 +44,7 @@ function Planet(game, id, x, y, size, start, nodes) {
     // Production
     this.rateStep = 0;
     this.rate = 100;
-    this.maxCount = Math.floor(this.size * 0.65);
+    this.maxCount = maxCount;
     this.nodes = nodes;
     
     this.initNeutral(true, true);
@@ -176,21 +176,35 @@ Planet.prototype.removePlayerShips = function(player) {
 };
 
 
-// Production Ticking ----------------------------------------------------------
+// Update Planets --------------------------------------------------------------
+// -----------------------------------------------------------------------------
 Planet.prototype.tick = function() {
-    if (this.player) {
-        this.rateStep++;
-        
-        var maxCount = this.player.id === 0 ? this.maxCount * 0.5 : this.maxCount;
-        if (this.rateStep > this.rate) {
-            if (this.player.shipCount < this.player.shipMaxCount) {
-                
-                if (this.getPlayerShipCount(this.player) < maxCount) {
-                    this.createShip('fight', this.player, false);
-                }
+    
+    // Make sure other conquer the planet here too
+    if (this.getTick() % 2 === 0) {
+        this.checkPlayer();
+    }
+    
+    // Production
+    this.rateStep++;
+    var maxCount = this.player.id === 0 ? this.maxCount * 0.5 : this.maxCount;
+    var maxRate = [1, 0.80, 0.90, 1.0, 1.2, 1.5, 1.75, 2.25, 2.75];
+    var rate = this.rate;
+    if (this.player.planetCount < maxRate.length) {
+        rate *= maxRate[this.player.planetCount];
+    
+    } else {
+        rate *= 3;
+    }
+    
+    if (this.rateStep > rate) {
+        if (this.player.shipCount < this.player.shipMaxCount) {
+            
+            if (this.getPlayerShipCount(this.player) < maxCount) {
+                this.createShip('fight', this.player, false);
             }
-            this.rateStep = 0;
         }
+        this.rateStep = 0;
     }
 };
 
