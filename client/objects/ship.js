@@ -43,11 +43,13 @@ function Ship(game, id) {
     this.orbit = 0;
     
     this.inOrbit = false;
+    this.landing = false;
     this.traveling = false;
     this.nextPlanet = null;
     this.travelTicks = 0;
     this.travelDistance = 0;
     this.arriveTick = 0;
+    this.stopped = false;
     
     this.$.shipList.push(this);
 }
@@ -177,10 +179,10 @@ Ship.prototype.calculatePosition = function() {
     // Bezier curve thingy between planets
     this.rs = this.getRotationSpeed();
     var a = this.getPointInOrbit(this.planet, this.or, 0);
-    var b = this.getPointInOrbit(this.planet, this.travelAngle, 0.5);
+    var b = this.getPointInOrbit(this.planet, this.travelAngle, 2);
     
-    var c = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180) % 360, 0.5);
-    var d = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180 + this.rs * 15 * this.direction) % 360, 0);
+    var c = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180) % 360, 2);
+    var d = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180 + this.rs * 20 * this.direction) % 360, 0);
     
     var step = 100 / this.travelTicks;
     var delta = 1 - step * ((this.arriveTick - this.getTick()) / 100);
@@ -236,6 +238,20 @@ Ship.prototype.bezier = function(dest, a, b, c, d, delta) {
     linp(dest, abbc, bccd, delta);
 };
 
+Ship.prototype.bezierDistance = function(a, b, c, d) {
+    var o = {x: 0, y: 0};
+    this.bezier(o, a, b, c, d, 0);
+    var e = {x: 0, y: 0};
+    var l = 0;
+    for(var i = 0.05; i < 1; i += 0.05) {
+        this.bezier(e, a, b, c, d, i);
+        var dx = o.x - e.x, dy = o.y - e.y;
+        l += Math.sqrt(dx * dx + dy * dy);
+        o.x = e.x, o.y = e.y;
+    }
+    return l;
+};
+
 
 // Newtwork --------------------------------------------------------------------
 Ship.prototype.initTravel = function(tick, or, pid, arrive, travel) {
@@ -252,11 +268,11 @@ Ship.prototype.initTravel = function(tick, or, pid, arrive, travel) {
     this.travelAngle = Math.round(this.$.coreAngle(this.planet, this.nextPlanet));
 };
 
-Ship.prototype.finishTravel = function(tick, or, pid) {
+Ship.prototype.finishTravel = function(or, pid) {
     this.planet = this.$.planets[pid];
     this.planet.addShip(this);
     this.r = this.or = or;
-    this.tickOffset = tick;
+    this.tickOffset = Math.floor(this.$.tickCount);
     if (!this.next) {
         this.nextPlanet = null;
     }
@@ -265,9 +281,11 @@ Ship.prototype.finishTravel = function(tick, or, pid) {
 Ship.prototype.update = function(d) {
     this.traveling = !!(d[0] & 2);
     this.inOrbit = !!(d[0] & 4);
+    this.landing = !!(d[0] & 8);
     this.next = !!(d[0] & 16);
     this.traveled = !!(d[0] & 32);
     this.direction = (d[0] & 64) ? 1 : -1;
+    this.stopped = !!(d[0] & 128);
         
     // Create
     if (d[0] & 1) {
@@ -298,16 +316,20 @@ Ship.prototype.update = function(d) {
             
             // Has just finished arrived
             if (this.traveled) {
-                this.finishTravel(d[3], d[4], d[5]);
+                this.finishTravel(d[3], d[4]);
             }
         
         // Start Travel
         } else if (this.next && this.traveling) {
             this.initTravel(d[2], d[3], d[4], d[5], d[6]);
         
+        // Stop
+        } else if (this.stopped) {
+            this.nextPlanet = null;
+        
         // Finish travel
         } else {
-            this.finishTravel(d[2], d[3], d[4]);
+            this.finishTravel(d[2], d[3]);
         }
     }
 };

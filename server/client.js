@@ -57,7 +57,7 @@ Client.prototype.onMessage = function(msg) {
     if (msg.send && this.validateMessage(msg.send, MSG_SEND)) {
         this.$.onMessage('send', msg.send, this);
     
-    } else if (msg.stop && this.validateMessage(msg.stop, MST_STOP)) {
+    } else if (msg.stop && this.validateMessage(msg.stop, MSG_STOP)) {
         this.$.onMessage('stop', msg.stop, this);
     }
 };

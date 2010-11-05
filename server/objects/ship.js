@@ -54,6 +54,7 @@ function Ship(game, type, planet, player, r, orbit) {
     this.travelTicks = 0;
     this.arriveTick = 0;
     
+    this.stopped = false;
     this.updated = false;
     this.attacked = false;
 }
@@ -106,6 +107,7 @@ Ship.prototype.send = function(target) {
 Ship.prototype.stop = function() {
     if (this.nextPlanet && !this.traveling) {
         this.nextPlanet = this.targetPlanet = null;
+        this.stopped = true;
         this.updated = true;
     }
 };
@@ -138,7 +140,7 @@ Ship.prototype.tick = function() {
     if (this.inOrbit && this.nextPlanet !== null && !this.traveling) {
         var diff = this.$.coreDifference(this.r, this.travelAngle);
         if ((this.direction === 1 && diff > 0) || (this.direction === -1 && diff < 0)) {
-            if (Math.abs(diff) < this.rs * 20 && Math.abs(diff) > this.rs * 10
+            if (Math.abs(diff) < this.rs * 20 && Math.abs(diff) > this.rs * 15
                 && this.nextPlanet.getPlayerShipCount(this.player) < this.nextPlanet.maxCount) {
                 
                 this.startTravel();
@@ -156,7 +158,16 @@ Ship.prototype.startTravel = function() {
     this.updated = true;
     this.or = this.r;
     this.tickOffset = this.getTick();
-    this.travelTicks = Math.ceil(this.$.coreOrbit(this, this.planet, this.nextPlanet));
+    
+    // Bezier Curve length
+    var a = this.getPointInOrbit(this.planet, this.or, 0);
+    var b = this.getPointInOrbit(this.planet, this.travelAngle, 2);
+    var c = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180) % 360, 2);
+    var d = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180 + this.rs * 20 * this.direction) % 360, 0);
+    
+    // Calculate travel time based on average planet speed and bezier length
+    var os = this.getNextRotationSpeed();
+    this.travelTicks = Math.ceil(this.bezierDistance(a, b, c, d) / ((this.rs + os) * 0.5));
     this.planet.removeShip(this);
     
     // Calculate best direction on the next planet
@@ -181,7 +192,7 @@ Ship.prototype.finishTravel = function() {
     this.traveled = true;
     this.tickOffset = this.getTick();
     
-    var r = this.travelAngle + 180 + (this.rs * 15 * this.direction);
+    var r = this.travelAngle + 180 + (this.rs * 20 * this.direction);
     this.r = this.or = this.wrapAngle(r);
     this.planet = this.nextPlanet;
     this.planet.checkAddShip(this);
@@ -210,6 +221,12 @@ Ship.prototype.getRotationSpeed = function() {
     
 };
 
+Ship.prototype.getNextRotationSpeed = function() {
+    return Math.round(Math.PI / this.nextPlanet.size
+                      * this.$.shipSpeeds[this.type] * 100) / 100;
+    
+};
+
 Ship.prototype.wrapAngle = function(r) {
     r = (r + 360) % 360;
     if (r < 0) {
@@ -217,6 +234,47 @@ Ship.prototype.wrapAngle = function(r) {
     }
     return r;
 };
+
+Ship.prototype.getPointInOrbit = function(planet, r, e) {
+    var orbit = Math.max(this.orbit, 3) + planet.size + e;
+    r = r * Math.PI / 180;
+    return {x: planet.x + Math.cos(r) * orbit,
+            y: planet.y + Math.sin(r) * orbit};
+    
+};
+
+
+// Bezier Helpers --------------------------------------------------------------
+function linp(d, a, b, t) {
+    d.x = a.x + (b.x - a.x) * t;
+    d.y = a.y + (b.y - a.y) * t;
+}
+
+Ship.prototype.bezier = function(dest, a, b, c, d, delta) {
+    var ab = {x:0, y: 0}, bc = {x:0, y: 0}, cd = {x:0, y: 0};
+    var abbc = {x:0, y: 0}, bccd = {x:0, y: 0};
+    linp(ab, a, b, delta);
+    linp(bc, b, c, delta);
+    linp(cd, c, d, delta);
+    linp(abbc, ab, bc, delta);
+    linp(bccd, bc, cd, delta);
+    linp(dest, abbc, bccd, delta);
+};
+
+Ship.prototype.bezierDistance = function(a, b, c, d) {
+    var o = {x: 0, y: 0};
+    this.bezier(o, a, b, c, d, 0);
+    var e = {x: 0, y: 0};
+    var l = 0;
+    for(var i = 0.05; i < 1; i += 0.05) {
+        this.bezier(e, a, b, c, d, i);
+        var dx = o.x - e.x, dy = o.y - e.y;
+        l += Math.sqrt(dx * dx + dy * dy);
+        o.x = e.x, o.y = e.y;
+    }
+    return l;
+};
+
 
 // Network ---------------------------------------------------------------------
 Ship.prototype.toMessage = function(create) {
@@ -230,6 +288,7 @@ Ship.prototype.toMessage = function(create) {
     flags += this.nextPlanet ? 16 : 0;
     flags += this.traveled ? 32 : 0;
     flags += this.direction === 1 ? 64 : 0;
+    flags += this.stopped ? 128 : 0;
     
     // Basic fields
     msg.push(flags);
@@ -263,7 +322,6 @@ Ship.prototype.toMessage = function(create) {
             
             // Ship has just arrived
             if (this.traveled) {
-                msg.push(this.tickOffset);
                 msg.push(this.or);
                 msg.push(this.planet.id);
             }
@@ -277,8 +335,7 @@ Ship.prototype.toMessage = function(create) {
             msg.push(this.travelTicks);
         
         // Ship finishes travel
-        } else {
-            msg.push(this.tickOffset);
+        } else if (!this.stopped) {
             msg.push(this.or);
             msg.push(this.planet.id);
         }

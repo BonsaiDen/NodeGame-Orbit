@@ -264,7 +264,7 @@ Planet.prototype.send = function(player, target, type, amount) {
             && ship.targetPlanet === null && ship.inOrbit) {
             
             var diff = this.$.coreDifference(ship.r, travelAngle);
-            if (Math.abs(diff) > ship.rs * 10) {
+            if (Math.abs(diff) >= ship.rs * 15) {
                 
                 ship.send(target);
                 amount--;
@@ -275,8 +275,7 @@ Planet.prototype.send = function(player, target, type, amount) {
     // If we still need more, then get some of the others
     for(var i = 0; i < ships.length; i++) {
         var ship = ships[i];
-        if (amount > 0 && !ship.traveling
-            && (ship.targetPlanet !== null || !ship.inOrbit)) {
+        if (amount > 0 && !ship.traveling && !ship.nextPlanet) {
             
             ship.send(target);
             amount--;

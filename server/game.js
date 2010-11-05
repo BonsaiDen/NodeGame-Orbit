@@ -331,6 +331,7 @@ Game.prototype.updateAllShips = function() {
     // Remove destroyed ships
     for(var i = 0, l = this.ships.length; i < l; i++) {
         this.ships[i].updated = false;
+        this.ships[i].stopped = false;
         if (this.ships[i].health === 0) {
             this.ships.splice(i, 1);
             l--;
