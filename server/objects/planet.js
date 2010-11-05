@@ -64,11 +64,11 @@ Planet.prototype.initPlayer = function(player, start) {
     }
     this.player = player;
     this.rateStep = 0;
-    this.rate = Math.floor((this.start ? 4000 : 9000) / this.size * 0.5);
+    this.rate = Math.floor((this.start ? 400 : 9000) / this.size * 0.5);
     
     if (start) {
         this.removeNeutral();
-        this.createShips('fight', this.player, 3, false);
+        this.createShips('fight', this.player, 1, false);
     }
 };
 
@@ -125,10 +125,12 @@ Planet.prototype.removeShips = function(player) {
     var ships = this.ships[player.id];
     for(var t in ships) {
         for(var i = 0; i < ships[t].length; i++) {
-            ships[t][i].destroy();
-            i--;
+            ships[t][i].destroy(true);
+            this.shipCount--;
         }
+        ships[t] = [];
     }
+    this.checkPlayer();
 };
 
 

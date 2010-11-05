@@ -91,7 +91,12 @@ Ship.prototype.tick = function() {
 // Drawing ---------------------------------------------------------------------
 Ship.prototype.clear = function(sx, sy) {
     if (this.$.shipVisbile(this, sx, sy)) {
-        this.$.fbg.clearRect(this.x - 3 - sx, this.y - 3 - sy, 6, 6);
+        if (this.type === 'fight') {
+            this.$.fbg.clearRect(this.x - 4 - sx, this.y - 4 - sy, 8, 8);
+        
+        } else if (this.type === 'def') {
+            this.$.fbg.clearRect(this.x - 3 - sx, this.y - 3 - sy, 6, 6);
+        }
     }
 };
 
@@ -108,7 +113,41 @@ Ship.prototype.draw = function(sx, sy) {
             this.$.drawColor(this.player.color);
         }
         
-        this.$.drawCircle(this.x, this.y, 1.5, true);
+        // Spawn Alpha
+        var orbitDiff = 1 / this.$.shipOrbits[this.type] * (this.$.shipOrbits[this.type] - this.orbit);    
+        this.$.drawAlpha(Math.max(1 - orbitDiff, 0));
+        
+        // Defender
+        if (this.type === 'def') {
+            this.$.drawCircle(this.x, this.y, 1.5, true);
+        
+        // Fighter
+        } else {
+            this.$.fbg.save();
+            this.$.fbg.translate(this.x, this.y);
+            if (!this.traveling) {
+                if (this.direction === 1) {
+                    this.$.fbg.rotate(this.r * Math.PI / 180 - (Math.PI / 4 * orbitDiff));
+                
+                } else {
+                    this.$.fbg.rotate(this.r * Math.PI / 180 - Math.PI + (Math.PI / 4 * orbitDiff));
+                }
+            
+            } else {
+                this.$.fbg.rotate(this.r * Math.PI / 180 + Math.PI / 2);
+            }
+            
+            this.$.fbg.beginPath();
+            this.$.fbg.moveTo(0, 2.5);
+            this.$.fbg.lineTo(-2, -2.5);
+            this.$.fbg.lineTo(2, -2.5);
+            this.$.fbg.lineTo(0, 2.5);
+            this.$.fbg.closePath();
+            this.$.fbg.fill();
+            this.$.fbg.restore();
+        }
+        
+        this.$.drawAlpha(1);
     }
 };
 
@@ -123,23 +162,62 @@ Ship.prototype.attack = function(other) {
 
 // Helpers ---------------------------------------------------------------------
 Ship.prototype.calculatePosition = function() {
-    var orbit = this.orbit + this.planet.size;
-    var r = this.r * Math.PI / 180;
-    this.x = this.planet.x + Math.cos(r) * orbit;
-    this.y = this.planet.y + Math.sin(r) * orbit;
-    
     if (this.traveling) {
+        this.rs = Math.round(Math.PI / this.planet.size * this.$.shipSpeeds[this.type] * 100) / 100;
+        var a = this.getPointInOrbit(this.planet, this.or, 0);
+        var b = this.getPointInOrbit(this.planet, this.travelAngle, 0);
+        
+        var c = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180) % 360, 0);
+        var d = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180 + this.rs * 15 * this.direction) % 360, 0);
+        
         var step = 100 / this.travelTicks;
         var delta = 1 - step * ((this.arriveTick - this.getTick()) / 100);
-        r = this.travelAngle * Math.PI / 180;
-        this.x += Math.cos(r) * this.travelDistance * delta;
-        this.y += Math.sin(r) * this.travelDistance * delta;
+        this.bezier(this, a, b, c, d, Math.min(delta, 0.99));
+        
+        var p = {x: 0, y: 0};
+        this.bezier(p, a, b, c, d, Math.min(delta + 0.01, 1));
+        
+        var dx = this.x - p.x, dy = this.y - p.y;
+        this.r = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
+        if (this.r < 0) {
+            this.r += 360;
+        }
+    
+    } else {
+        var orbit = Math.max(this.orbit, 3) + this.planet.size;
+        var r = this.r * Math.PI / 180;
+        this.x = this.planet.x + Math.cos(r) * orbit;
+        this.y = this.planet.y + Math.sin(r) * orbit;
     }
 };
 
+Ship.prototype.getPointInOrbit = function(planet, r, e) {
+    var orbit = Math.max(this.orbit, 3) + planet.size + e;
+    r = r * Math.PI / 180;
+    return {x: planet.x + Math.cos(r) * orbit,
+            y: planet.y + Math.sin(r) * orbit};
+    
+};
 
 Ship.prototype.getTick = function() {
     return this.$.getTick();
+};
+
+// Bezier Helpers --------------------------------------------------------------
+function linp(d, a, b, t) {
+    d.x = a.x + (b.x - a.x) * t;
+    d.y = a.y + (b.y - a.y) * t;
+}
+
+Ship.prototype.bezier = function(dest, a, b, c, d, delta) {
+    var ab = {x:0, y: 0}, bc = {x:0, y: 0}, cd = {x:0, y: 0};
+    var abbc = {x:0, y: 0}, bccd = {x:0, y: 0};
+    linp(ab, a, b, delta);
+    linp(bc, b, c, delta);
+    linp(cd, c, d, delta);
+    linp(abbc, ab, bc, delta);
+    linp(bccd, bc, cd, delta);
+    linp(dest, abbc, bccd, delta);
 };
 
 
@@ -156,13 +234,11 @@ Ship.prototype.initTravel = function(tick, or, pid, arrive, travel) {
     this.travelTicks = travel;
     this.travelDistance = this.$.coreOrbit(this, this.planet, this.nextPlanet);
     this.travelAngle = Math.round(this.$.coreAngle(this.planet, this.nextPlanet));
-    this.direction = 0;
 };
 
 Ship.prototype.finishTravel = function(tick, or, pid) {
     this.planet = this.$.planets[pid];
-    
-    this.planet.addShip(this); 
+    this.planet.addShip(this);
     this.r = this.or = or;
     this.tickOffset = tick;
     if (!this.next) {

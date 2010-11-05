@@ -48,6 +48,7 @@ Player.prototype.initInput = function() {
     this.resetSelectCount();
     this.selectPlanet = null;
     this.select = false;
+    this.selectType = '';
 };
 
 
@@ -75,7 +76,7 @@ Player.prototype.tick = function() {
             } else if (ticks > 200) {
                 add = 5;
             
-            } else if (ticks > 1) {
+            } else if (ticks > 0) {
                 add = 1;
             }
             this.addCount(type, add);
@@ -118,7 +119,7 @@ Player.prototype.send = function(target) {
 };
 
 Player.prototype.stop = function(planet) {
-    if (this.selectPlanet) {
+    if (this.selectPlanet === this.planet) {
         this.$.send({'stop': [planet.id, this.getSelectType()]});
     
     } else {
@@ -170,14 +171,17 @@ Player.prototype.getSelectType = function()  {
     var dx = this.$.worldX - this.selectPlanet.x;
     var dy = this.$.worldY - this.selectPlanet.y;
     var dr = Math.atan2(dy, dx);
+    
+    this.selectType = 'fight';
     for(var i = 0, l = this.$.shipTypes.length; i < l; i++) {
         var r = (0 - Math.PI / 2) + Math.PI * 2 / l * i;       
         var diff = Math.abs(Math.atan2(Math.sin(dr - r), Math.cos(dr - r)));
         if (diff <= Math.PI / 3) {
-            return this.$.shipTypes[i];
+            this.selectType = this.$.shipTypes[i];
+            break;
         }
     }
-    return 'fight';
+    return this.selectType;
 };
 
 Player.prototype.resetSelectCount = function() {

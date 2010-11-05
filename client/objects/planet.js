@@ -170,14 +170,14 @@ Planet.prototype.draw = function(sx, sy) {
     this.$.drawBack();
     this.$.drawWidth(5 * (ringScale * resScale));
     this.$.drawColor(this.player ? this.player.color : 0);
-    this.$.drawAlpha(selectShips ? 0.17 : 0.35);
-    this.$.drawCircle(this.x, this.y, this.size - 4 * (ringScale * resScale), false);
+    this.$.drawAlpha(selectShips ? 0.15 : 0.35);
+    this.$.drawCircle(this.x, this.y, this.size - 3 * (ringScale * resScale), false);
     this.$.drawWidth(7 * (ringScale * resScale));
-    this.$.drawAlpha(selectShips ? 0.10 : 0.20);
-    this.$.drawCircle(this.x, this.y, this.size - 10 * (ringScale * resScale), false);
+    this.$.drawAlpha(selectShips ? 0.075 : 0.20);
+    this.$.drawCircle(this.x, this.y, this.size - 9 * (ringScale * resScale), false);
     
     this.$.drawAlpha(1);
-    this.$.drawWidth(3 * ringScale);
+    this.$.drawWidth(2 * ringScale);
     this.$.drawColor(this.player ? this.player.color : 0);
     this.$.drawCircle(this.x, this.y, this.size - 1 * ringScale + 1, false);
     
@@ -192,30 +192,22 @@ Planet.prototype.draw = function(sx, sy) {
     // Select
     var size = (100 / 15) * this.size / 100;
     if (selectShips) {
-        size = size * 0.5;
         this.drawSelect();
         this.$.drawColor(this.$.player.color);
+        this.$.player.selectType;
         for(var i = 0, l = this.$.shipTypes.length; i < l; i++) {
             var type = this.$.shipTypes[i];
-            var r = (0 - Math.PI / 2) + Math.PI * 2 / l * i;
+            r = (0 - Math.PI / 2) + Math.PI * 2 / l * i;
             var x = this.x + Math.cos(r) * this.size * 0.5;
             var y = this.y + Math.sin(r) * this.size * 0.5;  
-            
-            this.$.drawText(x, y + 1 * size,
-                            this.$.player.selectCount[type], 'center', 'bottom',
-                            size);
-            
-            this.$.drawText(x, y + 1 * size,
-                            '_', 'center', 'bottom', size);
-            
-            this.$.drawText(x, y - 1 * size,
-                            this.ships[this.$.player.id][type].length,
-                            'center', 'top', size);         
+            this.$.drawText(x, y, this.$.player.selectCount[type] + '/'
+                            + this.ships[this.$.player.id][type].length,
+                            'center', 'middle', size * 0.6);      
             
         }
     
     // Info
-    } else if (this === this.$.inputHover || this === selected) {
+    } else if (this === this.$.inputHover || (this === selected && this.playerCount > 0)) {
         if (this.$.sendPath.length === 0) {
             this.drawSelect();
         }
@@ -259,6 +251,6 @@ Planet.prototype.draw = function(sx, sy) {
 
 Planet.prototype.drawSelect = function() {
     this.$.drawWidth(1);
-    this.$.drawCircle(this.x, this.y, this.size + 4, false);
+    this.$.drawCircle(this.x, this.y, this.size + 3.5, false);
 };
 

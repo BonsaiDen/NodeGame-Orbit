@@ -61,10 +61,12 @@ exports.Ship = Ship;
 
 
 // General ---------------------------------------------------------------------
-Ship.prototype.destroy = function() {
+Ship.prototype.destroy = function(keep) {
     this.player.shipCount--;
     this.health = 0;
-    this.planet.removeShip(this);
+    if (!keep) {
+        this.planet.removeShip(this);
+    }
 };
 
 Ship.prototype.attack = function(other) {
@@ -82,6 +84,10 @@ Ship.prototype.attack = function(other) {
 Ship.prototype.send = function(target) {
     this.movePlanets = this.$.corePath(this.planet, target, this.player);
     if (this.movePlanets.length > 0) {
+        if (!this.nextPlanet) {
+            this.traveled = false;
+        }
+        
         this.targetPlanet = this.movePlanets[this.movePlanets.length - 1];
         this.nextPlanet = this.movePlanets[0];
         this.travelAngle = Math.round(this.$.coreAngle(this.planet,
@@ -133,16 +139,27 @@ Ship.prototype.tick = function() {
     
     // Start Traveling
     if (this.inOrbit && this.nextPlanet !== null && !this.traveling) {
-        if (Math.abs(this.$.coreDifference(this.r, this.travelAngle)) < this.rs * 0.75) {
-            if (this.nextPlanet.getPlayerShipCount(this.player) < this.nextPlanet.maxCount) {
-                this.updated = true;
-                this.r = this.or = this.travelAngle;
-                this.tickOffset = this.getTick();
-                this.travelTicks = Math.ceil(this.$.coreOrbit(this, this.planet,
-                                                              this.nextPlanet));
+        var diff = this.$.coreDifference(this.r, this.travelAngle);
+        if ((this.direction === 1 && diff > 0) || (this.direction === -1 && diff < 0)) {
+            if (Math.abs(diff) < this.rs * 20 && Math.abs(diff) > this.rs * 10
+                && this.nextPlanet.getPlayerShipCount(this.player) < this.nextPlanet.maxCount) {
                 
+                this.updated = true;
+                this.r = this.or = this.r;
+                this.tickOffset = this.getTick();
+                this.travelTicks = Math.ceil(this.$.coreOrbit(this, this.planet, this.nextPlanet));
                 this.planet.removeShip(this);
-                this.direction = this.nextPlanet.getPreferedDirection(this.player, this.type);
+                
+                // Calculate best direction on the next planet
+                if (this.movePlanets.length > 1) {
+                    var travelAngle = Math.round(this.$.coreAngle(this.nextPlanet, this.movePlanets[1]));  
+                    var dr = this.$.coreDifference((this.traveAngle + 180) % 360, travelAngle);
+                    this.direction = dr >= 0 ? 1 : -1;
+                
+                } else {
+                    this.direction = this.nextPlanet.getPreferedDirection(this.player, this.type);
+                }
+                
                 this.nextPlanet.addShip(this);
                 this.arriveTick = this.getTick() + this.travelTicks;
                 this.traveling = true;
@@ -157,7 +174,10 @@ Ship.prototype.tick = function() {
         this.traveling = false;
         this.traveled = true;
         this.tickOffset = this.getTick();
-        this.r = this.or = (this.r + 180) % 360;
+        this.r = this.or = (this.travelAngle + 180 + (this.rs * 15 * this.direction)) % 360;
+        if (this.r < 0) {
+            this.r += 360;
+        }
         this.planet = this.nextPlanet;
         
         if (this.nextPlanet === this.targetPlanet) {
