@@ -83,13 +83,13 @@ Planet.prototype.initPlayer = function(player, start, factories) {
 
 Planet.prototype.initNeutral = function(ships, orbit, factories) {
     this.player = this.$.neutralPlayer;  
-    this.neutralTick = Math.floor(this.getTick() + 300 + (400 * Math.random()));
+    this.neutralTick = Math.floor(this.getTick() + 300 + (600 * Math.random()));
     if (factories) {
         var count = Math.max(1, Math.floor(this.maxFactories / 3));
         for(var i = 0; i < count; i++) {
             this.createFactory(this.player, -1, 'fight', true);
         }
-        this.spawnShipCount = Math.floor(this.maxCount / 6);
+        this.spawnShipCount = Math.floor(this.maxCount / 8);
     }
 };
 
@@ -121,14 +121,14 @@ Planet.prototype.checkPlayer = function() {
         
         if (master) {
             this.initPlayer(master, false, false);
+            for(var i in this.factories) {
+                if (this.factories[i].player !== master) {
+                    this.factories[i].destroy();
+                }
+            }
         
         } else {
             this.initNeutral();
-        }
-        for(var i in this.factories) {
-            if (this.factories[i].player !== this.player) {
-                this.factories[i].destroy();
-            }
         }
         this.$.updatePlanets(this);
     }
@@ -249,8 +249,8 @@ Planet.prototype.removePlayerShips = function(player) {
 // Update Planets --------------------------------------------------------------
 // -----------------------------------------------------------------------------
 Planet.prototype.tick = function() {
-    var maxRate = [1, 0.70, 0.90, 1.0, 1.2, 1.4, 1.6, 1.7, 1.9];
-    var rate = 2;
+    var maxRate = [1, 0.50, 0.90, 1.0, 1.2, 1.4, 1.6, 1.7, 2];
+    var rate = 2.1;
     if (this.player.planetCount < maxRate.length && this.player.id !== 0) {
         rate = maxRate[this.player.planetCount];
     }
@@ -261,7 +261,7 @@ Planet.prototype.tick = function() {
     
     // neutral AI
     if (this.player === this.$.neutralPlayer
-        && this.getTick() % 30 === 0 && Math.random() > 0.7) {
+        && this.getTick() % 45 === 0 && Math.random() > 0.7) {
         
         this.tickAI();
     }
@@ -285,7 +285,7 @@ Planet.prototype.tickAI = function() {
                     var type = this.$.shipTypes[e];
                     if (p.getShipReadyCount(this.player, type) > 2) { 
                         p.send(this.player, this, type, 1 + Math.floor(Math.random() * 2), true);
-                        console.log('Send help');
+                    //    console.log('Send help');
                     }
                 }
             
@@ -337,8 +337,8 @@ Planet.prototype.tickAI = function() {
         } else {
             var send = Math.floor(this.maxCount / 3);
             if (neutralCount >= send * 1.5 && p.getHumanShips() < send * 2) {
-                console.log('send attack');
-                this.send(this.player, p, 'fight', send, true);
+           //     console.log('send attack');
+                this.send(this.player, p, 'fight', send, false);
             }
         }
     }
@@ -452,7 +452,7 @@ Planet.prototype.stop = function(player, type, to) {
     if (to) {
         for(var i = 0, l = this.$.ships.length; i < l; i++) {
             var ship = this.$.ships[i];
-            if (ship.nextPlanet === this || ship.targetPlanet === this) {
+            if (ship.targetPlanet === this) {
                 ship.stop();
             }
         }
