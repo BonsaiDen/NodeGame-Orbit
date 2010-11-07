@@ -132,6 +132,16 @@ Player.prototype.stop = function(planet) {
     }
 };
 
+Player.prototype.build = function(planet, type) {
+    if (planet.player === this || this.selectPlanet.player.id === 0) {
+        if (planet.factoryCompleteCount === 0 || planet.player === this) {
+            if (planet.factoryCount < planet.maxFactories) {
+                this.$.send({'build': [planet.id, type]});
+            }
+        }
+    }
+};
+
 
 // Control ---------------------------------------------------------------------
 Player.prototype.selectStart = function(planet) {

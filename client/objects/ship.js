@@ -60,7 +60,7 @@ Ship.prototype.destroy = function() {
     var index = this.$.shipList.indexOf(this);
     if (index !== -1) {
         this.player.shipCount--;
-        if (this.landing && this.orbit <= 0) {
+        if (this.landing && this.orbit <= 1) {
        //    this.$.effectExplosion(this.player.color, this.planet,
        //                            0, this.landFactory.r, 0, 3);
             
@@ -92,7 +92,7 @@ Ship.prototype.tick = function() {
             if (this.landing) {
                 this.r = this.wrapAngle(this.or + this.direction * this.rs * tickDiff);
                 var l = 1 / (this.landingTick - this.tickOffset) * Math.max(this.landingTick - this.getTick(), 0);
-                this.orbit = this.$.shipOrbits[this.type] * (l * 1.25 - 0.25);
+                this.orbit = this.$.shipOrbits[this.type] * l;
             
             } else {
                 this.r = this.wrapAngle(this.or + this.direction * this.rs
@@ -207,30 +207,40 @@ Ship.prototype.draw = function(sx, sy) {
 };
 
 Ship.prototype.attackFactory = function(factory) {
-    if (!this.attacked && (this.type === 'fight' || this.type === 'bomb')) {
+    if (!this.attacked) {
         this.attacked = true;
-        this.$.effectExplosion(this.player.color, this.planet, 3, factory.r, 0, 6);
+       // if (this.type === 'bomb') {
+         //   this.$.effectExplosion(this.player.color, this.planet, 3, factory.r, 0, 6);
+        
+       //} else {
+            this.$.effectExplosion(this.player.color, this.planet, 3, factory.r, 0, 5);
+      //  }
     }
 };
 
 Ship.prototype.attack = function(other) {
     if (!this.attacked) {
         var attack = false;
-        if (this.type === 'fight') {
-            attack = other.type === 'bomb';
+//        if (this.type === 'fight') {
+//            attack = other.type === 'bomb';
+//        
+//        } else if (this.type === 'bomb') {
+//            attack = other.type === 'def';
+//        
+//        } else if (this.type === 'def') {
+//            attack = other.type === 'fight';
+//        }
+//        
+//        if (attack) {
+//            this.attacked = true;
+//            this.$.effectExplosion(this.player.color, this.planet,
+//                                   other.orbit, other.r, other.rs, 4);
         
-        } else if (this.type === 'bomb') {
-            attack = other.type === 'def';
-        
-        } else if (this.type === 'def') {
-            attack = other.type === 'fight';
-        }
-        
-        if (attack) {
+//        } else if (this.type === other.type) {
             this.attacked = true;
             this.$.effectExplosion(this.player.color, this.planet,
                                    other.orbit, other.r, other.rs, 4);
-        }
+//        }
     }
 };
 

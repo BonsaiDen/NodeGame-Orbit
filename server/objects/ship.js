@@ -41,7 +41,7 @@ function Ship(game, type, planet, player, r, orbit) {
     
     this.inOrbit = orbit;
     this.planet = planet;
-    this.direction = this.planet.getPreferedDirection(player, this.type);
+    this.direction = this.planet.getPreferedDirection(player, this.type, this.r);
     this.planet.addShip(this);
     
     this.targetPlanet = null;
@@ -76,9 +76,7 @@ Ship.prototype.destroy = function(keep) {
 };
 
 Ship.prototype.attackFactory = function(factory) {
-    if (!this.attacked
-        && (this.type === 'fight' || this.type === 'bomb')
-        && factory.health > 0) {
+    if (!this.attacked && factory.health > 0) {
         
         this.attacked = true;
         factory.health -= this.$.shipFactoryDamage[this.type];
@@ -107,6 +105,13 @@ Ship.prototype.attack = function(other) {
             if (other.health <= 0) {
                 other.destroy();
             }
+        
+        } else if (this.type === other.type) {
+            this.attacked = true;
+            other.health -= this.$.shipSelfDamage[this.type];
+            if (other.health <= 0) {
+                other.destroy();
+            }  
         }
     }
 };
@@ -172,7 +177,6 @@ Ship.prototype.tick = function() {
                 var l = 1 / (this.landingTick - this.tickOffset) * Math.max(this.landingTick - this.getTick(), 0);
                 this.orbit = this.$.shipOrbits[this.type] * l;
                 if (this.orbit <= 0) {
-                
                     if (this.landFactory.health <= 0 || this.landFactory.build) {
                         this.landFactory = null;
                         this.tickOffset = this.getTick();
@@ -218,14 +222,17 @@ Ship.prototype.tick = function() {
     
     // Start landing
     if (this.landFactory) {
-        if (!this.landing) {
+        if (!this.landing && this.landFactory.build) {
+            this.landFactory = null;
+        
+        } else if (!this.landing) {
             var diff = this.$.coreDifference(this.r, this.landFactory.r);
             if ((this.direction === 1 && diff > 0) || (this.direction === -1 && diff < 0)) {
                 var diff = Math.abs(diff);
-                if (diff > 15 && diff < 25) {
+                if (diff > 15 && diff <= 30) {
                     this.inOrbit = false;
                     this.landing = true;
-                    this.landingTick = this.getTick() + Math.floor((diff + 8) / this.rs);
+                    this.landingTick = this.getTick() + Math.floor(diff / this.rs);
                     this.tickOffset = this.getTick();
                     this.or = this.r;
                     this.updated = true;
@@ -263,7 +270,7 @@ Ship.prototype.startTravel = function() {
         this.direction = this.$.coreDifference(r, travelAngle) >= 0 ? 1 : -1;
     
     } else {
-        this.direction = this.nextPlanet.getPreferedDirection(this.player, this.type);
+        this.direction = this.nextPlanet.getPreferedDirection(this.player, this.type, (this.travelAngle + 180) % 360);
     }
     
     this.nextPlanet.addShip(this);

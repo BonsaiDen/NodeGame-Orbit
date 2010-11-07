@@ -23,6 +23,7 @@
 
 var MSG_SEND = ['number', 'number', 'string', 'number'];
 var MSG_STOP = ['number', 'string', 'boolean'];
+var MSG_BUILD = ['number', 'string'];
 
 
 // Clients ---------------------------------------------------------------------
@@ -59,6 +60,9 @@ Client.prototype.onMessage = function(msg) {
     
     } else if (msg.stop && this.validateMessage(msg.stop, MSG_STOP)) {
         this.$.onMessage('stop', msg.stop, this);
+    
+    } else if (msg.build && this.validateMessage(msg.build, MSG_BUILD)) {
+        this.$.onMessage('build', msg.build, this);
     }
 };
 

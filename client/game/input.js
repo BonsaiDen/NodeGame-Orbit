@@ -143,6 +143,19 @@ Game.prototype.inputKeyboard = function() {
     this.cameraY = Math.min(this.cameraY, this.height - this.viewHeight);
     this.cameraY = Math.max(this.cameraY, 0);
     
+    // Build?
+    if (this.player.selectPlanet) {
+        if (this.keys[49] === 2) {
+            this.player.build(this.player.selectPlanet, 'fight');
+        
+        } else if (this.keys[50] === 2) {
+            this.player.build(this.player.selectPlanet, 'def');
+        
+        } else if (this.keys[51] === 2) {
+            this.player.build(this.player.selectPlanet, 'bomb');
+        }
+    }
+    
     // Reset Key States
     for(var i in this.keys) {
         if (this.keys[i] === 2) {

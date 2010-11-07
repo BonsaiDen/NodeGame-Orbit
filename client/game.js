@@ -22,13 +22,14 @@
 var Orbit = null;
 
 function initGame() {
-    Orbit = new Client(HOST, PORT);
+    new Client(HOST, PORT);
 }
 
 
 // Game ------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 function Game(client) {
+    Orbit = this;
     this.$$ = client;
     this.coreInit();
 }

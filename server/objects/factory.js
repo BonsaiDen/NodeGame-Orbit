@@ -33,15 +33,18 @@ function Factory(planet, r, player, type, complete) {
     
     this.updated = false;
     this.r = r;
-    this.health = 50;
+    this.health = 100;
     this.type = type;
-    this.shipsNeeded = 5;
+    this.shipsNeeded = 10;
     this.shipsTaken = complete ? this.shipsNeeded : 0;
     this.build = complete;
     
     this.rateStep = 0;
-    this.rate = this.player === this.$.neutralPlayer ? 400 : 50;
+    this.rate = 140;
     
+    if (complete) {
+        this.planet.factoryCompleteCount++;
+    }
     this.planet.factoryCount++;
     planet.factoryID++;
 }
@@ -51,19 +54,23 @@ exports.Factory = Factory;
 // Stuff -----------------------------------------------------------------------
 Factory.prototype.produce = function(modifier) {
     if (!this.build) {
-        if (this.getTick() % 10 === 0) {
+        if (this.getTick() % 4 === 0) {
             this.callShip();
         }
     
     } else {
         var maxCount = this.player.id === 0 ? this.planet.maxCount * 0.5 : this.planet.maxCount; 
         this.rateStep++;
+        
         if (this.player.shipCount < this.player.shipMaxCount) {
             if (this.planet.getPlayerShipCount(this.player) < maxCount) {
-                var rate = this.planet.spawnShipCount > 0 ? 20 : this.rate * modifier;
-                if (this.rateStep >= Math.floor(rate)) {
-                    this.planet.createShip(this.type, this.player, this.r, false);
-                    this.rateStep = 0;
+                var typeCount = (maxCount / this.planet.factoryCount) * this.planet.getPlayerFactoryTypeCount(this.player, this.type);
+                if (this.planet.getPlayerTypeShipCount(this.player, this.type) < typeCount) {
+                    var rate = this.planet.spawnShipCount > 0 ? 20 : this.rate * modifier;
+                    if (this.rateStep >= Math.floor(rate)) {
+                        this.planet.createShip(this.type, this.player, this.r, false);
+                        this.rateStep = 0;
+                    }
                 }
             }
         }
@@ -76,6 +83,9 @@ Factory.prototype.addShip = function(ship) {
     
     if (this.shipsTaken === this.shipsNeeded) {
         this.build = true;
+        this.health = 100;
+        this.rateStep = 0;
+        this.planet.factoryCompleteCount++;
         this.planet.checkPlayer();
     }
     this.updated = true;
@@ -93,6 +103,7 @@ Factory.prototype.callShip = function() {
     
     var get = needed - calling;
     if (get > 0) {
+        
         ships.sort(function(a, b) {
             var ra = a.direction === 1 ? ((a.r + a.rs) - this.r + 360) % 360
                                        : (this.r - (a.r - a.rs) + 360) % 360;
@@ -102,13 +113,17 @@ Factory.prototype.callShip = function() {
             
             return rb - ra;
         });
+        
         for(var i = 0, l = ships.length; i < l; i++) {
-            var diff = this.$.coreDifference(this.r, ships[i].r);
-            if (Math.abs(diff) < 90 / this.planet.maxFactories) {
-                if (ships[i].land(this)) {
-                    get--;
-                    if (get === 0) {
-                        break;
+            var ship = ships[i];
+            var diff = this.$.coreDifference(ship.r, this.r);
+            if ((ship.direction === 1 && diff > 0) || (ship.direction === -1 && diff < 0)) {
+                if (Math.abs(diff) > 15 && Math.abs(diff) <= 30) {
+                    if (ship.land(this)) {
+                        get--;
+                        if (get === 0) {
+                            break;
+                        }
                     }
                 }
             }
@@ -116,12 +131,18 @@ Factory.prototype.callShip = function() {
     }
 };
 
-Factory.prototype.destroy = function() {
+Factory.prototype.destroy = function(noCheck) {
     if (this.planet.factories[this.id]) {
+        this.health = 0;
         this.planet.factoryCount--;
+        if (this.build) {
+            this.planet.factoryCompleteCount--;
+        }
         this.planet.factoriesDestroyed.push(this.id);
-        this.planet.checkPlayer();
         delete this.planet.factories[this.id];
+        if (!noCheck) {
+            this.planet.checkPlayer();
+        }
     }
 };
 

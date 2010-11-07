@@ -151,13 +151,19 @@ Game.prototype.onMessage = function(type, data, client) {
             var from = this.planets[data[0]];
             var to = this.planets[data[1]];
             if (from && to && this.shipTypes.indexOf(data[2]) !== -1) {
-                from.send(player, to, data[2], data[3]);
+                from.send(player, to, data[2], data[3], false);
             }
         
         } else if (type === 'stop') {
             var at = this.planets[data[0]];
             if (at && this.shipTypes.indexOf(data[1]) !== -1) {
                 at.stop(player, data[1], data[2]);
+            }
+        
+        } else if (type === 'build') {
+            var at = this.planets[data[0]];
+            if (at && this.factoryTypes.indexOf(data[1]) !== -1) {
+                at.buildFactory(player, data[1]);
             }
         }
     }
@@ -437,24 +443,24 @@ Game.prototype.updateShips = function(client) {
 Game.prototype.loadMap = function() { 
     var planets = [
         // Top Left
-        [1,  64,  56, 22, [2], 15, 3],
-        [2, 176, 128, 50, [11,  9, 1], 25, 5],
+        [1,  64,  56, 22, [2], 15, 4],
+        [2, 176, 128, 50, [11,  9, 1], 25, 6],
         
         // Top Right
-        [3, 576,  56, 22, [4], 15, 3],
-        [4, 464, 128, 50, [12,  9, 3], 25, 5],  
+        [3, 576,  56, 22, [4], 15, 4],
+        [4, 464, 128, 50, [12,  9, 3], 25, 6],  
         
         // Bottom Right
-        [5, 576, 424, 22, [6], 15, 3],
-        [6, 464, 352, 50, [12, 10, 5], 25, 5],
+        [5, 576, 424, 22, [6], 15, 4],
+        [6, 464, 352, 50, [12, 10, 5], 25, 6],
         
         // Bottom Left
-        [7, 64,  424, 22, [8], 15, 3],
-        [8, 176, 352, 50, [11, 10, 7], 25, 5],
+        [7, 64,  424, 22, [8], 15, 4],
+        [8, 176, 352, 50, [11, 10, 7], 25, 6],
         
         // Center
-        [9,  320, 56,  27, [2, 4], 15, 2],
-        [10, 320, 424, 27, [6, 8], 15, 2],
+        [9,  320, 56,  27, [2, 4], 15, 3],
+        [10, 320, 424, 27, [6, 8], 15, 3],
          
         // Sides
         [11,  96, 240, 21, [2, 8], 12, 2],
@@ -490,17 +496,18 @@ Game.prototype.coreInit = function() {
     // Ships
     this.shipID = 0;
     this.ships = [];
-    this.shipTypes = ['fight', 'bomb', 'def'];
+    this.shipTypes = ['fight'];//, 'bomb', 'def'];
     this.shipSpeeds = {def: 12.50, fight: 9.54, bomb: 6.50};
-    this.shipOrbits = {def: 11, fight: 16.5, bomb: 22};
-    this.shipToOrbitSpeed = {def: 0.15, fight: 0.5, bomb: 0.25};
+    this.shipOrbits = {def: 11, fight: 15, bomb: 22};
+    this.shipToOrbitSpeed = {def: 0.5, fight: 0.5, bomb: 0.5};
     
-    this.shipHealth = {def: 10, fight: 15, bomb: 20};
-    this.shipDamage = {def: 5, fight: 5, bomb: 5};
-    this.shipFactoryDamage = {def: 0, fight: 2, bomb: 10};
+    this.shipHealth = {def: 50, fight: 20, bomb: 50};
+    this.shipDamage = {def: 25, fight: 5, bomb: 25};
+    this.shipFactoryDamage = {def: 1, fight: 5, bomb: 15};
+    this.shipSelfDamage = {def: 5, fight: 5, bomb: 5};
     
     // Factories
-    this.factoryTypes = ['fight', 'bomb', 'def'];
+    this.factoryTypes = ['fight'];//, 'bomb', 'def'];
     
     // Planets
     this.startPlanets = [];
