@@ -175,7 +175,7 @@ Game.prototype.netMessage = function(msg) {
 Game.prototype.netPlanetsInit = function(data) {
     for(var i = 0; i < data.length; i++) {
         var d = data[i];
-        var p = new Planet(this, d[0], d[1], d[2], d[3], this.players[d[4]], d[5], d[6]);
+        var p = new Planet(this, d[0], d[1], d[2], d[3], this.players[d[4]], d[5], d[6], d[7]);
         this.planets[d[0]] = p;
         this.planetList.push(p);
         
@@ -203,11 +203,13 @@ Game.prototype.netFactoriesUpdate = function(data) {
     for(var i = 0; i < data.length; i++) {
         var d = data[i];
         var p = this.planets[d[0]];
-        var factory = p[d[1]];
+        var factory = p.factories[d[1]];
         if (!factory) {
             factory = new Factory(this, p, d[1], d[2], this.players[d[3]],
                                   d[4], d[5], d[6]);
-            
+        
+        } else {
+            factory.update(d[2]);
         }
     }
     this.updateBackground = true;

@@ -38,10 +38,16 @@ function Factory(game, planet, id, r, player, type, taken, needed) {
     this.rateStep = 0;
     this.rate = this.player === this.$.neutralPlayer ? 400 : 200;    
     this.planet.factoryCount++;
+    this.updated = false;
 }
 
+Factory.prototype.update = function(taken) {
+    this.shipsTaken = taken;
+    this.$.drawBackground();
+};
+
 Factory.prototype.draw = function() {
-    var scale = ((100 / this.shipsNeeded) * this.shipsTaken / 100);
+    var scale = ((100 / this.shipsNeeded) * this.shipsTaken / 100) / 2 + 0.5;
     var size = 1.5 * scale;
     var r = this.r * Math.PI / 180;
     var x = this.planet.x + Math.cos(r) * (this.planet.size - 1);
@@ -49,7 +55,7 @@ Factory.prototype.draw = function() {
     
     this.$.bbg.save();
     this.$.drawShaded(this.player.color);
-    this.$.drawAlpha(Math.max(scale, 0.05));
+    this.$.drawAlpha(scale);
     this.$.bbg.translate(x, y);
     this.$.bbg.beginPath();
     if (this.type === 'def') {

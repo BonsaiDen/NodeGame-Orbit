@@ -292,7 +292,8 @@ Game.prototype.initPlanets = function(client) {
     for(var i in this.planets) {
         var p = this.planets[i];
         planets.push([p.id, p.x, p.y, p.size,
-                      p.player ? p.player.id : 0, p.maxCount, p.nodes]);
+                      p.player ? p.player.id : 0, p.maxCount, p.nodes,
+                      p.maxFactories]);
         
         if (client.player && !p.ships[client.player.id]) {
             p.ships[client.player.id] = {fight: [], bomb: [], def: []};
@@ -335,7 +336,7 @@ Game.prototype.updateAllFactories = function() {
     for(var i in this.planets) {
         var p = this.planets[i];
         for(var f in p.factories) {
-            p.factories[f][1] = false;
+            p.factories[f].updated = false;
         }
         p.factoriesDestroyed = [];
     }
@@ -349,9 +350,12 @@ Game.prototype.updateFactories = function(client) {
         for(var e in p.factories) {
             var f = p.factories[e];
             
-            if (f.updated || !client.factories[i][f.id]) {
+            if (!client.factories[i][f.id]) {
                 updates.push([p.id, f.id, f.r, f.player.id, f.typeID, f.shipsTaken, f.shipsNeeded]);
                 client.factories[i][f.id] = true;
+            
+            } else if (f.updated) {
+                updates.push([p.id, f.id, f.shipsTaken]);
             }
         }
         

@@ -64,19 +64,6 @@ Player.prototype.tick = function() {
     
 };
 
-
-// Commands --------------------------------------------------------------------
-Player.prototype.send = function(target) {
-    if (this.selectPlanet && this.selectCount > 0) {
-        this.selectPlanet.send(this, this.selectType, this.selectCount, target);
-        this.selectCount = 0;
-    
-    } else {
-        this.selectPlanet = target;
-    }
-};
-
-
 // Helpers ---------------------------------------------------------------------
 Player.prototype.getTick = function() {
     return this.$.getTick();

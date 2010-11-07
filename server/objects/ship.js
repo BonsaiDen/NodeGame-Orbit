@@ -54,6 +54,10 @@ function Ship(game, type, planet, player, r, orbit) {
     this.travelTicks = 0;
     this.arriveTick = 0;
     
+    this.landFactory = null;
+    this.landing = false;
+    this.landingTick = 0;
+    
     this.stopped = false;
     this.updated = false;
     this.attacked = false;
@@ -63,6 +67,7 @@ exports.Ship = Ship;
 
 // General ---------------------------------------------------------------------
 Ship.prototype.destroy = function(keep) {
+    this.landFactory = null;
     this.player.shipCount--;
     this.health = 0;
     if (!keep) {
@@ -110,10 +115,11 @@ Ship.prototype.attack = function(other) {
 // Commands --------------------------------------------------------------------
 Ship.prototype.send = function(target) {
     this.movePlanets = this.$.corePath(this.planet, target, this.player);
-    if (this.movePlanets.length > 0) {
+    if (this.movePlanets.length > 0 && !this.landing) {
         if (!this.nextPlanet) {
             this.traveled = false;
         }
+        this.landFactory = false;
         
         this.targetPlanet = this.movePlanets[this.movePlanets.length - 1];
         this.nextPlanet = this.movePlanets[0];
@@ -126,6 +132,16 @@ Ship.prototype.send = function(target) {
     } else {
         this.targetPlanet = null;
         this.nextPlanet = null;
+        return false;
+    }
+};
+
+Ship.prototype.land = function(factory) {
+    if (!this.nextPlanet && this.inOrbit && !this.landFactory && !this.landing) {
+        this.landFactory = factory;
+        return true;
+    
+    } else {
         return false;
     }
 };
@@ -150,15 +166,36 @@ Ship.prototype.tick = function() {
         if (!this.inOrbit) {
             var ospeed = this.rs * this.$.shipToOrbitSpeed[this.type];
             var orbitDiff = Math.ceil(this.$.shipOrbits[this.type] / ospeed);
-            this.orbit = tickDiff * ospeed;
-            this.r = this.wrapAngle(this.or + this.direction * this.rs
-                                    * Math.max(tickDiff - orbitDiff * 0.35, 0));  
+
+            if (this.landing) {
+                this.r = this.wrapAngle(this.or + this.direction * this.rs * tickDiff);
+                var l = 1 / (this.landingTick - this.tickOffset) * Math.max(this.landingTick - this.getTick(), 0);
+                this.orbit = this.$.shipOrbits[this.type] * l;
+                if (this.orbit <= 0) {
+                
+                    if (this.landFactory.health <= 0 || this.landFactory.build) {
+                        this.landFactory = null;
+                        this.tickOffset = this.getTick();
+                        this.landing = false;
+                        this.or = this.r;
+                        this.updated = true;
+                        
+                    } else {
+                        this.landFactory.addShip(this);
+                    }
+                }
             
-            if (this.orbit >= this.$.shipOrbits[this.type]) {
-                this.inOrbit = true;
-                this.orbit = this.$.shipOrbits[this.type];
-                this.or = this.r;
-                this.tickOffset += (tickDiff - Math.round((this.orbit - this.$.shipOrbits[this.type]) / this.rs));
+            } else {
+                this.r = this.wrapAngle(this.or + this.direction * this.rs
+                                        * Math.max(tickDiff - orbitDiff * 0.35, 0));  
+                
+                this.orbit = tickDiff * ospeed;
+                if (this.orbit >= this.$.shipOrbits[this.type]) {
+                    this.inOrbit = true;
+                    this.orbit = this.$.shipOrbits[this.type];
+                    this.or = this.r;
+                    this.tickOffset += (tickDiff - Math.round((this.orbit - this.$.shipOrbits[this.type]) / this.rs));
+                }
             }
         
         } else {
@@ -175,6 +212,24 @@ Ship.prototype.tick = function() {
                 && this.nextPlanet.getPlayerShipCount(this.player) < this.nextPlanet.maxCount) {
                 
                 this.startTravel();
+            }
+        }
+    }
+    
+    // Start landing
+    if (this.landFactory) {
+        if (!this.landing) {
+            var diff = this.$.coreDifference(this.r, this.landFactory.r);
+            if ((this.direction === 1 && diff > 0) || (this.direction === -1 && diff < 0)) {
+                var diff = Math.abs(diff);
+                if (diff > 15 && diff < 25) {
+                    this.inOrbit = false;
+                    this.landing = true;
+                    this.landingTick = this.getTick() + Math.floor((diff + 8) / this.rs);
+                    this.tickOffset = this.getTick();
+                    this.or = this.r;
+                    this.updated = true;
+                }
             }
         }
     }
@@ -315,6 +370,7 @@ Ship.prototype.toMessage = function(create) {
     flags += create ? 1 : 0;
     flags += this.traveling ? 2: 0;
     flags += this.inOrbit ? 4 : 0;
+    flags += this.landing ? 8 : 0;
     flags += this.nextPlanet ? 16 : 0;
     flags += this.traveled ? 32 : 0;
     flags += this.direction === 1 ? 64 : 0;
@@ -332,8 +388,13 @@ Ship.prototype.toMessage = function(create) {
         msg.push(this.tickOffset);
         msg.push(this.or);
         
+        // Ship created while landing
+        if (this.landing) {
+            msg.push(this.landFactory.id);
+            msg.push(this.landingTick);
+            
         // Ship created in travel
-        if (this.nextPlanet && this.traveling) {
+        } else if (this.nextPlanet && this.traveling) {
             msg.push(this.nextPlanet.id);
             msg.push(this.arriveTick);
             msg.push(this.travelTicks);
@@ -362,7 +423,12 @@ Ship.prototype.toMessage = function(create) {
             msg.push(this.nextPlanet.id);
             msg.push(this.travelTicks);
         
-        // Ship finishes travel
+        // Ship landing
+        } else if (this.landing) {
+            msg.push(this.landFactory.id);
+            msg.push(this.landingTick);
+        
+        // Ship finishes travel 
         } else if (!this.stopped) {
             msg.push(this.or);
             msg.push(this.planet.id);

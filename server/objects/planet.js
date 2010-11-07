@@ -69,10 +69,10 @@ Planet.prototype.initPlayer = function(player, start, factories) {
         this.removeNeutral();
         this.player = player; 
         if (factories) {
-            this.createFactory('fight', true, false);
-            this.createFactory('bomb', true, false);
-            this.createFactory('def', true, false);
-            this.spawnShipCount = 15;
+            this.createFactory('fight', true);
+            this.createFactory('fight', false);
+            this.createFactory('fight', false);
+            this.spawnShipCount = 1;
         }
     }
 };
@@ -83,7 +83,7 @@ Planet.prototype.initNeutral = function(ships, orbit, factories) {
         var count = Math.floor(this.maxFactories / 1.5);
         for(var i = 0; i < count; i++) {
             var type = this.$.factoryTypes[Math.floor(Math.random() * this.$.factoryTypes.length)];
-            this.createFactory(type, true, true);
+            this.createFactory(type, true);
         }
         this.spawnShipCount = Math.floor(this.maxCount / 2.5);
     }
@@ -133,7 +133,7 @@ Planet.prototype.checkPlayer = function() {
 
 // Factories -------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-Planet.prototype.createFactory = function(type, complete, neutral) {
+Planet.prototype.createFactory = function(type, complete) {
     if (this.factoryCount >= this.maxFactories) {
         return
     }
@@ -216,8 +216,16 @@ Planet.prototype.tick = function() {
     }
     
     for(var i in this.factories) {
-        var f = this.factories[i];
-        f.produce(rate);
+        this.factories[i].produce(rate);
+    }
+    
+    // neutral AI
+    if (this.player === this.$.neutralPlayer && this.getTick() % 50 === 0) {
+        
+        // send some ships to surrounding neutral planets
+        
+        
+        // create neutral factories
     }
 };
 
@@ -254,7 +262,7 @@ Planet.prototype.tickCombat = function() {
                 var s = ships[e];
                 var ds = Math.abs(this.$.coreDifference(s.r, c.r));
                 if (!s.traveling && s.health > 0
-                    && ds <= c.getRotationSpeed() * 7) {
+                    && ds <= c.getRotationSpeed() * 6) {
                     
                     if (s.player !== c.player) {
                         c.attack(s);
@@ -271,7 +279,7 @@ Planet.prototype.tickCombat = function() {
                 for(var e in this.factories) {
                     var f = this.factories[e];
                     var ds = Math.abs(this.$.coreDifference(f.r, c.r));
-                    if (ds <= c.getRotationSpeed() * 7 && f.player !== c.player) {
+                    if (ds <= c.getRotationSpeed() * 6 && f.player !== c.player) {
                         c.attackFactory(f);
                         break;
                     }
@@ -298,7 +306,7 @@ Planet.prototype.send = function(player, target, type, amount) {
     // First get the ships that will leave the planet the soonest
     for(var i = 0; i < ships.length; i++) {
         var ship = ships[i];
-        if (amount > 0 && !ship.traveling
+        if (amount > 0 && !ship.traveling && !ship.landFactory
             && ship.targetPlanet === null && ship.inOrbit) {
             
             var diff = this.$.coreDifference(ship.r, travelAngle);

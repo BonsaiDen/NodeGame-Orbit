@@ -23,7 +23,7 @@
 
 // Planets ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Planet(game, id, x, y, size, player, maxCount, nodes) {
+function Planet(game, id, x, y, size, player, maxCount, nodes, maxFactories) {
     this.$ = game;
     this.id = id;
     this.player = player;
@@ -34,6 +34,7 @@ function Planet(game, id, x, y, size, player, maxCount, nodes) {
     this.ressources = 1;
     this.size = size;
     this.maxCount = maxCount;
+    this.maxFactories = maxFactories;
     this.x = x;
     this.y = y;
     
@@ -105,7 +106,7 @@ Planet.prototype.tickCombat = function() {
                 
                 var s = ships[e];
                 var ds = Math.abs(this.$.coreDifference(s.r, c.r));
-                if (!s.traveling && ds <= c.getRotationSpeed() * 7) {
+                if (!s.traveling && ds <= c.getRotationSpeed() * 6) {
                     if (s.player !== c.player) {
                         c.attack(s);
                         s.attack(c);
@@ -121,7 +122,7 @@ Planet.prototype.tickCombat = function() {
                 for(var e in this.factories) {
                     var f = this.factories[e];
                     var ds = Math.abs(this.$.coreDifference(f.r, c.r));
-                    if (ds <= c.getRotationSpeed() * 7 && f.player !== c.player) {
+                    if (ds <= c.getRotationSpeed() * 6 && f.player !== c.player) {
                         c.attackFactory(f);
                         break;
                     }

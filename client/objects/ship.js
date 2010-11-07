@@ -44,10 +44,12 @@ function Ship(game, id) {
     
     this.inOrbit = false;
     this.landing = false;
+    this.landFactory = null;
+    this.landingTick = 0;
+    
     this.traveling = false;
     this.nextPlanet = null;
     this.travelTicks = 0;
-    this.travelDistance = 0;
     this.arriveTick = 0;
     this.stopped = false;
     
@@ -58,7 +60,13 @@ Ship.prototype.destroy = function() {
     var index = this.$.shipList.indexOf(this);
     if (index !== -1) {
         this.player.shipCount--;
-        if (!this.traveling) {
+        if (this.landing && this.orbit <= 0) {
+       //    this.$.effectExplosion(this.player.color, this.planet,
+       //                            0, this.landFactory.r, 0, 3);
+            
+            this.planet.removeShip(this);
+        
+        } else if (!this.traveling) {
             this.$.effectExplosion(this.player.color, this.planet,
                                    this.orbit, this.r, this.rs, 8);
             
@@ -80,15 +88,23 @@ Ship.prototype.tick = function() {
         if (!this.inOrbit) {
             var ospeed = this.rs * this.$.shipToOrbitSpeed[this.type];
             var orbitDiff = Math.ceil(this.$.shipOrbits[this.type] / ospeed);
-            this.orbit = tickDiff * ospeed;
-            this.r = this.wrapAngle(this.or + this.direction * this.rs
-                                    * Math.max(tickDiff - orbitDiff * 0.35, 0));  
+
+            if (this.landing) {
+                this.r = this.wrapAngle(this.or + this.direction * this.rs * tickDiff);
+                var l = 1 / (this.landingTick - this.tickOffset) * Math.max(this.landingTick - this.getTick(), 0);
+                this.orbit = this.$.shipOrbits[this.type] * (l * 1.25 - 0.25);
             
-            if (this.orbit >= this.$.shipOrbits[this.type]) {
-                this.inOrbit = true;
-                this.orbit = this.$.shipOrbits[this.type];
-                this.or = this.r;
-                this.tickOffset += (tickDiff - Math.round((this.orbit - this.$.shipOrbits[this.type]) / this.rs));
+            } else {
+                this.r = this.wrapAngle(this.or + this.direction * this.rs
+                                        * Math.max(tickDiff - orbitDiff * 0.35, 0));  
+                
+                this.orbit = tickDiff * ospeed;
+                if (this.orbit >= this.$.shipOrbits[this.type]) {
+                    this.inOrbit = true;
+                    this.orbit = this.$.shipOrbits[this.type];
+                    this.or = this.r;
+                    this.tickOffset += (tickDiff - Math.round((this.orbit - this.$.shipOrbits[this.type]) / this.rs));
+                }
             }
         
         } else {
@@ -120,17 +136,30 @@ Ship.prototype.draw = function(sx, sy) {
         // inFlight
         if (this.nextPlanet) {
             this.$.drawDark(this.player.color);
+         
+        // Scheduled to land   
+        } else if (this.landing) {
+            this.$.drawShaded(this.player.color);
         
         // Stationed
         } else {
             this.$.drawColor(this.player.color);
         }
         
-        // Spawn Alpha
+        // Start/Landing Alpha
         var orbitDiff = 1 / this.$.shipOrbits[this.type]
                         * (this.$.shipOrbits[this.type] - this.orbit);
         
         this.$.drawAlpha(Math.max(1 - orbitDiff, 0.05));
+        
+        // Start/Landing angle
+        var dr = 0;
+        if (this.landing) {
+            dr = -Math.PI / 2 * Math.max(orbitDiff, orbitDiff * 0.5);
+        
+        } else if (!this.inOrbit) {
+            dr = Math.PI / 2 * Math.max(orbitDiff, orbitDiff * 0.5);
+        }
         
         // Bomber
         if (this.type === 'bomb') {
@@ -140,11 +169,10 @@ Ship.prototype.draw = function(sx, sy) {
             var r = 0;
             if (!this.traveling) {
                 if (this.direction === 1) {
-                    r = this.r * Math.PI / 180 - (Math.PI / 2 * Math.max(orbitDiff, orbitDiff * 0.5));
+                    r = this.r * Math.PI / 180 - dr;
                 
                 } else {
-                    r = this.r * Math.PI / 180 - Math.PI
-                        + (Math.PI / 2 * Math.max(orbitDiff, orbitDiff * 0.5));
+                    r = this.r * Math.PI / 180 - Math.PI + dr;
                 }
             } else {
                 r = this.r * Math.PI / 180 + Math.PI / 2;
@@ -311,7 +339,6 @@ Ship.prototype.initTravel = function(tick, or, pid, arrive, travel) {
     
     this.arriveTick = arrive;
     this.travelTicks = travel;
-    this.travelDistance = Math.round(this.$.coreOrbit(this, this.planet, this.nextPlanet));
     this.travelAngle = Math.round(this.$.coreAngle(this.planet, this.nextPlanet));
 };
 
@@ -333,7 +360,7 @@ Ship.prototype.update = function(d) {
     this.traveled = !!(d[0] & 32);
     this.direction = (d[0] & 64) ? 1 : -1;
     this.stopped = !!(d[0] & 128);
-        
+    
     // Create
     if (d[0] & 1) {
         this.type = this.$.shipTypes[d[2]];
@@ -345,8 +372,13 @@ Ship.prototype.update = function(d) {
         this.r = this.or = d[6];
         this.planet.addShip(this);
         
+        // Already landing
+        if (this.landing) {
+            this.landFactory = this.planet.factories[d[7]];
+            this.landingTick = d[8];
+        
         // Already traveling
-        if (this.next && this.traveling) {
+        } else if (this.next && this.traveling) {
             this.initTravel(d[5], d[6], d[7], d[8], d[9]);
         
         // Already sent
@@ -371,6 +403,13 @@ Ship.prototype.update = function(d) {
             var tick = Math.floor(this.$.tickCount);
             this.initTravel(tick, d[2], d[3], tick + d[4], d[4]);
         
+        // Landing
+        } else if (this.landing) {
+            this.landFactory = this.planet.factories[d[2]];
+            this.landingTick = d[3];
+            this.or = this.r;
+            this.tickOffset = this.getTick();
+        
         // Stop
         } else if (this.stopped) {
             this.nextPlanet = null;
@@ -378,6 +417,11 @@ Ship.prototype.update = function(d) {
         // Finish travel
         } else {
             this.finishTravel(d[2], d[3]);
+            
+            // Restart
+            if (this.landFactory) {
+                this.landFactory = false;
+            }
         }
     }
 };
