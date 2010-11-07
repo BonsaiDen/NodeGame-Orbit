@@ -36,6 +36,9 @@ var MSG_GAME_TICK = 7;
 var MSG_SHIPS_UPDATE = 8;
 var MSG_SHIPS_DESTROY = 9;
 
+var MSG_FACTORIES_UPDATE = 11;
+var MSG_FACTORIES_DESTROY = 12;
+
 
 // Game ------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -105,6 +108,7 @@ Game.prototype.update = function() {
     if (this.tickCount % 30 === 0) {
         this.broadcast(MSG_GAME_TICK, [this.tickCount]);
     }
+    this.updateAllFactories();
     this.updateAllShips();
 };
 
@@ -165,6 +169,7 @@ Game.prototype.onMessage = function(type, data, client) {
 Game.prototype.addClient = function(client, watch) {
     this.clients[client.id] = client;
     this.clients[client.id].ships = {};
+    this.clients[client.id].factories = {};
     this.clientCount++;
     
     // Create player
@@ -199,10 +204,12 @@ Game.prototype.addClient = function(client, watch) {
     client.send(MSG_GAME_INIT, [this.id, this.width, this.height,
                                 this.combatTickRate,
                                 this.shipTypes, this.shipSpeeds ,
-                                this.shipOrbits, this.shipToOrbitSpeed]);
+                                this.shipOrbits, this.shipToOrbitSpeed,
+                                this.factoryTypes]);
     
     this.initPlanets(client);
-    this.updatePlanets();
+    this.updatePlanets(null);
+    this.updateAllFactories();
     this.updateShips(client);
     
     // Send Start
@@ -234,7 +241,7 @@ Game.prototype.addPlayer = function(client) {
             this.$$.log('++', player.name, 'joined Game #' + this.id);
             this.broadcast(MSG_PLAYER_ADD, [player.id, player.name, player.color]);
             
-            planet.initPlayer(player, true);
+            planet.initPlayer(player, true, true);
             player.startPlanet = planet;
         }
     }
@@ -267,7 +274,7 @@ Game.prototype.removePlayer = function(player) {
         var p = this.planets[i];
         p.removePlayer(player);
     }
-    this.updatePlanets();
+    this.updatePlanets(null);
     
     // Remove the player
     this.playerCount--;
@@ -281,6 +288,7 @@ Game.prototype.removePlayer = function(player) {
 // -----------------------------------------------------------------------------
 Game.prototype.initPlanets = function(client) {
     var planets = [];
+    var factories = [];
     for(var i in this.planets) {
         var p = this.planets[i];
         planets.push([p.id, p.x, p.y, p.size,
@@ -288,6 +296,10 @@ Game.prototype.initPlanets = function(client) {
         
         if (client.player && !p.ships[client.player.id]) {
             p.ships[client.player.id] = {fight: [], bomb: [], def: []};
+        }
+        
+        if (!client.factories[i]) {
+            client.factories[i] = {};
         }
     }
     client.send(MSG_PLANETS_INIT, [planets]);
@@ -307,8 +319,55 @@ Game.prototype.updatePlanets = function(planet) {
             planets.push([p.id, p.player ? p.player.id : 0, p.maxCount]); 
         }
     }
-    this.broadcast(MSG_PLANETS_UPDATE, [planets]);
+    if (planets.length > 0) {
+        this.broadcast(MSG_PLANETS_UPDATE, [planets]);
+    }
 };
+
+
+
+// Factories -------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+Game.prototype.updateAllFactories = function() {
+    for(var i in this.clients) {
+        this.updateFactories(this.clients[i]);
+    }
+    for(var i in this.planets) {
+        var p = this.planets[i];
+        for(var f in p.factories) {
+            p.factories[f][1] = false;
+        }
+        p.factoriesDestroyed = [];
+    }
+};
+
+Game.prototype.updateFactories = function(client) {
+    var updates = [];
+    var removes = [];
+    for(var i in this.planets) {
+        var p = this.planets[i];
+        for(var e in p.factories) {
+            var f = p.factories[e];
+            
+            if (f.updated || !client.factories[i][f.id]) {
+                updates.push([p.id, f.id, f.r, f.player.id, f.typeID, f.shipsTaken, f.shipsNeeded]);
+                client.factories[i][f.id] = true;
+            }
+        }
+        
+        for(var e = 0, l = p.factoriesDestroyed.length; e < l; e++) {
+            removes.push([p.id, p.factoriesDestroyed[e]]);
+        }
+    }
+    
+    // Send Messages
+    if (updates.length > 0) {
+        client.send(MSG_FACTORIES_UPDATE, [updates]);
+    }
+    if (removes.length > 0) {
+        client.send(MSG_FACTORIES_DESTROY, [removes]);
+    }
+}
 
 Game.prototype.getStartPlanet = function() {
     for(var i = 0; i < this.startPlanets.length; i++) {
@@ -360,8 +419,12 @@ Game.prototype.updateShips = function(client) {
     }
     
     // Send Messages
-    client.send(MSG_SHIPS_UPDATE, [updates]);
-    client.send(MSG_SHIPS_DESTROY, [removes]);
+    if (updates.length > 0) {
+        client.send(MSG_SHIPS_UPDATE, [updates]);
+    }
+    if (removes.length > 0) {
+        client.send(MSG_SHIPS_DESTROY, [removes]);
+    }
 };
 
 
@@ -370,55 +433,40 @@ Game.prototype.updateShips = function(client) {
 Game.prototype.loadMap = function() { 
     var planets = [
         // Top Left
-        [1, 80, 48, 24, [2], 15],
-        [2, 160, 112, 40, [11, 9, 1, 15], 25],
+        [1,  64,  56, 22, [2], 15, 3],
+        [2, 176, 128, 50, [11,  9, 1], 25, 5],
         
         // Top Right
-        [3, 560, 48, 24, [4], 15],
-        [4, 480, 112, 40, [12, 9, 3, 17], 25],  
+        [3, 576,  56, 22, [4], 15, 3],
+        [4, 464, 128, 50, [12,  9, 3], 25, 5],  
         
         // Bottom Right
-        [5, 560, 432, 24, [6], 15],
-        [6, 480, 368, 40, [12, 10, 5, 16], 25],
-    
+        [5, 576, 424, 22, [6], 15, 3],
+        [6, 464, 352, 50, [12, 10, 5], 25, 5],
+        
         // Bottom Left
-        [7, 80, 432, 24, [8], 15],
-        [8, 160, 368, 40, [11, 10, 7, 14], 25],
+        [7, 64,  424, 22, [8], 15, 3],
+        [8, 176, 352, 50, [11, 10, 7], 25, 5],
         
         // Center
-        [9, 320, 56, 30, [2, 4], 15],
-        [10, 320, 424, 30, [6, 8], 15],
+        [9,  320, 56,  27, [2, 4], 15, 2],
+        [10, 320, 424, 27, [6, 8], 15, 2],
          
         // Sides
-        [11, 96, 240, 30, [2, 8], 15],
-        [12, 544, 240, 30, [4, 6], 15],
-        
-        // Middle
-        [13, 320, 240, 60, [14, 15, 16, 17], 20],
-        
-        // Middle Top Left
-        [15, 240, 164, 16, [13, 2], 5],
-        
-        // Middle Top Right
-        [17, 400, 164, 16, [13, 4], 5],  
-        
-        // Middle Bottom Right
-        [16, 400, 312, 16, [13, 6], 5], 
-        
-        // Middle Bottom Left
-        [14, 240, 312, 16, [13, 8], 5]
+        [11,  96, 240, 21, [2, 8], 12, 2],
+        [12, 544, 240, 21, [4, 6], 12, 2]
     ];
     
     this.startPlanets = [1, 5, 3, 7];
-    this.width = 640 * 1.25;
-    this.height = 480 * 1.25;
+    this.width = 640;
+    this.height = 480;
     
     this.planetCount = 0;
     for(var i = 0; i < planets.length; i++) {
         var p = planets[i];
-        var planet = new Planet(this, p[0], p[1] * 1.25, p[2] * 1.25, p[3],
+        var planet = new Planet(this, p[0], p[1], p[2], p[3],
                                 this.startPlanets.indexOf(p[0]) !== -1, p[4],
-                                p[5]);
+                                p[5], p[6]);
         
         this.planets[p[0]] = planet;
         this.planetList.push(planet);
@@ -439,12 +487,16 @@ Game.prototype.coreInit = function() {
     this.shipID = 0;
     this.ships = [];
     this.shipTypes = ['fight', 'bomb', 'def'];
-    this.shipSpeeds = {def: 9.54, fight: 9.54, bomb: 9.54};
-    this.shipOrbits = {def: 5, fight: 15, bomb: 10};
-    this.shipToOrbitSpeed = {def: 0.125, fight: 0.5, bomb: 0.25};
+    this.shipSpeeds = {def: 12.50, fight: 9.54, bomb: 6.50};
+    this.shipOrbits = {def: 11, fight: 16.5, bomb: 22};
+    this.shipToOrbitSpeed = {def: 0.15, fight: 0.5, bomb: 0.25};
     
-    this.shipHealth = {def: 40, fight: 20, bomb: 15};
-    this.shipDamage = {def: 5, fight: 5, bomb: 20};
+    this.shipHealth = {def: 10, fight: 15, bomb: 20};
+    this.shipDamage = {def: 5, fight: 5, bomb: 5};
+    this.shipFactoryDamage = {def: 0, fight: 2, bomb: 10};
+    
+    // Factories
+    this.factoryTypes = ['fight', 'bomb', 'def'];
     
     // Planets
     this.startPlanets = [];

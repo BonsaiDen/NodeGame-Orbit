@@ -59,7 +59,9 @@ Ship.prototype.destroy = function() {
     if (index !== -1) {
         this.player.shipCount--;
         if (!this.traveling) {
-            this.$.effectExplosion(this.player.color, this.planet, this.orbit, this.r, this.rs, 8);
+            this.$.effectExplosion(this.player.color, this.planet,
+                                   this.orbit, this.r, this.rs, 8);
+            
             this.planet.removeShip(this);
         }
         this.$.shipList.splice(index, 1);
@@ -71,22 +73,28 @@ Ship.prototype.destroy = function() {
 // Interpolation ---------------------------------------------------------------
 Ship.prototype.tick = function() {
     this.attacked = false;
+    
     if (!this.traveling) {
         var tickDiff = this.getTick() - this.tickOffset;
+        this.rs = this.getRotationSpeed();
         if (!this.inOrbit) {
-            this.orbit = tickDiff * this.$.shipToOrbitSpeed[this.type];
+            var ospeed = this.rs * this.$.shipToOrbitSpeed[this.type];
+            var orbitDiff = Math.ceil(this.$.shipOrbits[this.type] / ospeed);
+            this.orbit = tickDiff * ospeed;
+            this.r = this.wrapAngle(this.or + this.direction * this.rs
+                                    * Math.max(tickDiff - orbitDiff * 0.35, 0));  
             
             if (this.orbit >= this.$.shipOrbits[this.type]) {
                 this.inOrbit = true;
                 this.orbit = this.$.shipOrbits[this.type];
+                this.or = this.r;
+                this.tickOffset += (tickDiff - Math.round((this.orbit - this.$.shipOrbits[this.type]) / this.rs));
             }
         
         } else {
             this.orbit = this.$.shipOrbits[this.type];
+            this.r = this.wrapAngle(this.or + this.direction * this.rs * tickDiff); 
         }
-        
-        this.rs = this.getRotationSpeed();
-        this.r = this.wrapAngle(this.or + this.direction * this.rs * tickDiff);
     }
 };
 
@@ -97,6 +105,9 @@ Ship.prototype.clear = function(sx, sy) {
             this.$.fbg.clearRect(this.x - 4 - sx, this.y - 4 - sy, 8, 8);
         
         } else if (this.type === 'def') {
+            this.$.fbg.clearRect(this.x - 3 - sx, this.y - 3 - sy, 6, 6);
+        
+        } else if (this.type === 'bomb') {
             this.$.fbg.clearRect(this.x - 3 - sx, this.y - 3 - sy, 6, 6);
         }
     }
@@ -119,22 +130,21 @@ Ship.prototype.draw = function(sx, sy) {
         var orbitDiff = 1 / this.$.shipOrbits[this.type]
                         * (this.$.shipOrbits[this.type] - this.orbit);
         
-        this.$.drawAlpha(Math.max(1 - orbitDiff, 0));
+        this.$.drawAlpha(Math.max(1 - orbitDiff, 0.05));
         
-        // Defender
-        if (this.type === 'def') {
+        // Bomber
+        if (this.type === 'bomb') {
             this.$.drawCircle(this.x, this.y, 1.5, true);
         
-        // Fighter
         } else {
             var r = 0;
             if (!this.traveling) {
                 if (this.direction === 1) {
-                    r = this.r * Math.PI / 180 - (Math.PI / 2 * orbitDiff);
+                    r = this.r * Math.PI / 180 - (Math.PI / 2 * Math.max(orbitDiff, orbitDiff * 0.5));
                 
                 } else {
                     r = this.r * Math.PI / 180 - Math.PI
-                        + (Math.PI / 2 * orbitDiff);
+                        + (Math.PI / 2 * Math.max(orbitDiff, orbitDiff * 0.5));
                 }
             } else {
                 r = this.r * Math.PI / 180 + Math.PI / 2;
@@ -144,25 +154,56 @@ Ship.prototype.draw = function(sx, sy) {
             this.$.fbg.translate(this.x, this.y);  
             this.$.fbg.rotate(r);
             this.$.fbg.beginPath();
-            this.$.fbg.moveTo(0, 2.5);
-            this.$.fbg.lineTo(-2, -2.5);
-            this.$.fbg.lineTo(2, -2.5);
-            this.$.fbg.lineTo(0, 2.5);
+            
+            // Defender
+            if (this.type === 'def') {
+                this.$.fbg.moveTo(-1.8, -1.8);
+                this.$.fbg.lineTo(1.8, -1.8);
+                this.$.fbg.lineTo(1.8, 1.8);
+                this.$.fbg.lineTo(-1.8, 1.8);
+            
+            // Fighter
+            } else {
+                this.$.fbg.moveTo(0, 2.5);
+                this.$.fbg.lineTo(-2, -2.5);
+                this.$.fbg.lineTo(2, -2.5);
+                this.$.fbg.lineTo(0, 2.5);
+            }
+            
             this.$.fbg.closePath();
             this.$.fbg.fill();
             this.$.fbg.restore();
         }
-        
         this.$.drawAlpha(1);
+    }
+};
+
+Ship.prototype.attackFactory = function(factory) {
+    if (!this.attacked && (this.type === 'fight' || this.type === 'bomb')) {
+        this.attacked = true;
+        this.$.effectExplosion(this.player.color, this.planet, 3, factory.r, 0, 6);
     }
 };
 
 Ship.prototype.attack = function(other) {
     if (!this.attacked) {
-        this.$.effectExplosion(this.player.color, this.planet,
-                               other.orbit, other.r, other.rs, 4);
+        var attack = false;
+        if (this.type === 'fight') {
+            attack = other.type === 'bomb';
+        
+        } else if (this.type === 'bomb') {
+            attack = other.type === 'def';
+        
+        } else if (this.type === 'def') {
+            attack = other.type === 'fight';
+        }
+        
+        if (attack) {
+            this.attacked = true;
+            this.$.effectExplosion(this.player.color, this.planet,
+                                   other.orbit, other.r, other.rs, 4);
+        }
     }
-    this.attacked = false;
 };
 
 

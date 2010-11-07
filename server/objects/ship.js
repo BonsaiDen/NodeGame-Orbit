@@ -70,14 +70,40 @@ Ship.prototype.destroy = function(keep) {
     }
 };
 
-Ship.prototype.attack = function(other) {
-    if (!this.attacked && this.health > 0) {
-        other.health -= this.$.shipDamage[this.type];
-        if (other.health <= 0) {
-            other.destroy();
+Ship.prototype.attackFactory = function(factory) {
+    if (!this.attacked
+        && (this.type === 'fight' || this.type === 'bomb')
+        && factory.health > 0) {
+        
+        this.attacked = true;
+        factory.health -= this.$.shipFactoryDamage[this.type];
+        if (factory.health <= 0) {
+            factory.destroy();
         }
     }
-    this.attacked = true;
+};
+
+Ship.prototype.attack = function(other) {
+    if (!this.attacked && this.health > 0 && other.health > 0) {
+        var attack = false;
+        if (this.type === 'fight') {
+            attack = other.type === 'bomb';
+        
+        } else if (this.type === 'bomb') {
+            attack = other.type === 'def';
+        
+        } else if (this.type === 'def') {
+            attack = other.type === 'fight';
+        }
+        
+        if (attack) {
+            this.attacked = true;
+            other.health -= this.$.shipDamage[this.type];
+            if (other.health <= 0) {
+                other.destroy();
+            }
+        }
+    }
 };
 
 
@@ -120,20 +146,25 @@ Ship.prototype.tick = function() {
     // Orbit & Angle
     if (!this.traveling) {
         var tickDiff = this.getTick() - this.tickOffset;
+        this.rs = this.getRotationSpeed();
         if (!this.inOrbit) {
-            this.orbit = tickDiff * this.$.shipToOrbitSpeed[this.type];
+            var ospeed = this.rs * this.$.shipToOrbitSpeed[this.type];
+            var orbitDiff = Math.ceil(this.$.shipOrbits[this.type] / ospeed);
+            this.orbit = tickDiff * ospeed;
+            this.r = this.wrapAngle(this.or + this.direction * this.rs
+                                    * Math.max(tickDiff - orbitDiff * 0.35, 0));  
             
             if (this.orbit >= this.$.shipOrbits[this.type]) {
                 this.inOrbit = true;
                 this.orbit = this.$.shipOrbits[this.type];
+                this.or = this.r;
+                this.tickOffset += (tickDiff - Math.round((this.orbit - this.$.shipOrbits[this.type]) / this.rs));
             }
         
         } else {
             this.orbit = this.$.shipOrbits[this.type];
-        }  
-        
-        this.rs = this.getRotationSpeed();
-        this.r = this.wrapAngle(this.or + this.direction * this.rs * tickDiff);
+            this.r = this.wrapAngle(this.or + this.direction * this.rs * tickDiff); 
+        }
     }
     
     // Start Traveling
@@ -195,7 +226,6 @@ Ship.prototype.finishTravel = function() {
     var r = this.travelAngle + 180 + (20 * this.direction);
     this.r = this.or = this.wrapAngle(r);
     this.planet = this.nextPlanet;
-    this.planet.checkAddShip(this);
     
     if (this.nextPlanet === this.targetPlanet) {
         this.nextPlanet = this.targetPlanet = null;

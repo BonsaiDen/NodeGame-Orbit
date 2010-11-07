@@ -31,6 +31,9 @@ var MSG_GAME_TICK = 7;
 var MSG_SHIPS_UPDATE = 8;
 var MSG_SHIPS_DESTROY = 9;
 
+var MSG_FACTORIES_UPDATE = 11;
+var MSG_FACTORIES_DESTROY = 12;
+
 
 // Network ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -96,12 +99,19 @@ Game.prototype.netMessage = function(msg) {
         this.shipSpeeds = msg[5];
         this.shipOrbits = msg[6];
         this.shipToOrbitSpeed = msg[7];
+        this.factoryTypes = msg[8];
     
     } else if (type === MSG_PLANETS_INIT) {
         this.netPlanetsInit(msg[0]);
     
     } else if (type === MSG_PLANETS_UPDATE) {
         this.netPlanetsUpdate(msg[0]);
+    
+    } else if (type === MSG_FACTORIES_UPDATE) {
+        this.netFactoriesUpdate(msg[0]);
+    
+    } else if (type === MSG_FACTORIES_DESTROY) {
+        this.netFactoriesDestroy(msg[0]);
     
     } else if (type === MSG_SHIPS_UPDATE) {
         this.netShipsUpdate(msg[0]);
@@ -183,6 +193,32 @@ Game.prototype.netPlanetsUpdate = function(data) {
         var d = data[i];
         this.planets[d[0]].player = this.players[d[1]];
         this.planets[d[0]].maxCount = d[2];
+    }
+    this.updateBackground = true;
+};
+
+
+// Factories -------------------------------------------------------------------
+Game.prototype.netFactoriesUpdate = function(data) {
+    for(var i = 0; i < data.length; i++) {
+        var d = data[i];
+        var p = this.planets[d[0]];
+        var factory = p[d[1]];
+        if (!factory) {
+            factory = new Factory(this, p, d[1], d[2], this.players[d[3]],
+                                  d[4], d[5], d[6]);
+            
+        }
+    }
+    this.updateBackground = true;
+};
+
+Game.prototype.netFactoriesDestroy = function(data) {
+    for(var i = 0; i < data.length; i++) {
+        var d = data[i];
+        if (this.planets[d[0]].factories[d[1]]) {
+            this.planets[d[0]].factories[d[1]].destroy();
+        }
     }
     this.updateBackground = true;
 };

@@ -53,7 +53,6 @@ Player.prototype.initInput = function() {
     this.selectType = '';
 };
 
-
 Player.prototype.remove = function() {
     for(var i in this.$.planets) {
         delete this.$.planets[i].ships[this.id];

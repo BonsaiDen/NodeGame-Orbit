@@ -45,6 +45,9 @@ Game.prototype.coreInit = function() {
     this.shipTypes = null;
     this.shipOrbits = null;
     this.shipToOrbitSpeed = null;
+    
+    // Factories
+    this.factoryTypes = null;
 };
 
 
