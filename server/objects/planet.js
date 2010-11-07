@@ -107,8 +107,8 @@ Planet.prototype.removePlayer = function(player) {
     delete this.ships[player.id];
 };
 
-Planet.prototype.checkPlayer = function() {
-    if (this.getPlayerCompleteFactoryCount(this.player) === 0) {
+Planet.prototype.checkPlayer = function(build) {
+    if (this.getPlayerCompleteFactoryCount(this.player) === 0 || build) {
         var master = null;
         var max = 0;
         for(var i in this.factories) {
@@ -128,7 +128,13 @@ Planet.prototype.checkPlayer = function() {
             }
         
         } else {
+            var oldPlayer = this.player;
             this.initNeutral();
+            for(var i in this.factories) {
+                if (this.factories[i].player === oldPlayer) {
+                    this.factories[i].destroy();
+                }
+            }
         }
         this.$.updatePlanets(this);
     }
@@ -298,18 +304,19 @@ Planet.prototype.tickAI = function() {
                     var f = this.factories[e];
                     neededShips[f.type] += (f.shipsNeeded - f.shipsTaken);
                 }
+                
                 if (build) {
                     if (p.getPlayerFactoryCount(this.player) < p.maxFactories) {
                         var all = p.getPlayerShipCount(this.player);
                         for(var e = 0; e < this.$.shipTypes.length; e++) {
                             var type = this.$.shipTypes[e];
                             var cur = this.getShipReadyCount(this.player, type);
-                            if (p.getHumanShips() * 1.5 < all) {
-                                if (cur > 3 + neededShips[type]) {
-                                    p.buildFactory(this.player, -1, type);
-                                    factoryBuilt = true;
-                                }
+                           // if (p.getHumanShips() * 1.5 < all) {
+                            if (cur > 3 + neededShips[type]) {
+                                p.buildFactory(this.player, -1, type);
+                                factoryBuilt = true;
                             }
+                          //  }
                         }
                     }
                 }

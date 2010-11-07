@@ -90,7 +90,7 @@ Factory.prototype.addShip = function(ship) {
         this.health = 100;
         this.rateStep = 0;
         this.planet.factoryCompleteCount++;
-        this.planet.checkPlayer();
+        this.planet.checkPlayer(true);
     }
     this.updated = true;
 };
