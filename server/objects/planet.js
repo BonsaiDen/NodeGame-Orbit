@@ -235,7 +235,7 @@ Planet.prototype.removePlayerShips = function(player) {
 // Update Planets --------------------------------------------------------------
 // -----------------------------------------------------------------------------
 Planet.prototype.tick = function() {
-    var maxRate = [1, 0.60, 0.80, 1.0, 1.1, 1.25, 1.4, 1.75, 2.00];
+    var maxRate = [1, 0.70, 0.90, 1.0, 1.1, 1.25, 1.4, 1.75, 2.00];
     var rate = 2;
     if (this.player.planetCount < maxRate.length && this.player.id !== 0) {
         rate = maxRate[this.player.planetCount];

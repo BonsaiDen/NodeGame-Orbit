@@ -418,7 +418,7 @@ Ship.prototype.update = function(d) {
             this.landFactory = this.planet.factories[d[2]];
             this.landingTick = d[3];
             this.or = this.r;
-            this.tickOffset = this.getTick();
+            this.tickOffset = Math.floor(this.$.tickCount);
         
         // Stop
         } else if (this.stopped) {
