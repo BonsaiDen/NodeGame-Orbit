@@ -23,7 +23,7 @@
 
 // Planets ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Planet(game, id, x, y, size, player, maxCount, nodes, maxFactories) {
+function Planet(game, id, x, y, size, player, maxCount, nodes, maxFactories, fr) {
     this.$ = game;
     this.id = id;
     this.player = player;
@@ -37,6 +37,8 @@ function Planet(game, id, x, y, size, player, maxCount, nodes, maxFactories) {
     this.maxFactories = maxFactories;
     this.factoryCount = 0;
     this.factoryCompleteCount = 0;
+    this.factoryR = fr;
+    this.canBuild = false;
     
     this.x = x;
     this.y = y;
@@ -45,9 +47,13 @@ function Planet(game, id, x, y, size, player, maxCount, nodes, maxFactories) {
     this.localCount = 0;
     this.playerCount = 0;
     this.oldPlayer = this.player;
-    
     this.factories = {};
 }
+
+Planet.prototype.update = function() {
+    this.canBuild = this.canBuildFactory(this.$.player);
+};
+
 
 // Combat ----------------------------------------------------------------------
 Planet.prototype.tick = function() {
@@ -109,7 +115,7 @@ Planet.prototype.tickCombat = function() {
                 
                 var s = ships[e];
                 var ds = Math.abs(this.$.coreDifference(s.r, c.r));
-                if (!s.traveling && ds <= c.getRotationSpeed() * 6) {
+                if (!s.traveling && ds <= c.getRotationSpeed() * 7) {
                     if (s.player !== c.player) {
                         c.attack(s);
                         s.attack(c);
@@ -125,7 +131,7 @@ Planet.prototype.tickCombat = function() {
                 for(var e in this.factories) {
                     var f = this.factories[e];
                     var ds = Math.abs(this.$.coreDifference(f.r, c.r));
-                    if (ds <= c.getRotationSpeed() * 6 && f.player !== c.player) {
+                    if (ds <= c.getRotationSpeed() * 5 && f.player !== c.player) {
                         c.attackFactory(f);
                         break;
                     }
@@ -159,6 +165,8 @@ Planet.prototype.getPlayerShipCount = function(player) {
            + this.ships[player.id]['bomb'].length;
 };
 
+
+// Factories -------------------------------------------------------------------
 Planet.prototype.getPlayerFactoryCount = function(player) {
     var count = 0;
     for(var i in this.factories) {
@@ -169,7 +177,6 @@ Planet.prototype.getPlayerFactoryCount = function(player) {
     return count;
 };
 
-
 Planet.prototype.getCompleteFactoryCount = function() {
     var count = 0;
     for(var i in this.factories) {
@@ -178,6 +185,27 @@ Planet.prototype.getCompleteFactoryCount = function() {
         }
     }
     return count;
+};
+
+Planet.prototype.canBuildFactory = function(player) {
+    if (player === this.player) {
+        return true;
+    
+    } else if (this.player.id === 0 && this.factoryCompleteCount === 0
+               && this.getPlayerFactoryCount(player) === 0) {
+        
+        var found = false;
+        for(var i = 0; i < this.nodes.length; i++) {
+            if (this.$.planets[this.nodes[i]].player === player) {
+                found = true;
+                break;
+            }
+        }
+        return found;
+    
+    } else {
+        return false;
+    }
 };
 
 
@@ -206,13 +234,9 @@ Planet.prototype.draw = function(sx, sy) {
     this.$.drawBack();
     
     // Color
-    if (this.player === this.$.player) {
-        this.$.drawColor(this.$.player.color);
+    this.$.drawShaded(this.$.player.color);
     
-    } else {
-        this.$.drawShaded(this.$.player.color);
-    } 
-    
+    // Selection    
     if (selectShips) {
         this.drawSelect();
     
@@ -225,6 +249,37 @@ Planet.prototype.draw = function(sx, sy) {
     // Factories
     for(var i in this.factories) {
         this.factories[i].draw();
+    }
+    if (this === this.$.player.selectPlanet && this.canBuild) {
+        this.$.drawWidth(1);
+        for(var i = 0; i < this.maxFactories; i++) {
+            var r = (this.factoryR + (360 / this.maxFactories) * i);
+            var build = false;
+            for(var e in this.factories) {
+                if (this.factories[e].r === r) {
+                    build = true;
+                    break;
+                }
+            }
+            if (!build) {
+                var x = this.x + Math.cos(r * Math.PI / 180) * (this.size - 1.5);
+                var y = this.y + Math.sin(r * Math.PI / 180) * (this.size - 1.5);
+                var size = this.$.inputFactoryPlace === i ? 7 * 1.5 : 5 * 1.5;
+                this.$.bbg.fillStyle = '#000000';
+                this.$.drawCircle(x, y, size, true);
+                if (this.$.inputFactoryPlace === i) {
+                    this.$.drawAlpha(0.5);
+                    this.$.drawShaded(this.$.player.color);
+                    this.$.drawCircle(x, y, size, true);
+                }
+                
+                this.$.drawAlpha(1);
+                this.$.drawColor(this.$.player.color);
+                this.$.drawCircle(x, y, size, false);
+            }
+        }
+        this.$.bbg.fillStyle = '#000000';
+        this.$.drawCircle(this.x, this.y, this.size, true);
     }
     
     this.$.drawWidth(5 * (ringScale * resScale));
@@ -277,7 +332,7 @@ Planet.prototype.draw = function(sx, sy) {
 //    
     // Info
     } else if (this === this.$.inputHover || (this === selected && this.playerCount > 0)) {
-                
+        
         // Enemy Planet
         if (this.playerCount > 0 && this.player !== this.$.player) {
             this.$.drawShaded(this.$.player.color);

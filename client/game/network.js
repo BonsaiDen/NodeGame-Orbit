@@ -148,6 +148,11 @@ Game.prototype.netMessage = function(msg) {
         } catch(e) {
         }
         
+        // Planet updates
+        for(var i in this.planets) {
+            this.planets[i].update();
+        }
+        
         // Stuff
         this.drawInit();
         this.cameraOldX = this.cameraX;
@@ -175,7 +180,9 @@ Game.prototype.netMessage = function(msg) {
 Game.prototype.netPlanetsInit = function(data) {
     for(var i = 0; i < data.length; i++) {
         var d = data[i];
-        var p = new Planet(this, d[0], d[1], d[2], d[3], this.players[d[4]], d[5], d[6], d[7]);
+        var p = new Planet(this, d[0], d[1], d[2], d[3], this.players[d[4]],
+                           d[5], d[6], d[7], d[8]);
+        
         this.planets[d[0]] = p;
         this.planetList.push(p);
         
@@ -193,6 +200,7 @@ Game.prototype.netPlanetsUpdate = function(data) {
         var d = data[i];
         this.planets[d[0]].player = this.players[d[1]];
         this.planets[d[0]].maxCount = d[2];
+        this.planets[d[0]].update();
     }
     this.updateBackground = true;
 };
@@ -207,9 +215,12 @@ Game.prototype.netFactoriesUpdate = function(data) {
         if (!factory) {
             factory = new Factory(this, p, d[1], d[2], this.players[d[3]],
                                   d[4], d[5], d[6]);
+            
+            p.update();
         
         } else {
             factory.update(d[2]);
+            p.update();
         }
     }
     this.updateBackground = true;
@@ -220,6 +231,7 @@ Game.prototype.netFactoriesDestroy = function(data) {
         var d = data[i];
         if (this.planets[d[0]].factories[d[1]]) {
             this.planets[d[0]].factories[d[1]].destroy();
+            this.planets[d[0]].update();
         }
     }
     this.updateBackground = true;

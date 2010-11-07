@@ -39,7 +39,7 @@ function Factory(planet, r, player, type, complete) {
     this.shipsTaken = complete ? this.shipsNeeded : 0;
     this.build = complete;
     
-    this.rateStep = 0;
+    this.rateStep = 30;
     this.rate = 140;
     
     if (complete) {
@@ -64,9 +64,11 @@ Factory.prototype.produce = function(modifier) {
         
         if (this.player.shipCount < this.player.shipMaxCount) {
             if (this.planet.getPlayerShipCount(this.player) < maxCount) {
-                var typeCount = (maxCount / this.planet.factoryCount) * this.planet.getPlayerFactoryTypeCount(this.player, this.type);
+                var typeCount = (maxCount / this.planet.factoryCount)
+                                * this.planet.getPlayerFactoryTypeCount(this.player, this.type);
+                
                 if (this.planet.getPlayerTypeShipCount(this.player, this.type) < typeCount) {
-                    var rate = this.planet.spawnShipCount > 0 ? 20 : this.rate * modifier;
+                    var rate = this.planet.spawnShipCount > 0 ? 30 : this.rate * modifier;
                     if (this.rateStep >= Math.floor(rate)) {
                         this.planet.createShip(this.type, this.player, this.r, false);
                         this.rateStep = 0;
@@ -77,6 +79,8 @@ Factory.prototype.produce = function(modifier) {
     }
 };
 
+
+// Ships -----------------------------------------------------------------------
 Factory.prototype.addShip = function(ship) {
     this.shipsTaken++;
     ship.destroy();
@@ -117,7 +121,9 @@ Factory.prototype.callShip = function() {
         for(var i = 0, l = ships.length; i < l; i++) {
             var ship = ships[i];
             var diff = this.$.coreDifference(ship.r, this.r);
-            if ((ship.direction === 1 && diff > 0) || (ship.direction === -1 && diff < 0)) {
+            if ((ship.direction === 1 && diff > 0)
+                || (ship.direction === -1 && diff < 0)) {
+                
                 if (Math.abs(diff) > 15 && Math.abs(diff) <= 30) {
                     if (ship.land(this)) {
                         get--;

@@ -35,6 +35,7 @@ Game.prototype.inputInit = function(full) {
     this.mouseDragX = 0;
     this.mouseDragY = 0;
     this.mouseDragDown = false;
+    this.inputFactoryPlace = -1;
     
     this.scale = 2;
     this.mouseX = -1;
@@ -143,19 +144,6 @@ Game.prototype.inputKeyboard = function() {
     this.cameraY = Math.min(this.cameraY, this.height - this.viewHeight);
     this.cameraY = Math.max(this.cameraY, 0);
     
-    // Build?
-    if (this.player.selectPlanet) {
-        if (this.keys[49] === 2) {
-            this.player.build(this.player.selectPlanet, 'fight');
-        
-        } else if (this.keys[50] === 2) {
-            this.player.build(this.player.selectPlanet, 'def');
-        
-        } else if (this.keys[51] === 2) {
-            this.player.build(this.player.selectPlanet, 'bomb');
-        }
-    }
-    
     // Reset Key States
     for(var i in this.keys) {
         if (this.keys[i] === 2) {
@@ -204,6 +192,7 @@ Game.prototype.inputMove = function(ox, oy) {
     
     // Calculate paths
     if (oldHover !== newHover) {
+        this.inputFactoryPlace = -1;
         this.drawBackground(this.sendPath.length > 0);
         if (this.oldHover) {
             this.player.selectStop();
@@ -218,7 +207,32 @@ Game.prototype.inputMove = function(ox, oy) {
             }
         }
     }
+    
     this.inputHover = newHover;
+    
+    // Check for factory hover
+    if (this.player.selectPlanet && this.player.selectPlanet.canBuild) {
+        var p = this.player.selectPlanet;
+        var pdx = p.x - this.worldX;
+        var pdy = p.y - this.worldY;
+        
+        var oldPlace = this.inputFactoryPlace;
+        this.inputFactoryPlace = -1;
+        if (Math.sqrt(pdx * pdx + pdy * pdy) > p.size + 2) {
+            for(var i = 0; i < p.maxFactories; i++) {
+                var size = i === oldPlace ? 7 * 1.5  : 5 * 1.5;
+                var r = (p.factoryR + (360 / p.maxFactories) * i) * Math.PI / 180;
+                var dx = p.x + Math.cos(r) * (p.size - 1.5) - this.worldX;
+                var dy = p.y + Math.sin(r) * (p.size - 1.5) - this.worldY;
+                if (Math.sqrt(dx * dx + dy * dy) < size + 2) {
+                    this.inputFactoryPlace = i;
+                }
+            }
+            if (this.inputFactoryPlace !== oldPlace) {
+                this.drawBackground();
+            }
+        }
+    }
 };
 
 Game.prototype.inputDown = function(e) {
@@ -260,7 +274,10 @@ Game.prototype.inputUp = function(e) {
 };
 
 Game.prototype.inputClick = function(e) {
-    if (this.inputHover && e.button === 2) {
+    if (this.inputFactoryPlace !== -1 && this.player.selectPlanet) {
+        this.player.build(this.player.selectPlanet, this.inputFactoryPlace, 'fight');
+    
+    } else if (this.inputHover && e.button === 2) {
         this.player.stop(this.inputHover);
     
     } else if (!this.inputHover && !this.mouseDrag) {

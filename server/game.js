@@ -25,7 +25,6 @@ var Player = require('./objects/player').Player;
 var Planet = require('./objects/planet').Planet;
 
 // Message Types
-var MSG_PLANETS_INIT = 0;
 var MSG_PLAYER_ADD = 1;
 var MSG_PLAYER_REMOVE = 2;
 var MSG_GAME_JOIN = 3;
@@ -162,8 +161,8 @@ Game.prototype.onMessage = function(type, data, client) {
         
         } else if (type === 'build') {
             var at = this.planets[data[0]];
-            if (at && this.factoryTypes.indexOf(data[1]) !== -1) {
-                at.buildFactory(player, data[1]);
+            if (at && data[1] >= 0 && this.factoryTypes.indexOf(data[2]) !== -1) {
+                at.buildFactory(player, data[1], data[2]);
             }
         }
     }
@@ -299,7 +298,7 @@ Game.prototype.initPlanets = function(client) {
         var p = this.planets[i];
         planets.push([p.id, p.x, p.y, p.size,
                       p.player ? p.player.id : 0, p.maxCount, p.nodes,
-                      p.maxFactories]);
+                      p.maxFactories, p.factoryR]);
         
         if (client.player && !p.ships[client.player.id]) {
             p.ships[client.player.id] = {fight: [], bomb: [], def: []};
@@ -355,9 +354,10 @@ Game.prototype.updateFactories = function(client) {
         var p = this.planets[i];
         for(var e in p.factories) {
             var f = p.factories[e];
-            
             if (!client.factories[i][f.id]) {
-                updates.push([p.id, f.id, f.r, f.player.id, f.typeID, f.shipsTaken, f.shipsNeeded]);
+                updates.push([p.id, f.id, f.r, f.player.id, f.typeID,
+                              f.shipsTaken, f.shipsNeeded]);
+                
                 client.factories[i][f.id] = true;
             
             } else if (f.updated) {

@@ -64,7 +64,7 @@ Player.prototype.remove = function() {
 // Tick the GUI ----------------------------------------------------------------
 Player.prototype.tick = function() {
     var tick = Math.floor(this.getTick());
-    if (this.selectPlanet && tick % 2 === 0) {
+    if (this.selectPlanet && tick % 2 === 0 && this.$.inputFactoryPlace === -1) {
         var type = this.getSelectType();
         var oldCount = this.selectCount[type];
         if (this.select && this.getTick() - this.selectAddTick > 10) {
@@ -95,8 +95,10 @@ Player.prototype.tick = function() {
 };
 
 Player.prototype.addCount = function(type, add) {
-    var maxCount = this.selectPlanet.ships[this.id][type].length;;
-    this.selectCount[type] = Math.min(maxCount, this.selectCount[type] + add);
+    if (this.$.inputFactoryPlace === -1) {
+        var maxCount = this.selectPlanet.ships[this.id][type].length;;
+        this.selectCount[type] = Math.min(maxCount, this.selectCount[type] + add);
+    }
 };
 
 
@@ -132,11 +134,14 @@ Player.prototype.stop = function(planet) {
     }
 };
 
-Player.prototype.build = function(planet, type) {
+Player.prototype.build = function(planet, place, type) {
     if (planet.player === this || this.selectPlanet.player.id === 0) {
         if (planet.factoryCompleteCount === 0 || planet.player === this) {
-            if (planet.factoryCount < planet.maxFactories) {
-                this.$.send({'build': [planet.id, type]});
+            if (planet.factoryCount < planet.maxFactories
+                && place < planet.maxFactories) {
+                
+                this.selectCount[this.selectType] = 0;
+                this.$.send({'build': [planet.id, place, type]});
             }
         }
     }
@@ -182,10 +187,12 @@ Player.prototype.selectAdd = function() {
 };
 
 Player.prototype.selectCancel = function() {
-    this.selectTick = 0;
-    this.resetSelectCount();
-    this.selectPlanet = null;
-    this.select = false;
+    if (this.$.inputFactoryPlace === -1) {
+        this.selectTick = 0;
+        this.resetSelectCount();
+        this.selectPlanet = null;
+        this.select = false;
+    }
 };
 
 Player.prototype.getSelectType = function()  {

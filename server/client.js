@@ -23,7 +23,7 @@
 
 var MSG_SEND = ['number', 'number', 'string', 'number'];
 var MSG_STOP = ['number', 'string', 'boolean'];
-var MSG_BUILD = ['number', 'string'];
+var MSG_BUILD = ['number', 'number', 'string'];
 
 
 // Clients ---------------------------------------------------------------------

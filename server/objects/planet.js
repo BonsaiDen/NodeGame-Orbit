@@ -72,7 +72,7 @@ Planet.prototype.initPlayer = function(player, start, factories) {
         this.removeFactories(true);
         this.player = player; 
         if (factories) {
-            this.createFactory(player, 'fight', true);
+            this.createFactory(player, -1, 'fight', true);
             this.spawnShipCount = 5;
         }
     
@@ -85,10 +85,9 @@ Planet.prototype.initNeutral = function(ships, orbit, factories) {
     this.player = this.$.neutralPlayer;  
     this.neutralTick = Math.floor(this.getTick() + 300 + (400 * Math.random()));
     if (factories) {
-        var count = Math.max(1, Math.floor(this.maxFactories / 2.5));
+        var count = Math.max(1, Math.floor(this.maxFactories / 3));
         for(var i = 0; i < count; i++) {
-            var type = this.$.factoryTypes[Math.floor(Math.random() * this.$.factoryTypes.length)];
-            this.createFactory(this.player, type, true);
+            this.createFactory(this.player, -1, 'fight', true);
         }
         this.spawnShipCount = Math.floor(this.maxCount / 6);
     }
@@ -138,41 +137,56 @@ Planet.prototype.checkPlayer = function() {
 
 // Factories -------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-Planet.prototype.createFactory = function(player, type, complete) {
+Planet.prototype.createFactory = function(player, place, type, complete) {
     if (this.factoryCount >= this.maxFactories) {
         return
     }
     
     var fdiff = Math.round(360 / this.maxFactories);
-    var p = 0, r = 0, found = false;
-    while(!found) {
-        found = true;
-        r = Math.round(this.factoryR + (p % 2 === 0 ? 0 - fdiff * p : fdiff * p));
-        while (r >= 360) {
-            r -= 360;
-        }
-        while (r < 0) {
-            r += 360;
-        }
-        for(var i in this.factories) {
-            if (this.factories[i].r === r) {
-                found = false;
-                break;
+    if (place === -1) {
+        var random = [];
+        for(var p = 0; p < this.maxFactories; p++) {
+            var r = this.factoryR + p * fdiff;
+            var found = false;
+            for(var i in this.factories) {
+                if (this.factories[i].r === r) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                random.push(r);
             }
         }
-        p++;
+        random.sort(function(a, b) {return (Math.random() * 2) - 1});
+        new Factory(this, random[0], player, type, complete);
+        
+    } else if (place >= 0 && place < this.maxFactories) {   
+        var found = false;
+        var r = this.factoryR + place * fdiff;
+        for(var p = 0; p < this.maxFactories; p++) {
+            for(var i in this.factories) {
+                if (this.factories[i].r === r) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found) {
+            new Factory(this, r, player, type, complete);
+        }
     }
-    new Factory(this, r, player, type, complete);
 };
 
-Planet.prototype.buildFactory = function(player, type) {
+Planet.prototype.buildFactory = function(player, place, type) {
     if (player === this.player) {
-        this.createFactory(player, type, false);
+        this.createFactory(player, place, type, false);
     
     } else if (this.player === this.$.neutralPlayer
-              && this.factoryCompleteCount === 0) {
+               && this.factoryCompleteCount === 0
+               && this.getPlayerFactoryCount(player) === 0) {
         
-        var found = 0;
+        var found = false;
         for(var i = 0; i < this.nodes.length; i++) {
             if (this.$.planets[this.nodes[i]].player === player) {
                 found = true;
@@ -181,7 +195,7 @@ Planet.prototype.buildFactory = function(player, type) {
         }
         
         if (found) {
-            this.createFactory(player, type, false);
+            this.createFactory(player, place, type, false);
         }
     }
 };
@@ -235,7 +249,7 @@ Planet.prototype.removePlayerShips = function(player) {
 // Update Planets --------------------------------------------------------------
 // -----------------------------------------------------------------------------
 Planet.prototype.tick = function() {
-    var maxRate = [1, 0.70, 0.90, 1.0, 1.1, 1.25, 1.4, 1.75, 2.00];
+    var maxRate = [1, 0.70, 0.90, 1.0, 1.2, 1.4, 1.6, 1.7, 1.9];
     var rate = 2;
     if (this.player.planetCount < maxRate.length && this.player.id !== 0) {
         rate = maxRate[this.player.planetCount];
@@ -292,7 +306,7 @@ Planet.prototype.tickAI = function() {
                             var cur = this.getShipReadyCount(this.player, type);
                             if (p.getHumanShips() * 1.5 < all) {
                                 if (cur > 3 + neededShips[type]) {
-                                    p.buildFactory(this.player, type);
+                                    p.buildFactory(this.player, -1, type);
                                     factoryBuilt = true;
                                 }
                             }
@@ -366,7 +380,7 @@ Planet.prototype.tickCombat = function() {
                 var s = ships[e];
                 var ds = Math.abs(this.$.coreDifference(s.r, c.r));
                 if (!s.traveling && s.health > 0
-                    && ds <= c.getRotationSpeed() * 6) {
+                    && ds <= c.getRotationSpeed() * 7) {
                     
                     if (s.player !== c.player) {
                         c.attack(s);
@@ -383,7 +397,7 @@ Planet.prototype.tickCombat = function() {
                 for(var e in this.factories) {
                     var f = this.factories[e];
                     var ds = Math.abs(this.$.coreDifference(f.r, c.r));
-                    if (ds <= c.getRotationSpeed() * 6 && f.player !== c.player) {
+                    if (ds <= c.getRotationSpeed() * 5 && f.player !== c.player) {
                         c.attackFactory(f);
                         break;
                     }
