@@ -96,7 +96,7 @@ OrbitFactory.prototype = {
     damage: function(amount) {
         this.health -= amount;
         if (this.health <= 0) {
-            this.destroy();
+            this.destroy(false);
         }
     },
     
@@ -119,8 +119,8 @@ OrbitFactory.prototype = {
         ships.each(function(ship) {
             if (ship.targetFactory === this) {
                 callingShips++;
-                if (callingShips >= neededShips) {
-                    return true;
+                if (callingShips > neededShips) {
+                    ship.targetFactory = null;
                 }
             }
         }, this); 
@@ -147,16 +147,18 @@ OrbitFactory.prototype = {
     },
     
     useShip: function(ship) {
-        ship.destroy();
-        this.shipsUsed++;
-        if (this.shipsUsed === this.shipsRequired) {
-            this.build = true;
-            this.health = this.game.factoryHealth;
-            this.produceStep = 0;
-            this.planet.factoriesComplete.add(this);
-            this.planet.checkFactoryTakeover(true);
+        if (!this.build) {
+            ship.destroy();
+            this.shipsUsed++;
+            if (this.shipsUsed === this.shipsRequired) {
+                this.build = true;
+                this.health = this.game.factoryHealth;
+                this.produceStep = 0;
+                this.planet.factoriesComplete.add(this);
+                this.planet.checkFactoryTakeover(true);
+            }
+            this.update();
         }
-        this.update();
     },
     
     // Network -----------------------------------------------------------------
