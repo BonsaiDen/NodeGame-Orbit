@@ -174,8 +174,7 @@ OrbitPlayer.extend({
     getProductionModifier: function() {
         var mods = [1, 0.50, 0.90, 1.0, 1.2, 1.4, 1.6, 1.7, 2];
         var rate = mods[Math.min(this.planets.length, mods.length - 1)];
-        
-        return this.isNeutral() ? rate * 1.5 : rate;
+        return this.isNeutral() ? rate * 1.25 : rate;
     },
     
     isHuman: function() {
