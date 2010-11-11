@@ -150,24 +150,7 @@ OrbitShip.extend({
         }
     },
     
-    // Commands ----------------------------------------------------------------
-    sendToPlanet: function(targetPlanet, readyOnly) {
-        if (this.isLanding || this.isTraveling) {
-            return false;
-        
-        } else if (readyOnly && this.inOrbit
-                   && !this.targetFactory && !this.targetPlanet) {
-            
-            var diff = this.angleDifference(this.planet.angleBetween(targetPlanet));
-            if (Math.abs(diff) / this.getRotationSpeed() > 20) {
-                return this.calculateTravelRoute(targetPlanet);
-            }
-        
-        } else {
-            return this.calculateTravelRoute(targetPlanet);
-        }
-    },
-    
+    // Commands ----------------------------------------------------------------    
     landAtFactory: function(factory) {
         if (!this.nextPlanet && !this.isTraveling && this.inOrbit
             && !this.targetFactory && !this.isLanding) {

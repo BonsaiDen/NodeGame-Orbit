@@ -46,9 +46,33 @@ exports.methods = {
     
     sendShips: function(player, targetPlanet, count, readyOnly) {
         var ships = this.getNearestShips(player, this.angleBetween(targetPlanet));
-        var remaining = this.sendShipsToPlanet(ships, targetPlanet, count, true);
-        if (!readyOnly && remaining > 0) {
-            this.sendShipsToPlanet(ships, targetPlanet, remaining, false);
+        ships.each(function(ship) {
+            if (!ship.isTraveling && !ship.targetFactory && !ship.isLanding
+                && !ship.targetPlanet && ship.inOrbit) {
+                
+                var diff = ship.angleDifference(this.angleBetween(targetPlanet));
+                if (Math.abs(diff) / ship.getRotationSpeed() > 20) {
+                    if (ship.calculateTravelRoute(targetPlanet)) {
+                        count--;
+                        if (count === 0) {
+                            return true;
+                        }   
+                    }
+                }
+            }
+        }, this);
+        
+        if (!readyOnly && count > 0) {
+            ships.each(function(ship) {
+                if (!ship.isTraveling && !ship.isLanding && !ship.nextPlanet) {
+                    if (ship.calculateTravelRoute(targetPlanet)) {
+                        count--;
+                        if (count === 0) {
+                            return true;
+                        }
+                    }
+                }
+            }, this);
         }
     },
     
