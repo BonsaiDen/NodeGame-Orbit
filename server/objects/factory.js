@@ -21,140 +21,194 @@
 */
 
 
-// Factory ---------------------------------------------------------------------
+// Modules ---------------------------------------------------------------------
+var HashList = require('./../libs/hashlist').HashList;
+var OrbitShip = require('./ship').OrbitShip;
+
+
+// Orbit Planet ----------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Factory(planet, r, player, type, complete) {
+function OrbitFactory(planet, player, angle, build) {
     this.planet = planet;
-    this.$ = this.planet.$;
+    this.game = this.planet.game;
+    this.id = this.game.factoryID++;
     this.player = player;
-    this.id = planet.factoryID;
-    this.typeID = this.$.factoryTypes.indexOf(type);
-    this.planet.factories[this.id] = this;
+    
+    this.game.factories.add(this);
+    this.planet.factories.add(this);
+    this.player.factories.add(this);
+    if (build) {
+        this.planet.factoriesComplete.add(this);
+    }
     
     this.updated = false;
-    this.r = r;
-    this.health = 100;
-    this.type = type;
-    this.shipsNeeded = 10;
-    this.shipsTaken = complete ? this.shipsNeeded : 0;
-    this.build = complete;
+    this.destroyed = false;
     
-    this.rateStep = 30;
-    this.rate = 140;
+    this.health = this.game.factoryHealth;
+    this.angle = angle;
+    this.build = build;
+    this.produceRate = 140;
+    this.produceStep = 140;
     
-    if (complete) {
-        this.planet.factoryCompleteCount++;
-    }
-    this.planet.factoryCount++;
-    planet.factoryID++;
+    this.shipsRequired = 7;
+    this.shipsUsed = build ? this.shipsRequired : 0;
 }
-exports.Factory = Factory;
+exports.OrbitFactory = OrbitFactory;
 
 
-// Stuff -----------------------------------------------------------------------
-Factory.prototype.produce = function(modifier) {
-    if (!this.build) {
-        if (this.getTick() % 4 === 0) {
-            this.callShip();
-        }
+// Prototype -------------------------------------------------------------------
+OrbitFactory.prototype = {
     
-    } else {
-        var maxCount = this.player.id === 0 ? this.planet.maxCount * 0.5 : this.planet.maxCount; 
-        this.rateStep++;
+    tick: function() {
+        if (this.destroyed) {
+            return;
         
-        if (this.player.shipCount < this.player.shipMaxCount) {
-            if (this.planet.getPlayerShipCount(this.player) < maxCount) {
-                var typeCount = (maxCount / this.planet.factoryCount)
-                                * this.planet.getPlayerFactoryTypeCount(this.player, this.type);
+        } else if (!this.build) {
+            if (this.getTick() % 4 === 0) {
+                this.callShip();
+            }
+        
+        } else {
+            this.produceStep++;
+            this.produce(); 
+        }
+    },
+    
+    produce: function() {
+        if (this.produceStep >= Math.floor(this.getProductionRate())) {
+            if (!this.player.shipMaximum()
+                && !this.planet.shipMaximum(this.player)) {
                 
-                if (this.planet.getPlayerTypeShipCount(this.player, this.type) < typeCount) {
-                    var rate = this.planet.spawnShipCount > 0 ? 30 : this.rate * modifier;
-                    if (this.rateStep >= Math.floor(rate)) {
-                        this.planet.createShip(this.type, this.player, this.r, false);
-                        this.rateStep = 0;
-                    }
+                if (this.planet.shipSpawn > 0) {
+                    this.planet.shipSpawn--;
+                }
+                new OrbitShip(this.planet, this.player, this.angle);
+            }
+            this.produceStep = 0;
+        }
+    },
+    
+    getProductionRate: function() {
+        return this.planet.shipSpawn > 0 ? 30
+               : this.produceRate * this.player.getProductionModifier();
+    },
+    
+    damage: function(amount) {
+        this.health -= amount;
+        if (this.health <= 0) {
+            this.destroy();
+        }
+    },
+    
+    destroy: function(ingoreCheck) {
+        this.destroyed = true;
+        this.planet.factories.remove(this);
+        this.planet.factoriesComplete.remove(this);
+        this.player.factories.remove(this);
+        
+        if (this.build && !ingoreCheck) {
+            this.planet.checkFactoryTakeover(false);
+        }
+    },
+    
+    // Ships -------------------------------------------------------------------
+    callShip: function() {
+        var ships = this.getNearestShips();
+        var neededShips = this.shipsRequired - this.shipsUsed;
+        var callingShips = 0;
+        ships.each(function(ship) {
+            if (ship.targetFactory === this) {
+                callingShips++;
+                if (callingShips >= neededShips) {
+                    return true;
                 }
             }
-        }
-    }
-};
-
-
-// Ships -----------------------------------------------------------------------
-Factory.prototype.addShip = function(ship) {
-    this.shipsTaken++;
-    ship.destroy();
-    
-    if (this.shipsTaken === this.shipsNeeded) {
-        this.build = true;
-        this.health = 100;
-        this.rateStep = 0;
-        this.planet.factoryCompleteCount++;
-        this.planet.checkPlayer(true);
-    }
-    this.updated = true;
-};
-
-Factory.prototype.callShip = function() {
-    var ships = this.planet.ships[this.player.id][this.type];
-    var needed = this.shipsNeeded - this.shipsTaken;
-    var calling = 0;
-    for(var i = 0, l = ships.length; i < l; i++) {
-         if (ships[i].landFactory === this) {
-            calling++;
-         }
-    }
-    
-    var get = needed - calling;
-    if (get > 0) {
+        }, this); 
         
-        ships.sort(function(a, b) {
-            var ra = a.direction === 1 ? ((a.r + a.rs) - this.r + 360) % 360
-                                       : (this.r - (a.r - a.rs) + 360) % 360;
-        
-            var rb = b.direction === 1 ? ((b.r + b.rs) - this.r + 360) % 360
-                                       : (this.r - (b.r - b.rs) + 360) % 360;
-            
-            return rb - ra;
-        });
-        
-        for(var i = 0, l = ships.length; i < l; i++) {
-            var ship = ships[i];
-            var diff = this.$.coreDifference(ship.r, this.r);
-            if ((ship.direction === 1 && diff > 0)
-                || (ship.direction === -1 && diff < 0)) {
-                
-                if (Math.abs(diff) > 15 && Math.abs(diff) <= 30) {
-                    if (ship.land(this)) {
-                        get--;
-                        if (get === 0) {
-                            break;
+        var additionalShips = neededShips - callingShips;
+        if (additionalShips > 0) {
+            ships.each(function(ship) {
+                if (!ship.targetFactory
+                    && ship.inAngleDifference(this.angle, 20, 30)) {
+                    
+                    if (ship.landAtFactory(this)) {
+                        additionalShips--;
+                        if (additionalShips === 0) {
+                            return true;
                         }
                     }
                 }
-            }
+            }, this);
         }
+    },
+    
+    getNearestShips: function() {
+        return this.planet.getNearestShips(this.player, this.angle);
+    },
+    
+    useShip: function(ship) {
+        ship.destroy();
+        this.shipsUsed++;
+        if (this.shipsUsed === this.shipsRequired) {
+            this.build = true;
+            this.health = this.game.factoryHealth;
+            this.produceStep = 0;
+            this.planet.factoriesComplete.add(this);
+            this.planet.checkFactoryTakeover(true);
+        }
+        this.update();
+    },
+    
+    // Network -----------------------------------------------------------------
+    createMessage: function() {
+        return [this.planet.id, this.id, this.angle, this.player.id,
+                this.shipsUsed, this.shipsRequired];
+    },
+    
+    updateMessage: function() {
+        return [this.planet.id, this.id, this.shipsUsed];
+    },
+    
+    destroyMessage: function() {
+        return [this.planet.id, this.id];
+    },
+    
+    update: function() {
+        this.updated = true;
+    },
+    
+    // Helpers -----------------------------------------------------------------
+    isAlive: function() {
+        return this.health >= 0
+    },
+    
+    isBuild: function() {
+        return this.build;
+    }, 
+    
+    isBuilding: function() {
+        return !this.build;
+    },
+    
+    requiredCount: function() {
+        return this.shipsRequired;
+    },
+    
+    angleDifference: function(angle) {
+        return this.game.angleDifference(this.angle, angle);
+    },
+    
+    isNeutral: function() {
+        return this.player.isNeutral();
+    },
+    
+    getTick: function() {
+        return this.game.getTick();
+    },
+    
+    log: function(msg) {
+        var factory = 'Factory #' + this.id + ' of Player #' + this.player.id;
+        this.planet.log('[' + factory + ']: ' + msg);
     }
-};
-
-Factory.prototype.destroy = function(noCheck) {
-    if (this.planet.factories[this.id]) {
-        this.health = 0;
-        this.planet.factoryCount--;
-        if (this.build) {
-            this.planet.factoryCompleteCount--;
-        }
-        this.planet.factoriesDestroyed.push(this.id);
-        delete this.planet.factories[this.id];
-        if (!noCheck) {
-            this.planet.checkPlayer();
-        }
-    }
-};
-
-
-// Helpers ---------------------------------------------------------------------
-Factory.prototype.getTick = function() {
-    return this.$.getTick();
 };
 

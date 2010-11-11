@@ -21,205 +21,179 @@
 */
 
 
+// Modules ---------------------------------------------------------------------
 var ws = require('./libs/ws');
-var BISON = require('./libs/bison');
-var Client = require('./client').Client;
-var Game = require('./game').Game;
-var Status = require('./status').Status;
+var bison = require('./libs/bison');
+var HashList = require('./libs/hashlist').HashList;
+var OrbitGame = require('./game').OrbitGame;
+var OrbitServerStatus = require('./status').OrbitServerStatus;
 
 
-// Server ----------------------------------------------------------------------
+// Orbit Server ----------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Server(port, status, flash) {
-    
-    // Clients
-    this.maxClients = 8;
-    this.clientCount = 0;
-    this.clients = {};
-    this.clientID = 1;
-    
-    // Game
-    this.gameCount = 0;
-    this.games = {};
-    
-    // Socket
+var ERROR_SERVER_FULL = 100;
+var ERROR_INVALID_LOGIN = 200;
+
+
+function OrbitServer(port, flash, max) {
     var that = this;
-    this.port = port;
-    this.bytesSend = 0;
-    this.flash = flash;
+    this.clients = new HashList();
+    this.maxClient = max;
     
-    this.$ = new ws.Server(this.flash);
-    this.$.onConnect = function(conn) {
-        if (this.clientCount >= this.maxClients) {
+    this.games = new HashList();
+    this.maxGames = 12;
+    
+    this.server = new ws.Server(flash, bison.encode, bison.decode);
+    this.server.onConnect = function(conn) {that.connect(conn);};
+    this.server.onMessage = function(conn, msg) {that.message(conn, msg);};
+    this.server.onClose = function(conn) {that.close(conn);};
+    this.server.listen(port);
+    
+    new OrbitServerStatus(this);
+}
+exports.OrbitServer = OrbitServer;
+
+
+// Prototype -------------------------------------------------------------------
+OrbitServer.prototype = {
+    connect: function(conn) {
+        if (this.clients.length >= this.maxClients) {
+            conn.send({error: ERROR_SERVER_FULL});
             conn.close();
-            return;
+            return false;
         }
-    };
+    },
     
-    this.$.onMessage = function(conn, msg) {
-        that.onMessage(conn, msg);
-    };
+    broadcast: function(type, msg, clients, exclude) {
+        msg.unshift(type);
+        if (!clients || clients.length === 0) {
+            this.server.broadcast(msg);
+        
+        } else if (exclude) {
+            this.clients.eachNot(clients, function(client) {
+                client.conn.send(msg);
+            });
+        
+        } else {
+            this.clients.eachIn(clients, function(client) {
+                client.conn.send( msg);
+            });
+        }
+    },
     
-    this.$.onClose = function(conn) {
-        that.removeClient(conn.$clientID);
-    };
+    close: function(conn) {
+        if (this.clients.has(conn)) {
+            this.clients.get(conn).close();
+            this.clients.remove(conn);
+        }
+    },
     
-    process.addListener('SIGINT', function(){that.onShutdown()})
-    this.flash = this.$.listen(port);
+    message: function(conn, msg) {
+        if (this.clients.has(conn)) {
+            this.clients.get(conn).message(msg);
+        
+        } else {
+            this.login(conn, msg);
+        }
+    },
     
+    login: function(conn, msg) {
+        if (msg instanceof Array
+        
+            // basic check
+            && msg.length >= 3
+            && msg[0] === 'init'
+            
+            // name check
+            && typeof msg[1] === 'string'
+            && msg[1].trim() !== ''
+            && msg[1].trim().length >= 2
+            && msg[1].trim().length <= 15
+            
+            // game id check
+            && typeof msg[2] === 'number'
+            && msg[2] >= 0
+            && msg[2] <= this.maxGames
+            
+            // watch check
+            && typeof msg[3] === 'boolean'
+            
+            // hash check
+            && typeof msg[4] === 'string'
+            && msg[4].trim().length <= 32
+        
+        // Valid
+        ) {
+            var name = msg[1].trim();
+            var game = msg[2], watch = msg[3], hash = msg[4].trim();
+            var client = new OrbitClient(this, conn, name, game, watch, hash);
+            this.clients.add(client);
+        
+        // Invalid
+        } else {
+            this.log('Invalid login');
+            conn.send({error: ERROR_INVALID_LOGIN});
+            conn.close();
+        }
+    },
     
-    // Status
-    this.status = null;
-    if (status) {
-        this.status = new Status(this);
-        this.status.update();
+    addToGame: function(client) {
+        if (!this.games.has(client.gameID)) {
+            this.games.add(new OrbitGame(this, client.gameID));
+        }
+        this.games.get(client.gameID).clientAdd(client);
+    },
+    
+    removeFromGame: function(client) {
+        if (this.games.has(client.gameID)) {
+            this.games.get(client.gameID).clientRemove(client);
+        }
+    },
+    
+    log: function(msg) {
+        console.log('[Server]: ' + msg);
     }
+};
+
+
+// Orbit Client ----------------------------------------------------------------
+// -----------------------------------------------------------------------------
+function OrbitClient(server, conn, name, game, watch, hash) {
+    this.server = server;
+    this.conn = conn;
+    this.connID = conn.host + ':' + conn.port;
+    this.id = this.conn.id;
+    
+    this.name = name;
+    this.player = null;
+    this.gameWatch = watch;
+    this.gameHash = hash;
+    this.gameID = game;
+    
+    this.log('Connected');
+    this.server.addToGame(this);
 }
 
-Server.prototype.log = function() {
-    if (this.status) {
-        this.status.log.apply(this.status, arguments);
+
+// Prototype -------------------------------------------------------------------
+OrbitClient.prototype = {
+    send: function(type, msg) {
+        msg.unshift(type);
+        this.conn.send(msg);
+    },
     
-    } else {
-        console.log.apply(console, arguments);
-    }
-};
-
-
-// Events ----------------------------------------------------------------------
-Server.prototype.onMessage = function(conn, msg) {
-    if (msg.length > this.maxChars) {
-        this.log('!! Message longer than ' + this.maxChars + ' chars');
-        conn.close();
+    close: function() {
+        this.server.removeFromGame(this);
+        this.conn.close();
+        this.log('Disconnected');
+    },
     
-    } else {
-       try {
-            
-            // Login or Message
-            var msg = BISON.decode(msg);
-            if (!conn.$clientID && this.checkLogin(msg)) {
-                var name = this.checkName(msg[1]);
-                var game = this.checkGame(msg[2]);
-                var watch = this.checkWatch(msg[3]);
-                var hash = this.checkHash(msg[4]);
-                if (name !== null) {
-                    conn.$clientID = this.addClient(conn, name, game,
-                                                    watch, hash);
-                }
-            
-            } else if (conn.$clientID) {
-                this.clients[conn.$clientID].onMessage(msg);
-            }
-        
-        } catch (e) {
-            if (this.status) {
-                this.status.logError(e);
-                
-            } else {
-                console.log(e.stack || e.message);
-            }
-            conn.close();
-        }
-    }
-};
-
-Server.prototype.onShutdown = function() {
-    if (this.status) {
-        this.status.update(true);
-    }
-    process.exit(0);
-};
-
-
-// Validation -------------------------------------------------------------------
-Server.prototype.checkLogin = function(msg) {
-    if (msg instanceof Array && msg.length >= 3
-        && msg[0] === 'init' && typeof msg[1] === 'string') {
-        
-        return true;
+    message: function(msg) {
+        this.game.message(this, msg);
+    },
     
-    } else {
-        return false;
+    log: function(msg) {
+        console.log('[Client ' + this.name + '@' + this.connID + ']: ' + msg);
     }
 };
-
-Server.prototype.checkName = function(name) {
-    name = name.trim();
-    if (name.length >= 2 && name.length <= 15) {
-        return name;
-        
-    } else {
-        return null;
-    }
-};
-
-Server.prototype.checkGame = function(game) {
-    if (typeof game === 'number') {
-        if (game >= 0 && game <= 12) {
-            return game;
-        }
-    }
-    return 0;
-};
-
-Server.prototype.checkWatch = function(watch) {
-    if (typeof watch === 'boolean') {
-        return watch;
-    }
-    return false;
-};
-
-Server.prototype.checkHash = function(hash) {
-    if (typeof hash === 'string' && hash.length === 32) {
-        return hash;
-    }
-    return null;
-};
-
-
-// Clients & Players -----------------------------------------------------------
-Server.prototype.addClient = function(conn, name, gameID, watch, hash) {
-    this.clientID++;
-    this.clients[this.clientID] = new Client(this, conn, name, hash);
-    this.clientCount++;
-    this.addClientToGame(this.clients[this.clientID], gameID, watch);
-    return this.clientID;
-};
-
-Server.prototype.addClientToGame = function(client, gameID, watch) {
-    if (!this.games[gameID]) {
-        this.games[gameID] = new Game(this, gameID);
-        this.gameCount++;
-    }
-    client.onJoin(this.games[gameID], watch);
-};
-
-Server.prototype.removeClient = function(id) {
-    if (this.clients[id]) {
-        this.clientCount--;
-        this.clients[id].onRemove();
-        delete this.clients[id];
-    }
-};
-
-
-// Network ---------------------------------------------------------------------
-Server.prototype.broadcast = function(type, msg, clients) {
-    msg.unshift(type);
-    msg = BISON.encode(msg);
-    for(var i in clients) {
-        this.bytesSend += clients[i].conn.send(msg);
-    }
-};
-
-Server.prototype.send = function(conn, type, msg) {
-    msg.unshift(type);
-    this.bytesSend += conn.send(BISON.encode(msg));
-};
-
-
-// Start the Server ------------------------------------------------------------
-// -----------------------------------------------------------------------------
-new Server(28785, true, true);
-
 

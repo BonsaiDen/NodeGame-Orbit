@@ -1,16 +1,13 @@
 NodeGame: Orbit
 ===============
 
-**NodeGame: Orbit** is a bit like Eufloria, but completely written in JavaScript. The project is in it's early pre pre pre alpha aka 2 days of hacking stages.
+**NodeGame: Orbit** is a bit like Eufloria, but completely written in JavaScript.
 
 
 Todo
 ----
 
-- Different Ship types
-- Build factories
-- Rework the graphics(partly done)
-- Better controls(partly done)
+- Rewrite the client, either JS or C++
 
 
 License

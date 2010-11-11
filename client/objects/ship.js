@@ -26,7 +26,6 @@
 function Ship(game, id) {
     this.$ = game;
     
-    this.type = 0;
     this.x = 0;
     this.y = 0;
     this.planet = null;
@@ -52,6 +51,8 @@ function Ship(game, id) {
     this.travelTicks = 0;
     this.arriveTick = 0;
     this.stopped = false;
+    this.travelBezier = null;
+    this.travelAcceleration = 0;
     
     this.$.shipList.push(this);
 }
@@ -86,29 +87,28 @@ Ship.prototype.tick = function() {
         var tickDiff = this.getTick() - this.tickOffset;
         this.rs = this.getRotationSpeed();
         if (!this.inOrbit) {
-            var ospeed = this.rs * this.$.shipToOrbitSpeed[this.type];
-            var orbitDiff = Math.ceil(this.$.shipOrbits[this.type] / ospeed);
-
+            var ospeed = this.rs * this.$.shipToOrbitSpeed;
+            var orbitDiff = Math.ceil(this.$.shipOrbit / ospeed);
             if (this.landing) {
                 this.r = this.wrapAngle(this.or + this.direction * this.rs * tickDiff);
                 var l = 1 / (this.landingTick - this.tickOffset) * Math.max(this.landingTick - this.getTick(), 0);
-                this.orbit = this.$.shipOrbits[this.type] * l;
+                this.orbit = this.$.shipOrbit * l;
             
             } else {
                 this.r = this.wrapAngle(this.or + this.direction * this.rs
                                         * Math.max(tickDiff - orbitDiff * 0.35, 0));  
                 
                 this.orbit = tickDiff * ospeed;
-                if (this.orbit >= this.$.shipOrbits[this.type]) {
+                if (this.orbit >= this.$.shipOrbit) {
                     this.inOrbit = true;
-                    this.orbit = this.$.shipOrbits[this.type];
+                    this.orbit = this.$.shipOrbit;
                     this.or = this.r;
-                    this.tickOffset += (tickDiff - Math.round((this.orbit - this.$.shipOrbits[this.type]) / this.rs));
+                    this.tickOffset += (tickDiff - Math.round((this.orbit - this.$.shipOrbit) / this.rs));
                 }
             }
         
         } else {
-            this.orbit = this.$.shipOrbits[this.type];
+            this.orbit = this.$.shipOrbit;
             this.r = this.wrapAngle(this.or + this.direction * this.rs * tickDiff); 
         }
     }
@@ -117,15 +117,7 @@ Ship.prototype.tick = function() {
 // Drawing ---------------------------------------------------------------------
 Ship.prototype.clear = function(sx, sy) {
     if (this.$.shipVisbile(this, sx, sy)) {
-        if (this.type === 'fight') {
-            this.$.fbg.clearRect(this.x - 4 - sx, this.y - 4 - sy, 8, 8);
-        
-        } else if (this.type === 'def') {
-            this.$.fbg.clearRect(this.x - 3 - sx, this.y - 3 - sy, 6, 6);
-        
-        } else if (this.type === 'bomb') {
-            this.$.fbg.clearRect(this.x - 3 - sx, this.y - 3 - sy, 6, 6);
-        }
+        this.$.fbg.clearRect(this.x - 4 - sx, this.y - 4 - sy, 8, 8);
     }
 };
 
@@ -147,8 +139,8 @@ Ship.prototype.draw = function(sx, sy) {
         }
         
         // Start/Landing Alpha
-        var orbitDiff = 1 / this.$.shipOrbits[this.type]
-                        * (this.$.shipOrbits[this.type] - this.orbit);
+        var orbitDiff = 1 / this.$.shipOrbit
+                        * (this.$.shipOrbit - this.orbit);
         
         this.$.drawAlpha(Math.max(1 - orbitDiff, 0.05));
         
@@ -183,21 +175,11 @@ Ship.prototype.draw = function(sx, sy) {
             this.$.fbg.rotate(r);
             this.$.fbg.beginPath();
             
-            // Defender
-            if (this.type === 'def') {
-                this.$.fbg.moveTo(-1.8, -1.8);
-                this.$.fbg.lineTo(1.8, -1.8);
-                this.$.fbg.lineTo(1.8, 1.8);
-                this.$.fbg.lineTo(-1.8, 1.8);
-            
-            // Fighter
-            } else {
-                this.$.fbg.moveTo(0, 2.5);
-                this.$.fbg.lineTo(-2, -2.5);
-                this.$.fbg.lineTo(2, -2.5);
-                this.$.fbg.lineTo(0, 2.5);
-            }
-            
+            this.$.fbg.moveTo(0, 2.5);
+            this.$.fbg.lineTo(-2, -2.5);
+            this.$.fbg.lineTo(2, -2.5);
+            this.$.fbg.lineTo(0, 2.5);
+
             this.$.fbg.closePath();
             this.$.fbg.fill();
             this.$.fbg.restore();
@@ -209,38 +191,17 @@ Ship.prototype.draw = function(sx, sy) {
 Ship.prototype.attackFactory = function(factory) {
     if (!this.attacked) {
         this.attacked = true;
-       // if (this.type === 'bomb') {
-         //   this.$.effectExplosion(this.player.color, this.planet, 3, factory.r, 0, 6);
-        
-       //} else {
-            this.$.effectExplosion(this.player.color, this.planet, 3, factory.r, 0, 5);
-      //  }
+        this.$.effectExplosion(this.player.color, this.planet, 3, factory.r, 0, 5);
     }
 };
 
 Ship.prototype.attack = function(other) {
     if (!this.attacked) {
         var attack = false;
-//        if (this.type === 'fight') {
-//            attack = other.type === 'bomb';
-//        
-//        } else if (this.type === 'bomb') {
-//            attack = other.type === 'def';
-//        
-//        } else if (this.type === 'def') {
-//            attack = other.type === 'fight';
-//        }
-//        
-//        if (attack) {
-//            this.attacked = true;
-//            this.$.effectExplosion(this.player.color, this.planet,
-//                                   other.orbit, other.r, other.rs, 4);
-        
-//        } else if (this.type === other.type) {
-            this.attacked = true;
-            this.$.effectExplosion(this.player.color, this.planet,
-                                   other.orbit, other.r, other.rs, 4);
-//        }
+
+        this.attacked = true;
+        this.$.effectExplosion(this.player.color, this.planet,
+                               other.orbit, other.r, other.rs, 4);
     }
 };
 
@@ -252,26 +213,20 @@ Ship.prototype.calculatePosition = function() {
         var r = this.r * Math.PI / 180;
         this.x = this.planet.x + Math.cos(r) * orbit;
         this.y = this.planet.y + Math.sin(r) * orbit;
+        
+        
         return;
     }
     
     // Bezier curve thingy between planets
-    this.rs = this.getRotationSpeed();
-    var a = this.getPointInOrbit(this.planet, this.or, 0);
-    var b = this.getPointInOrbit(this.planet, this.travelAngle, 2);
+    var t = 1 - 1 / this.travelTicks * (this.arriveTick - this.getTick());
+    var m = 0.5 * this.travelAcceleration + this.startSpeed;
+    var d = 0.5 * this.travelAcceleration * t * t + this.startSpeed * t;
+    t = 1 / m * d;
     
-    var c = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180) % 360, 2);
-    var d = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180 + 20 * this.direction) % 360, 0);
-    
-    var step = 1 / this.travelTicks;
-    var delta = Math.max(0, 1 - step * (this.arriveTick - this.getTick()));
-    this.bezier(this, a, b, c, d, Math.max(0.00, Math.min(delta, 0.99)));
-    
-    var p = {x: 0, y: 0};
-    this.bezier(p, a, b, c, d, Math.max(0.01, Math.min(delta + 0.01, 1)));
-    
-    var dx = this.x - p.x, dy = this.y - p.y;
-    this.r = this.wrapAngle(Math.atan2(dy, dx) * 180 / Math.PI);
+    this.x = this.travelBezier.mx(t);
+    this.y = this.travelBezier.my(t);
+    this.r = this.wrapAngle(this.travelBezier.mr(t) * 180 / Math.PI);
 };
 
 Ship.prototype.getPointInOrbit = function(planet, r, e) {
@@ -284,13 +239,13 @@ Ship.prototype.getPointInOrbit = function(planet, r, e) {
 
 Ship.prototype.getNextRotationSpeed = function() {
     return Math.round(Math.PI / this.nextPlanet.size
-                      * this.$.shipSpeeds[this.type] * 100) / 100;
+                      * this.$.shipSpeed * 100) / 100;
     
 };
 
 Ship.prototype.getRotationSpeed = function() {
     return Math.round(Math.PI / this.planet.size
-                      * this.$.shipSpeeds[this.type] * 100) / 100;
+                      * this.$.shipSpeed * 100) / 100;
     
 };
 
@@ -306,42 +261,11 @@ Ship.prototype.getTick = function() {
     return this.$.getTick();
 };
 
-// Bezier Helpers --------------------------------------------------------------
-function linp(d, a, b, t) {
-    d.x = a.x + (b.x - a.x) * t;
-    d.y = a.y + (b.y - a.y) * t;
-}
 
-Ship.prototype.bezier = function(dest, a, b, c, d, delta) {
-    var ab = {x: 0, y: 0}, bc = {x:0, y: 0}, cd = {x: 0, y: 0};
-    var abbc = {x:0, y: 0}, bccd = {x:0, y: 0};
-    linp(ab, a, b, delta);
-    linp(bc, b, c, delta);
-    linp(cd, c, d, delta);
-    linp(abbc, ab, bc, delta);
-    linp(bccd, bc, cd, delta);
-    linp(dest, abbc, bccd, delta);
-};
-
-Ship.prototype.bezierDistance = function(a, b, c, d) {
-    var o = {x: 0, y: 0};
-    this.bezier(o, a, b, c, d, 0);
-    var e = {x: 0, y: 0};
-    var l = 0;
-    for(var i = 0.1; i < 1; i += 0.1) {
-        this.bezier(e, a, b, c, d, i);
-        var dx = o.x - e.x, dy = o.y - e.y;
-        l += Math.sqrt(dx * dx + dy * dy) ;
-        o.x = e.x, o.y = e.y;
-    }
-    return l;
-};
-
-
-// Newtwork --------------------------------------------------------------------
+// Network ---------------------------------------------------------------------
 Ship.prototype.initTravel = function(tick, or, pid, arrive, travel) {
     this.planet.removeShip(this);
-    this.orbit = this.$.shipOrbits[this.type];
+    this.orbit = this.$.shipOrbit;
     this.nextPlanet = this.$.planets[pid]; 
     
     this.r = this.or = or;
@@ -350,6 +274,27 @@ Ship.prototype.initTravel = function(tick, or, pid, arrive, travel) {
     this.arriveTick = arrive;
     this.travelTicks = travel;
     this.travelAngle = Math.round(this.$.coreAngle(this.planet, this.nextPlanet));
+    
+    // Bezier curve path
+    var a = this.getPointInOrbit(this.planet, this.or, 0);
+    var b = this.getPointInOrbit(this.planet, this.travelAngle, 2);
+    
+    var c = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180) % 360, 2);
+    var d = this.getPointInOrbit(this.nextPlanet, (this.travelAngle + 180 + 20 * this.direction) % 360, 0);
+    this.travelBezier = new Bezier(a, b, c, d, 100);
+    
+    this.startSpeed = this.rotationToMovement(this.planet.size, this.getRotationSpeed());
+    var end = this.rotationToMovement(this.nextPlanet.size, this.getNextRotationSpeed());
+    this.travelAcceleration = (end - this.startSpeed) / 1;
+};
+
+Ship.prototype.rotationToMovement = function(size, rs) {
+    var r = this.r * Math.PI / 180;
+    var rr = (this.r + rs) * Math.PI / 180;
+    var orbit = size + this.orbit;
+    var dx = Math.cos(r) * orbit - Math.cos(rr) * orbit;
+    var dy = Math.sin(r) * orbit - Math.sin(rr) * orbit;
+    return Math.sqrt(dx * dx + dy * dy);
 };
 
 Ship.prototype.finishTravel = function(or, pid) {
@@ -373,27 +318,26 @@ Ship.prototype.update = function(d) {
     
     // Create
     if (d[0] & 1) {
-        this.type = this.$.shipTypes[d[2]];
-        this.planet = this.$.planets[d[3]];
-        this.player = this.$.players[d[4]];
+        this.planet = this.$.planets[d[2]];
+        this.player = this.$.players[d[3]];
         this.player.shipCount++;
         
-        this.tickOffset = this.tickInit = d[5];
-        this.r = this.or = d[6];
+        this.tickOffset = this.tickInit = d[4];
+        this.r = this.or = d[5];
         this.planet.addShip(this);
         
         // Already landing
         if (this.landing) {
-            this.landFactory = this.planet.factories[d[7]];
-            this.landingTick = d[8];
+            this.landFactory = this.planet.factories[d[6]];
+            this.landingTick = d[7];
         
         // Already traveling
         } else if (this.next && this.traveling) {
-            this.initTravel(d[5], d[6], d[7], d[8], d[9]);
+            this.initTravel(d[4], d[5], d[6], d[7], d[8]);
         
         // Already sent
         } else if (this.next) {
-            this.nextPlanet = this.$.planets[d[7]];
+            this.nextPlanet = this.$.planets[d[6]];
         }
     
     // Send // Arrive
@@ -433,6 +377,91 @@ Ship.prototype.update = function(d) {
                 this.landFactory = false;
             }
         }
+    }
+};
+
+
+// Bezier Curve ----------------------------------------------------------------
+// -----------------------------------------------------------------------------
+function Bezier(a, b, c, d, points) {
+    this.a = a;
+    this.b = b;
+    this.c = c;
+    this.d = d;
+    
+    this.length = 0;
+    this.points = points; 
+    this.arcs = new Array(this.points + 1);
+    this.arcs[0] = 0;
+    
+    var ox = this.x(0), oy = this.y(0);
+    for(var i = 1; i <= this.points; i += 1) {
+        var x = this.x(i / this.points), y = this.y(i / this.points);
+        var dx = ox - x, dy = oy - y;        
+        this.length += Math.sqrt(dx * dx + dy * dy);
+        this.arcs[i] = this.length;
+        ox = x, oy = y;
+    }
+}
+
+
+// Prototype -------------------------------------------------------------------
+Bezier.prototype = {
+    map: function(u) {
+        var targetLength = u * this.length;
+        var low = 0, high = this.points, index = 0;
+        while (low < high) {
+            index = low + (((high - low) / 2) | 0);
+            if (this.arcs[index] < targetLength) {
+                low = index + 1;
+            
+            } else {
+                high = index;
+            }
+        }
+        if (this.arcs[index] > targetLength) {
+            index--;
+        }
+        
+        var lengthBefore = this.arcs[index];
+        if (lengthBefore === targetLength) {
+            return index / this.points;
+        
+        } else {
+            return (index + (targetLength - lengthBefore)
+                   / (this.arcs[index + 1] - lengthBefore)) / this.points;
+        }
+    },
+    
+    mx: function (u) {
+        return this.x(this.map(u));
+    },
+    
+    my: function (u) {
+        return this.y(this.map(u));
+    },
+    
+    mr: function(u) {
+        return this.r(this.map(u));
+    },
+    
+    x: function (t) {
+        return ((1 - t) * (1 - t) * (1 - t)) * this.a.x
+               + 3 * ((1 - t) * (1 - t)) * t * this.b.x
+               + 3 * (1 - t) * (t * t) * this.c.x
+               + (t * t * t) * this.d.x;
+    },
+    
+    y: function (t) {
+        return ((1 - t) * (1 - t) * (1 - t)) * this.a.y
+               + 3 * ((1 - t) * (1 - t)) * t * this.b.y
+               + 3 * (1 - t) * (t * t) * this.c.y
+               + (t * t * t) * this.d.y;
+    },
+    
+    r: function(t) {
+        return Math.atan2(this.y(t) - this.y(t + 0.01),
+                          this.x(t) - this.x(t + 0.01));
     }
 };
 

@@ -37,7 +37,7 @@ function Player(game, id, name, color, watch) {
     // Update planets
     for(var i in this.$.planets) {
         if (!this.$.planets[i].ships[id]) {
-            this.$.planets[i].ships[id] = {fight: [], bomb: [], def: []};
+            this.$.planets[i].ships[id] = [];
         }
     }
 }
@@ -46,7 +46,7 @@ Player.prototype.initInput = function() {
     this.selectTick = 0;
     this.selectInitTick = 0;
     this.selectAddTick = 0;
-    this.selectCount = {};
+    this.selectCount = 0;
     this.resetSelectCount();
     this.selectPlanet = null;
     this.select = false;
@@ -65,8 +65,7 @@ Player.prototype.remove = function() {
 Player.prototype.tick = function() {
     var tick = Math.floor(this.getTick());
     if (this.selectPlanet && tick % 2 === 0 && this.$.inputFactoryPlace === -1) {
-        var type = this.getSelectType();
-        var oldCount = this.selectCount[type];
+        var oldCount = this.selectCount;
         if (this.select && this.getTick() - this.selectAddTick > 10) {
             var ticks = this.getTick() - this.selectTick;
             var add = 0;
@@ -80,7 +79,7 @@ Player.prototype.tick = function() {
                 add = 1;
             }
             this.selectAddTick = this.getTick() - 8;
-            this.addCount(type, add);
+            this.addCount(add);
         
         } else {
             for(var i = 0; i < this.$.shipTypes.length; i++) {
@@ -88,31 +87,31 @@ Player.prototype.tick = function() {
             }
         }
         
-        if (this.selectCount[type] !== oldCount) {
+        if (this.selectCount !== oldCount) {
             this.$.drawBackground();
         }
     }
 };
 
-Player.prototype.addCount = function(type, add) {
+Player.prototype.addCount = function(add) {
     if (this.$.inputFactoryPlace === -1) {
-        var maxCount = this.selectPlanet.ships[this.id][type].length;;
-        this.selectCount[type] = Math.min(maxCount, this.selectCount[type] + add);
+        var maxCount = this.selectPlanet.ships[this.id].length;;
+        this.selectCount = Math.min(maxCount, this.selectCount + add);
     }
 };
 
 
 // Send Ships ------------------------------------------------------------------
 Player.prototype.send = function(target) {
-    if (this.selectPlanet && this.selectCountAll() > 0) {
+    if (this.selectPlanet && this.selectCount > 0) {
         var path = this.$.corePath(this.selectPlanet, target, this);
         for(var i = 0; i < this.$.shipTypes.length; i++) {
             var type = this.$.shipTypes[i];
-            if (path.length > 0 && this.selectCount[type] > 0) {
-                this.$.send({'send': [this.selectPlanet.id, target.id, type,
-                                      this.selectCount[type]]});
+            if (path.length > 0 && this.selectCount > 0) {
+                this.$.send({'send': [this.selectPlanet.id, target.id,
+                                      this.selectCount]});
                 
-                this.selectCount[type] = 0;
+                this.selectCount = 0;
             }
         }
     
@@ -124,24 +123,21 @@ Player.prototype.send = function(target) {
 Player.prototype.stop = function(planet) {
     var to = !!this.$.keys[17];
     if (this.selectPlanet === planet) {
-        this.$.send({'stop': [planet.id, this.getSelectType(), to]});
+        this.$.send({'stop': [planet.id, to]});
     
     } else {
-        for(var i = 0; i < this.$.shipTypes.length; i++) {
-            var type = this.$.shipTypes[i];
-            this.$.send({'stop': [planet.id, type, to]});
-        }
+        this.$.send({'stop': [planet.id, to]});
     }
 };
 
 Player.prototype.build = function(planet, place, type) {
-    if (planet.player === this || this.selectPlanet.player.id === 0) {
+    if (planet.player === this || this.selectPlanet.player.id === 1) {
         if (planet.factoryCompleteCount === 0 || planet.player === this) {
             if (planet.factoryCount < planet.maxFactories
                 && place < planet.maxFactories) {
                 
-                this.selectCount[this.selectType] = 0;
-                this.$.send({'build': [planet.id, place, type]});
+                this.selectCount = 0;
+                this.$.send({'build': [planet.id, place]});
             }
         }
     }
@@ -173,14 +169,13 @@ Player.prototype.selectSimple = function(planet) {
 
 Player.prototype.selectAll = function() {
     if (this.selectPlanet) {
-        var type = this.getSelectType();
-        this.selectCount[type] = this.selectPlanet.ships[this.id][type].length;
+        this.selectCount = this.selectPlanet.ships[this.id].length;
     }
 };
 
 Player.prototype.selectAdd = function() {
     if (this.getTick() - this.selectInitTick > 2) {
-        this.addCount(this.getSelectType(), 1);
+        this.addCount(1);
         this.$.drawBackground();
         this.selectAddTick = this.getTick();
     }
@@ -195,35 +190,8 @@ Player.prototype.selectCancel = function() {
     }
 };
 
-Player.prototype.getSelectType = function()  {
-    var dx = this.$.worldX - this.selectPlanet.x;
-    var dy = this.$.worldY - this.selectPlanet.y;
-    var dr = Math.atan2(dy, dx);
-    
-    this.selectType = 'fight';
-    for(var i = 0, l = this.$.shipTypes.length; i < l; i++) {
-        var r = (0 - Math.PI / 2) + Math.PI * 2 / l * i;       
-        var diff = Math.abs(Math.atan2(Math.sin(dr - r), Math.cos(dr - r)));
-        if (diff <= Math.PI / 3) {
-            this.selectType = this.$.shipTypes[i];
-            break;
-        }
-    }
-    return this.selectType;
-};
-
 Player.prototype.resetSelectCount = function() {
-    for(var i = 0; i < this.$.shipTypes.length; i++) {
-        this.selectCount[this.$.shipTypes[i]] = 0; 
-    }
-};
-
-Player.prototype.selectCountAll = function() {
-    var count = 0;
-    for(var i = 0; i < this.$.shipTypes.length; i++) {
-        count += this.selectCount[this.$.shipTypes[i]] ; 
-    }
-    return count;
+    this.selectCount = 0; 
 };
 
 

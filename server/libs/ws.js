@@ -9,162 +9,26 @@
 var http = require('http');
 var net = require('net');
 var crypto = require('crypto');
-
-function pack(num) {
-    return String.fromCharCode(num >> 24 & 0xFF)
-           + String.fromCharCode(num >> 16 & 0xFF)
-           + String.fromCharCode(num >> 8 & 0xFF)
-           + String.fromCharCode(num & 0xFF);
-}
+var HashList = require('./hashlist').HashList;
 
 
-function Connection($, req, socket, headers, upgradeHeader) {
-
-    // Draft 76
-    if ('sec-websocket-key1' in headers && 'sec-websocket-key2' in headers) {
-        var data = 'HTTP/1.1 101 WebSocket Protocol Handshake\r\n'
-                    + 'Upgrade: WebSocket\r\n'
-                    + 'Connection: Upgrade\r\n'
-                    + 'Sec-WebSocket-Origin: ' + headers.origin + '\r\n'
-                    + 'Sec-WebSocket-Location: ws://' + headers.host + '/';
-        
-    
-    
-        var key1 = headers['sec-websocket-key1'];
-        var key2 = headers['sec-websocket-key2'];
-        
-        var num1 = parseInt(key1.replace(/[^\d]/g, ''), 10);
-        var num2 = parseInt(key2.replace(/[^\d]/g, ''), 10);
-        
-        var spaces1 = key1.replace(/[^\ ]/g, '').length;
-        var spaces2 = key2.replace(/[^\ ]/g, '').length;
-        
-        if (spaces1 === 0 || spaces2 === 0
-            || num1 % spaces1 != 0 || num2 % spaces2 != 0) {
-            
-            socket.end();
-            socket.destroy();
-            return;
-        
-        } else {
-            var hash = crypto.createHash('md5');
-            hash.update(pack(parseInt(num1 / spaces1)));
-            hash.update(pack(parseInt(num2 / spaces2)));
-            hash.update(upgradeHeader.toString('binary'));
-            data += '\r\n\r\n';
-            data += hash.digest('binary');
-            socket.write(data, 'binary');
-            socket.flush();
-        }
-    
-    } else {
-        var data = 'HTTP/1.1 101 Web Socket Protocol Handshake\r\n'
-                    + 'Upgrade: WebSocket\r\n'
-                    + 'Connection: Upgrade\r\n'
-                    + 'WebSocket-Origin: ' + headers.origin + '\r\n'
-                    + 'WebSocket-Location: ws://' + headers.host + '/';
-         
-        data += '\r\n\r\n';
-        socket.write(data, 'ascii');
-        socket.flush();
-    }  
-    
-    // Internal Stuff
+// WebSocekt Server ------------------------------------------------------------
+// -----------------------------------------------------------------------------
+function Server(flashSocket, encoder, decoder) {
     var that = this;
-    this.id = socket.remoteAddress + ':' + socket.remotePort;
+    this.encoder = encoder;
+    this.decoder = decoder;
+    
+    this.server = new http.Server();
+    this.flashSocket = flashSocket;
     this.bytesSend = 0;
+    this.port = 0;
     
-    var frame = [];
-    var state = 0;
-    function read(data) {
-        for(var i = 0, l = data.length; i < l; i++) {
-            var b = data[i];
-            if (state === 0) {
-                if (b & 0x80 === 0x80) {
-                    state = 2;
-                
-                } else {
-                    state = 1;
-                }
-            
-            // Low
-            } else if (state === 1) {
-                if (b === 0xff) {
-                    var str = new Buffer(frame);
-                    frame = [];
-                    state = 0
-                    $.onMessage(that, str.toString('utf8', 0, str.length));
-                
-                } else {
-                    frame.push(b);
-                }
-            
-            // High
-            } else if (state === 2) {
-                if (b === 0x00) {
-                    that.close();
-                }
-            }
-        }
-    }
-    
-    function write(data) {
-        var bytes = 0;
-        if (socket.writable) {
-            try {
-                socket.write('\x00', 'binary');
-                if (typeof data === 'string') {
-                    socket.write(data, 'utf8');
-                    bytes += Buffer.byteLength(data);
-                }
-                socket.write('\xff', 'binary'); 
-                socket.flush();
-                bytes += 2;
-            
-            } catch(e) {
-                
-            }
-        }
-        that.bytesSend += bytes;
-        return bytes;
-    }
-    
-    // Methods
-    this.send = function(data) {
-        return write(data);
-    };
-    
-    this.close = function() {
-        write(null);
-        socket.end();
-        socket.destroy();
-        $.remove(that);
-    };
-    
-    // Events
-    req.socket.addListener('data', function(data) {
-        read(data);
-    });
-
-    req.socket.addListener('end', function() {
-        $.remove(that);
-    });
-
-    req.socket.addListener('error', function() {
-        that.close();
-    });
-    
-    $.add(this);
-};
-
-
-function Server(flash) {
-    var that = this;
-    var $ = new http.Server();
-    var connections = {};
+    this.connectionID = 1;
+    this.connections = new HashList();
     
     // WebSockets
-    $.addListener('upgrade', function(req, socket, upgradeHeader) {
+    this.server.addListener('upgrade', function(req, socket, upgradeHeader) {
         if (req.method === 'GET'
             && 'upgrade' in req.headers && 'connection' in req.headers
             && req.headers.upgrade.toLowerCase() === 'websocket'
@@ -181,59 +45,259 @@ function Server(flash) {
             socket.destroy();
         }
     });
+}
+exports.Server = Server;
+
+
+// Prototype -------------------------------------------------------------------
+Server.prototype = {
+    onConnect: function(conn) {},
     
-    // Methods and Events
-    this.add = function(conn) {
-        connections[conn.id] = conn;
-        that.onConnect(conn);
-    };
+    onMessage: function(conn, data) {},
     
-    this.remove = function(conn) {
-        that.onClose(conn);
-        delete connections[conn.id];
-    };
+    onClose: function(conn) {},
     
-    this.onConnect = function(conn) {
-    };
+    add: function(conn) {
+        this.connections.add(conn);
+        this.onConnect(conn);
+    },
     
-    this.onMessage = function(conn, data) {
-    };
-    
-    this.onClose = function(conn) {
-    };
-    
-    this.broadcast = function(data) {
-        var bytes = 0;
-        for(var c in connections) {
-            bytes += connections[c].send(data);
+    remove: function(conn) {
+        if (this.connections.remove(conn)) {
+            this.onClose(conn);
         }
-        return bytes;
-    };
+    },
     
-    this.listen = function(port) {
-        if (flash) {
+    broadcast: function(data) {
+        var bytes = 0;
+        var msg = this.encoder ? this.encoder(data) : data;
+        this.connections.each(function(item) {
+            bytes += item.send(msg, true);
+        });
+        return bytes;
+    },
+    
+    listen: function(port) {
+        this.port = port;
+        if (this.flashSocket) {
             try {
-                net.createServer(function(socket) {
-                    socket.write('<?xml version="1.0"?>'
-                        + '<!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">'
-                        + '<cross-domain-policy>'
-                        + ' <allow-access-from domain="*" to-ports="*" />'
-                        + '</cross-domain-policy>'
-                    );
-                    socket.end();
-                    socket.destroy();
-                
-                }).listen(843);
+                this.initFlash();
             
             } catch (e) {
-                flash = false;
+                this.flashSocket = false;
             }
         }
+        this.server.listen(this.port);
+    },
+    
+    initFlash: function() {
+        net.createServer(function(socket) {
+            socket.write('<?xml version="1.0"?>'
+                + '<!DOCTYPE cross-domain-policy SYSTEM '
+                + '"http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">'
+                + '<cross-domain-policy>'
+                + '    <allow-access-from domain="*" to-ports="*" />'
+                + '</cross-domain-policy>'
+            );
+            socket.end();
+            socket.destroy();
         
-        $.listen(port);
-        return flash;
-    };
+        }).listen(843);
+    },
+    
+    supportsFlash: function() {
+        return this.flashSocket;
+    }
+};
+exports.Server = Server;
+
+
+// WebSocket Connection --------------------------------------------------------
+// -----------------------------------------------------------------------------
+function Connection(server, req, socket, headers, upgradeHeader) {
+    this.server = server;
+    this.socket = socket;
+    this.host = this.socket.remoteAddress;
+    this.port = this.socket.remotePort;
+    this.connected = false;
+    this.version = -1;
+    this.id = server.connectionID++;
+    
+    this.bytesSend = 0;
+    this.dataFrames = [];
+    this.dataState = 0;
+    
+    if (this.establish(headers, upgradeHeader)) {
+        this.init(req);
+        this.server.add(this);
+    }
 };
 
-exports.Server = Server;
+
+// Prototype -------------------------------------------------------------------
+Connection.prototype = {
+    init: function(req) {
+        var that = this;
+        req.socket.addListener('data', function(data) {that.read(data);});
+        req.socket.addListener('end', function() {that.server.remove(that);});
+        req.socket.addListener('error', function() {that.close();});
+        
+        this.connected = true;
+    },
+    
+    send: function(data, encoded) {
+        if (this.connected) {
+            return this.write(encoded ? data : this.server.encoder(data));
+        
+        } else {
+            return 0;
+        }
+    },
+    
+    close: function() {
+        if (this.connected) {
+            this.connected = false;
+            this.write(null);
+            this.socket.end();
+            this.socket.destroy();
+            this.server.remove(this);
+        }
+    },
+
+    read: function read(data) {
+        for(var i = 0, l = data.length; i < l; i++) {
+            var b = data[i];
+            if (this.dataState === 0) {
+                this.dataState = b & 0x80 === 0x80 ? 2 : 1;
+            
+            // Low bit frame
+            } else if (this.dataState === 1) {
+                if (b === 0xff) {
+                    var data = new Buffer(this.dataFrames);
+                    this.dataFrames = [];
+                    this.dataState = 0;
+                    
+                    if (!this.message(data.toString('utf8', 0, data.length))) {
+                        this.send({error: 'Invalid Message.'});
+                        this.close();
+                        return;
+                    }
+                
+                } else {
+                    this.dataFrames.push(b);
+                }
+            
+            // Unused high bit frames
+            } else if (this.dataState === 2) {
+                if (b === 0x00) {
+                    this.close();
+                }
+            }
+        }
+    },
+    
+    write: function(data) {
+        var bytes = 0;
+        if (!this.socket.writable) {
+            return bytes;
+        }
+        
+        try {
+            this.socket.write('\x00', 'binary');
+            if (typeof data === 'string') {
+                this.socket.write(data, 'utf8');
+                bytes += Buffer.byteLength(data);
+            }
+            this.socket.write('\xff', 'binary'); 
+            this.socket.flush();
+            bytes += 2;
+        
+        } catch(e) {}
+        
+        this.bytesSend += bytes;
+        this.server.bytesSend += bytes;
+        return bytes;
+    },
+      
+    message: function(msg) {
+        if (this.server.decoder) {
+            try {
+                msg = this.server.decoder(msg);
+            
+            } catch(e) {  
+                this.close();
+                return false;
+            }
+        }
+        this.server.onMessage(this, msg);
+        return true;
+    },
+    
+    establish: function(headers, upgradeHeader) {
+        
+        // Draft 76
+        if ('sec-websocket-key1' in headers
+            && 'sec-websocket-key2' in headers) {
+            
+            var data = 'HTTP/1.1 101 WebSocket Protocol Handshake\r\n'
+                        + 'Upgrade: WebSocket\r\n'
+                        + 'Connection: Upgrade\r\n'
+                        + 'Sec-WebSocket-Origin: ' + headers.origin + '\r\n'
+                        + 'Sec-WebSocket-Location: ws://' + headers.host + '/';
+            
+            var key1 = headers['sec-websocket-key1'];
+            var key2 = headers['sec-websocket-key2'];
+            
+            var num1 = parseInt(key1.replace(/[^\d]/g, ''), 10);
+            var num2 = parseInt(key2.replace(/[^\d]/g, ''), 10);
+            
+            var spaces1 = key1.replace(/[^\ ]/g, '').length;
+            var spaces2 = key2.replace(/[^\ ]/g, '').length;
+            
+            if (spaces1 === 0 || spaces2 === 0
+                || num1 % spaces1 != 0 || num2 % spaces2 != 0) {
+                
+                this.socket.end();
+                this.socket.destroy();
+                return false;
+            
+            } else {
+                var hash = crypto.createHash('md5');
+                hash.update(pack(parseInt(num1 / spaces1)));
+                hash.update(pack(parseInt(num2 / spaces2)));
+                hash.update(upgradeHeader.toString('binary'));
+                data += '\r\n\r\n';
+                data += hash.digest('binary');
+                
+                this.socket.write(data, 'binary');
+                this.socket.flush();
+                this.version = 76;
+                return true;
+            }
+        
+        // Draft 75
+        } else {
+            var data = 'HTTP/1.1 101 Web Socket Protocol Handshake\r\n'
+                        + 'Upgrade: WebSocket\r\n'
+                        + 'Connection: Upgrade\r\n'
+                        + 'WebSocket-Origin: ' + headers.origin + '\r\n'
+                        + 'WebSocket-Location: ws://' + headers.host + '/';
+             
+            data += '\r\n\r\n';
+            this.socket.write(data, 'ascii');
+            this.socket.flush();
+            this.version = 75;
+            return true;
+        }
+    }
+};
+
+
+// Helpers ---------------------------------------------------------------------
+function pack(num) {
+    return String.fromCharCode(num >> 24 & 0xFF)
+           + String.fromCharCode(num >> 16 & 0xFF)
+           + String.fromCharCode(num >> 8 & 0xFF)
+           + String.fromCharCode(num & 0xFF);
+}
 

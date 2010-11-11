@@ -95,11 +95,11 @@ Game.prototype.netMessage = function(msg) {
         this.height = msg[2];
         this.combatTickRate = msg[3];
         
-        this.shipTypes = msg[4];
-        this.shipSpeeds = msg[5];
-        this.shipOrbits = msg[6];
-        this.shipToOrbitSpeed = msg[7];
-        this.factoryTypes = msg[8];
+        this.shipTypes = [0];
+        
+        this.shipSpeed = msg[4];
+        this.shipOrbit = msg[5];
+        this.shipToOrbitSpeed = msg[6];
     
     } else if (type === MSG_PLANETS_INIT) {
         this.netPlanetsInit(msg[0]);
@@ -141,8 +141,8 @@ Game.prototype.netMessage = function(msg) {
         
         // Hash
         try {
-            if (msg[2] !== null) {
-                localStorage.setItem('clientHash-' + this.gameID, msg[2]);
+            if (msg[1] !== null) {
+                localStorage.setItem('clientHash-' + this.gameID, msg[1]);
             }
         
         } catch(e) {
@@ -161,9 +161,11 @@ Game.prototype.netMessage = function(msg) {
         
         if (!this.player.watch) {
             $('bgs').style.borderColor = this.colorsShaded[this.player.color];
-            if (this.planets[msg[1]]) {
-                this.cameraX = this.planets[msg[1]].x - this.viewWidth / 2;
-                this.cameraY = this.planets[msg[1]].y - this.viewHeight / 2;
+            for(var i in this.planets) {
+                if (!this.player.watch && this.planets[i].player === this.player) {
+                    this.cameraX = this.planets[i].x - this.viewWidth / 2;
+                    this.cameraY = this.planets[i].y - this.viewHeight / 2;
+                }
             }
         
         } else {
@@ -188,7 +190,7 @@ Game.prototype.netPlanetsInit = function(data) {
         
         for(var e in this.players) {
             if (!p.ships[e]) {
-                p.ships[e] = {fight: [], bomb: [], def: []};
+                p.ships[e] = [];
             }
         }
     }
@@ -214,7 +216,7 @@ Game.prototype.netFactoriesUpdate = function(data) {
         var factory = p.factories[d[1]];
         if (!factory) {
             factory = new Factory(this, p, d[1], d[2], this.players[d[3]],
-                                  d[4], d[5], d[6]);
+                                  d[4], d[5]);
             
             p.update();
         

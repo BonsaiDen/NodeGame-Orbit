@@ -94,9 +94,7 @@ Planet.prototype.tickCombat = function() {
     var ships = [];
     var tl = this.$.shipTypes.length;
     for(var p in this.ships) {
-        for(var t = 0; t < tl; t++) {
-            ships = ships.concat(this.ships[p][this.$.shipTypes[t]]);
-        }
+        ships = ships.concat(this.ships[p]);
     }
     ships.sort(function(a, b) {
         return a.r < b.r;
@@ -115,7 +113,7 @@ Planet.prototype.tickCombat = function() {
                 
                 var s = ships[e];
                 var ds = Math.abs(this.$.coreDifference(s.r, c.r));
-                if (!s.traveling && ds <= c.getRotationSpeed() * 7) {
+                if (!s.traveling && ds < c.getRotationSpeed() * 7) {
                     if (s.player !== c.player) {
                         c.attack(s);
                         s.attack(c);
@@ -131,7 +129,7 @@ Planet.prototype.tickCombat = function() {
                 for(var e in this.factories) {
                     var f = this.factories[e];
                     var ds = Math.abs(this.$.coreDifference(f.r, c.r));
-                    if (ds <= c.getRotationSpeed() * 5 && f.player !== c.player) {
+                    if (ds < c.getRotationSpeed() * 5 && f.player !== c.player) {
                         c.attackFactory(f);
                         break;
                     }
@@ -144,14 +142,14 @@ Planet.prototype.tickCombat = function() {
 
 // Ships -----------------------------------------------------------------------
 Planet.prototype.addShip = function(ship) {
-    if (this.ships[ship.player.id][ship.type].indexOf(ship) === -1) {
-        this.ships[ship.player.id][ship.type].push(ship);
+    if (this.ships[ship.player.id].indexOf(ship) === -1) {
+        this.ships[ship.player.id].push(ship);
         this.shipCount++;
     }
 };
 
 Planet.prototype.removeShip = function(ship) {
-    var ships = this.ships[ship.player.id][ship.type];
+    var ships = this.ships[ship.player.id];
     var index = ships.indexOf(ship);
     if (index !== -1) {
         ships.splice(index, 1);
@@ -160,9 +158,7 @@ Planet.prototype.removeShip = function(ship) {
 };
 
 Planet.prototype.getPlayerShipCount = function(player) {
-    return this.ships[player.id]['fight'].length
-           + this.ships[player.id]['def'].length
-           + this.ships[player.id]['bomb'].length;
+    return this.ships[player.id].length;
 };
 
 
@@ -191,7 +187,7 @@ Planet.prototype.canBuildFactory = function(player) {
     if (player === this.player) {
         return true;
     
-    } else if (this.player.id === 0 && this.factoryCompleteCount === 0
+    } else if (this.player.id === 1 && this.factoryCompleteCount === 0
                && this.getPlayerFactoryCount(player) === 0) {
         
         var found = false;
@@ -253,7 +249,7 @@ Planet.prototype.draw = function(sx, sy) {
     if (this === this.$.player.selectPlanet && this.canBuild) {
         this.$.drawWidth(1);
         for(var i = 0; i < this.maxFactories; i++) {
-            var r = (this.factoryR + (360 / this.maxFactories) * i);
+            var r = (this.factoryR + (360 / this.maxFactories) * i) % 360;
             var build = false;
             for(var e in this.factories) {
                 if (this.factories[e].r === r) {
@@ -307,28 +303,17 @@ Planet.prototype.draw = function(sx, sy) {
     var size = (100 / 15) * this.size / 100;
     if (selectShips) {
         this.$.drawColor(this.$.player.color);
-        var type = 'fight';
         this.$.drawShaded(this.$.player.color);
         this.$.drawText(this.x, this.y + 1 * size,
-                        this.$.player.selectCount[type], 'center', 'bottom', size);
+                        this.$.player.selectCount, 'center', 'bottom', size);
         
         this.$.drawText(this.x, this.y + 1 * size,
                         '_', 'center', 'bottom', size);
         
         this.$.drawText(this.x, this.y - 1 * size,
-                        this.ships[this.$.player.id][type].length, 'center', 'top', size);
+                        this.ships[this.$.player.id].length, 'center', 'top', size);
         
         
-//        for(var i = 0, l = this.$.shipTypes.length; i < l; i++) {
-//            var type = this.$.shipTypes[i];
-//            r = (0 - Math.PI / 2) + Math.PI * 2 / l * i;
-//            var x = this.x + Math.cos(r) * this.size * 0.5;
-//            var y = this.y + Math.sin(r) * this.size * 0.5;  
-//            this.$.drawText(x, y,  + '/'
-//                            + this.ships[this.$.player.id][type].length,
-//                            'center', 'middle', size * 0.6);      
-//            
-//        }
 //    
     // Info
     } else if (this === this.$.inputHover || (this === selected && this.playerCount > 0)) {

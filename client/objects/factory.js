@@ -23,7 +23,7 @@
 
 // Factory ---------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Factory(game, planet, id, r, player, type, taken, needed) {
+function Factory(game, planet, id, r, player, taken, needed) {
     this.$ = game;
     this.planet = planet;
     this.player = player;
@@ -31,7 +31,6 @@ function Factory(game, planet, id, r, player, type, taken, needed) {
     this.planet.factories[this.id] = this;
     
     this.r = r;
-    this.type = this.$.factoryTypes[type];
     this.shipsNeeded = needed;
     this.shipsTaken = taken;
     

@@ -197,7 +197,7 @@ Game.prototype.inputMove = function(ox, oy) {
         if (this.oldHover) {
             this.player.selectStop();
         }
-        if (this.player.selectPlanet && this.player.selectCountAll() > 0) {
+        if (this.player.selectPlanet && this.player.selectCount > 0) {
             if (newHover) {
                 this.sendPath = this.corePath(this.player.selectPlanet,
                                               newHover, this.player);
@@ -244,7 +244,7 @@ Game.prototype.inputDown = function(e) {
             }
             if (this.player.selectPlanet
                 && this.inputHover !== this.player.selectPlanet
-                && this.player.selectCountAll() > 0) {
+                && this.player.selectCount > 0) {
                 
                 this.player.send(this.inputHover);
                 this.inputSend = true;
