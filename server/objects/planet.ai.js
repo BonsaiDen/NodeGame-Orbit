@@ -30,7 +30,7 @@ exports.methods = {
         var buildSomething = this.getTick() > this.neutralTick; 
         var factoryHasBeenBuilt = false;
         var neutralCount = this.getPlayerShipCount(this.player);
-        var enemyCount = this.ships.length - neutralCount;
+        var enemyCount = this.enemyShips.length;
         var neutralReady = this.getShipReadyCount(this.player);
         var factoryCount = this.getFactoryCount(this.player);
         var buildingFactoriesCount = this.getBuildingFactoryCount(this.player);
@@ -49,7 +49,7 @@ exports.methods = {
         var borderPlanet = false;
         this.planetNodes.each(function(node) {
             var nodeNeutralCount = node.getPlayerShipCount(this.player);
-            var nodeEnemyCount = node.ships.length - nodeNeutralCount;
+            var nodeEnemyCount = node.enemyShips.length
             
             if (node.player === this.player) {
                 this.neutralBorder = false;
@@ -60,12 +60,12 @@ exports.methods = {
                     
                     var shipsReady = node.getShipReadyCount(this.player);
                     if (enemyCount > neutralCount * 1.5) {
-                        console.log('send small help from', node.id, 'to', this.id);
+                  //      console.log('send small help from', node.id, 'to', this.id);
                         node.sendShips(this.player, this,
                                        Math.floor(shipsReady * 0.9), true);
                     
                     } else {
-                        console.log('send big help from', node.id, 'to', this.id);
+                  //      console.log('send big help from', node.id, 'to', this.id);
                         node.sendShips(this.player, this,
                                        Math.floor(shipsReady * 0.4), false);
                       
@@ -102,21 +102,21 @@ exports.methods = {
                     if (nodeEnemyCount > node.shipMax * 0.75
                         && buildingFactoriesCount === 0) {
                         
-                        console.log('big attack from', this.id, 'on', node.id);
+                       // console.log('big attack from', this.id, 'on', node.id);
                         this.sendShips(this.player, node,
                                        Math.floor(neutralReady * 0.9), false);          
                     
                     } else if (nodeEnemyCount > node.shipMax * 0.25
                         && neutralCount > nodeEnemyCount * 1.5) {
                         
-                        console.log('small attack from', this.id, 'on', node.id);
+                      //  console.log('small attack from', this.id, 'on', node.id);
                         this.sendShips(this.player, node,
                                        Math.floor(neutralReady * 0.5), true);        
                     
                     } else if (nodeEnemyCount === 0
                         && neutralCount > this.shipMax * 0.1) {
                         
-                        console.log('take attack from', this.id, 'on', node.id);
+                      //  console.log('take attack from', this.id, 'on', node.id);
                         this.sendShips(this.player, node,
                                        Math.floor(neutralReady * 0.3), true);        
                     
@@ -143,7 +143,7 @@ exports.methods = {
                                    || factoryCount > this.factoryMax / 2.5)) {
                 
                 if (neutralReady > factoryMaxRequired * 0.25) {
-                    console.log('sending for build from', this.id, 'to', factoryToBuild.planet.id);
+                 //   console.log('sending for build from', this.id, 'to', factoryToBuild.planet.id);
                     this.sendShips(this.player, factoryToBuild.planet,
                                                 factoryMaxRequired, true);
                 }
@@ -153,7 +153,7 @@ exports.methods = {
         // Equalize ships
         if (planetToGet && neutralCount < this.shipMax * 0.75) {
             if (planetMaxCount > planetToGet.shipMax * 0.35) {
-                console.log('equalizing from', planetToGet.id, 'to', this.id);
+              //  console.log('equalizing from', planetToGet.id, 'to', this.id);
                 
                 var sendCount = 2 + Math.random() * planetToGet.shipMax * 0.2;
                 planetToGet.sendShips(this.player, this, sendCount, true);
