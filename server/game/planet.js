@@ -39,12 +39,9 @@ exports.methods = {
     },
     
     planetsSetup: function() {
-        var that = this;
         this.planetsAddPlayerData(this.playerNeutral);
         this.planets.each(function(planet) {
-            planet.planetNodesIDS.forEach(function(node, i) {
-                planet.planetNodes.add(that.planets.get(node));
-            });
+            planet.initNodes();
             planet.initPlayer(this.playerNeutral, true);
         }, this);
     },

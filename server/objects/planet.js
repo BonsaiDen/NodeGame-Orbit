@@ -40,9 +40,11 @@ function OrbitPlanet(game, id, x, y, size, nodes, shipMax, factoryMax, start) {
     this.playerStart = start;
     this.player = null;
     this.playerShips = new HashList();
+    this.enemyShips = new HashList();
     
     this.planetNodesIDS = nodes;
     this.planetNodes = new HashList();
+    this.planetDistances = {};
     
     this.factories = new HashList();
     this.factoriesComplete = new HashList();
@@ -87,6 +89,7 @@ OrbitPlanet.extend({
             this.player.planets.add(this);
             this.player.shipMax += this.shipMax;
             this.neutralTick = Math.floor(this.getTick() + 250 + (500 * Math.random()));
+            this.updateEnemyShips();
             
             if (start) {
                 this.removeAllShips();
@@ -106,18 +109,50 @@ OrbitPlanet.extend({
         this.initPlayer(this.game.playerNeutral, false);
     },
     
+    initNodes: function() {
+        var that = this;
+        this.planetNodesIDS.forEach(function(node, i) {
+            that.planetNodes.add(that.game.planets.get(node));
+        });
+    },
+    
+    // Distances ---------------------------------------------------------------
+    getPlanetDistance: function(otherPlanet, direction) {
+        if (otherPlanet.id in this.planetDistances) {
+            return this.planetDistances[otherPlanet.id];
+        }
+        return false;
+    },
+    
+    setPlanetDistance: function(otherPlanet, distance) {
+        this.planetDistances[otherPlanet.id] = distance;
+    },
+    
     // Directions --------------------------------------------------------------
     getBestDirection: function(player, targetAngle) {
-        var dir = this.getBestFactoryDirection(player, targetAngle);
-        if (dir === 0) {
-            dir = this.getBestShipDirection(player, targetAngle);
+        if (player === this.player && this.enemyShips.length > 0) {
+            return this.getBestShipFightDirection(targetAngle);
+        
+        } else {
+            var dir = this.getBestFactoryDirection(player, targetAngle);
+            if (dir === 0) {
+                dir = this.getBestShipDirection(player, targetAngle);
+            }
+            return dir;
         }
-        return dir;
+    },
+    
+    getBestShipFightDirection: function(targetAngle) {
+        return this.getShipsDirection(this.enemyShips, targetAngle);
     },
     
     getBestShipDirection: function(player, targetAngle) {
+        return this.getShipsDirection(this.playerShips.get(player), targetAngle);
+    },
+    
+    getShipsDirection: function(ships, targetAngle) {
         var left = 0, right = 0;
-        this.playerShips.get(player).each(function(ship) {
+        ships.each(function(ship) {
             if (ship.direction === 1) {
                 left++;
             
@@ -125,14 +160,14 @@ OrbitPlanet.extend({
                 right++;
             }
         });
-        return left >= right ? -1 : 1; 
+        return left >= right ? -1 : 1;
     },
     
     getBestFactoryDirection: function(player, targetAngle) {
         var minAngle = 361;
         var factoryAngle = 361;
         this.factories.each(function(factory) {
-            if (factory.isBuilding(player)) {
+            if (factory.player === player && factory.isBuilding()) {
                 var angle = factory.angleDifference(targetAngle);
                 var pAngle = Math.abs(angle);
                 if (pAngle > 30 && pAngle < minAngle) {
@@ -149,7 +184,6 @@ OrbitPlanet.extend({
             return 0;
         }
     },
-    
     
     // Combat ------------------------------------------------------------------
     tickCombat: function() {

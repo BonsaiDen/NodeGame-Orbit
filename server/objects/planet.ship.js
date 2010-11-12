@@ -26,11 +26,17 @@
 exports.methods = {
     
     addShip: function(ship) {
+        if (ship.player !== this.player) {
+            this.enemyShips.add(ship);
+        }
         this.playerShips.get(ship.player).add(ship);
         this.ships.add(ship);
     },
     
     removeShip: function(ship) {
+        if (ship.player !== this.player) {
+            this.enemyShips.remove(ship);
+        }
         this.playerShips.get(ship.player).remove(ship);
         this.ships.remove(ship);
     },
@@ -44,12 +50,19 @@ exports.methods = {
         }
     },
     
+    updateEnemyShips: function() {
+        this.enemyShips.clear();
+        this.ships.each(function(ship) {
+            if (ship.player !== this.player) {
+                this.enemyShips.add(ship);
+            }
+        }, this);
+    },
+    
     sendShips: function(player, targetPlanet, count, readyOnly) {
         var ships = this.getNearestShips(player, this.angleBetween(targetPlanet));
         ships.each(function(ship) {
-            if (!ship.isTraveling && !ship.targetFactory && !ship.isLanding
-                && !ship.targetPlanet && ship.inOrbit) {
-                
+            if (ship.isReady() && ship.inOrbit) {
                 var diff = ship.angleDifference(this.angleBetween(targetPlanet));
                 if (Math.abs(diff) / ship.getRotationSpeed() > 20) {
                     if (ship.calculateTravelRoute(targetPlanet)) {
@@ -62,9 +75,22 @@ exports.methods = {
             }
         }, this);
         
+        if (count > 0) {
+            ships.each(function(ship) {
+                if (ship.isHalfReady()) {
+                    if (ship.calculateTravelRoute(targetPlanet)) {
+                        count--;
+                        if (count === 0) {
+                            return true;
+                        }   
+                    }
+                }
+            }, this);
+        }
+        
         if (!readyOnly && count > 0) {
             ships.each(function(ship) {
-                if (!ship.isTraveling && !ship.isLanding && !ship.nextPlanet) {
+                if (ship.isControlable()) {
                     if (ship.calculateTravelRoute(targetPlanet)) {
                         count--;
                         if (count === 0) {
