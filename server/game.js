@@ -21,24 +21,10 @@
 */
 
 
-// Globals ---------------------------------------------------------------------
-Object.prototype.extend = function() {
-    for(var i = 0; i < arguments.length; i++) {
-        var mod = arguments[i];
-        var methods = mod instanceof Object ? mod : require('./' + mod).methods;
-        for(var e in methods) {
-            if (methods.hasOwnProperty(e)) {
-                this.prototype[e] = methods[e];
-            }
-        }
-    }
-};
-
-
 // Modules ---------------------------------------------------------------------
-var HashList = require('./libs/hashlist').HashList;
-var IDList = require('./libs/idlist').IDList;
-var OrbitMap = require('./objects/map').OrbitMap;
+var HashList = importLib('hashlist');
+var IDList = importLib('idlist');
+var OrbitMap = importObject('map');
 
 
 // Orbit Game ------------------------------------------------------------------
@@ -89,7 +75,7 @@ function OrbitGame(server, id) {
     // Game
     setTimeout(function(){that.run();}, 66);
 }
-exports.OrbitGame = OrbitGame;
+exports.module = OrbitGame;
 
 
 // Prototype -------------------------------------------------------------------

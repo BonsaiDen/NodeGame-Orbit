@@ -22,7 +22,7 @@
 
 
 // Modules ---------------------------------------------------------------------
-var HashList = require('./../libs/hashlist').HashList;
+var HashList = importLib('hashlist');
 
 
 // Orbit Ship ------------------------------------------------------------------
@@ -72,13 +72,13 @@ function OrbitShip(planet, player, angle) {
     this.direction = this.planet.getBestDirection(this.player, this.angle);    
     this.offsetTick = this.getTick();
 }
-exports.OrbitShip = OrbitShip;
+exports.object = OrbitShip;
 
 
 // Prototype -------------------------------------------------------------------
-OrbitShip.extend('objects/ship.angle', 'objects/ship.network',
-                 'objects/ship.travel', 'objects/ship.helper',
-                 'objects/ship.landing');
+OrbitShip.extend('objects/ship/angle', 'objects/ship/network',
+                 'objects/ship/travel', 'objects/ship/helper',
+                 'objects/ship/landing');
 
 OrbitShip.extend({
     

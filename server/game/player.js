@@ -21,8 +21,7 @@
 */
 
 // Modules ---------------------------------------------------------------------
-var OrbitPlayer = require('./../objects/player').OrbitPlayer;
-
+var OrbitPlayer = importObject('player');
 
 
 // Orbit Game Player Methods ---------------------------------------------------

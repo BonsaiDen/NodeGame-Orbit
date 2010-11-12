@@ -41,7 +41,7 @@ function OrbitServerStatus(server) {
     process.addListener('SIGINT', function(){that.update(true)})
     this.update(false);
 }
-exports.OrbitServerStatus = OrbitServerStatus;
+exports.module = OrbitServerStatus;
 
 
 // Status Screen ---------------------------------------------------------------

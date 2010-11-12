@@ -10,6 +10,13 @@ Todo
 - Rewrite the client, either JS or C++
 
 
+Known Bugs
+----------
+
+- Sometimes when the last factory has been destroyed, the planet does not become neutral(already working on that)
+
+
+
 License
 =======
 

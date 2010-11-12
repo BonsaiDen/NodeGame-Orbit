@@ -22,11 +22,11 @@
 
 
 // Modules ---------------------------------------------------------------------
-var ws = require('./libs/ws');
-var bison = require('./libs/bison');
-var HashList = require('./libs/hashlist').HashList;
-var OrbitGame = require('./game').OrbitGame;
-var OrbitServerStatus = require('./status').OrbitServerStatus;
+var WebSocket = importLib('websocket');
+var bison = importLib('bison');
+var HashList = importLib('hashlist');
+var OrbitServerStatus = importModule('status');
+var OrbitGame = importModule('game');
 
 
 // Orbit Server ----------------------------------------------------------------
@@ -43,7 +43,7 @@ function OrbitServer(port, flash, max) {
     this.games = new HashList();
     this.maxGames = 12;
     
-    this.server = new ws.Server(flash, bison.encode, bison.decode);
+    this.server = new WebSocket(flash, bison.encode, bison.decode);
     this.server.onConnect = function(conn) {that.connect(conn);};
     this.server.onMessage = function(conn, msg) {that.message(conn, msg);};
     this.server.onClose = function(conn) {that.close(conn);};
@@ -51,7 +51,7 @@ function OrbitServer(port, flash, max) {
     
     new OrbitServerStatus(this);
 }
-exports.OrbitServer = OrbitServer;
+exports.module = OrbitServer;
 
 
 // Prototype -------------------------------------------------------------------

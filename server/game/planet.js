@@ -22,7 +22,7 @@
 
 
 // Modules ---------------------------------------------------------------------
-var HashList = require('./../libs/hashlist').HashList;
+var HashList = importLib('hashlist');
 
 
 // Orbit Game Planet Methods ---------------------------------------------------

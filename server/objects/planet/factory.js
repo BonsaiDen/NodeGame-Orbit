@@ -22,7 +22,7 @@
 
 
 // Modules ---------------------------------------------------------------------
-var OrbitFactory = require('./factory').OrbitFactory;
+var OrbitFactory = importObject('factory');
 
 
 // Orbit Planet Factories ------------------------------------------------------

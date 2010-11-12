@@ -43,7 +43,7 @@ function Bezier(a, b, c, d, points) {
         ox = x, oy = y;
     }
 }
-exports.Bezier = Bezier;
+exports.lib = Bezier;
 
 
 // Prototype -------------------------------------------------------------------

@@ -30,7 +30,7 @@ function IDList(size) {
         this.list.push(undefined);
     }
 }
-exports.IDList = IDList;
+exports.lib = IDList;
 
 
 IDList.prototype = {

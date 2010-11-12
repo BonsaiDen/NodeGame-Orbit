@@ -9,7 +9,7 @@
 var http = require('http');
 var net = require('net');
 var crypto = require('crypto');
-var HashList = require('./hashlist').HashList;
+var HashList = importLib('hashlist');
 
 
 // WebSocekt Server ------------------------------------------------------------
@@ -46,7 +46,7 @@ function Server(flashSocket, encoder, decoder) {
         }
     });
 }
-exports.Server = Server;
+exports.lib = Server;
 
 
 // Prototype -------------------------------------------------------------------

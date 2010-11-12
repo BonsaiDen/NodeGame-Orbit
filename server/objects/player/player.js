@@ -23,7 +23,7 @@
 
 // Modules ---------------------------------------------------------------------
 var crypto = require('crypto');
-var HashList = require('./../libs/hashlist').HashList;
+var HashList = importLib('hashlist');
 
 
 // Orbit Player ----------------------------------------------------------------
@@ -58,7 +58,7 @@ function OrbitPlayer(game, client, neutral) {
     }
     this.log('Joined');
 }
-exports.OrbitPlayer = OrbitPlayer;
+exports.object = OrbitPlayer;
 
 
 // Prototype -------------------------------------------------------------------

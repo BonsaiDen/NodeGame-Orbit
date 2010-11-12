@@ -22,8 +22,9 @@
 
 
 // Modules ---------------------------------------------------------------------
-var HashList = require('./../libs/hashlist').HashList;
-var OrbitShip = require('./ship').OrbitShip;
+var HashList = importLib('hashlist');
+var Struct = importLib('struct');
+var OrbitShip = importObject('ship');
 
 
 // Orbit Planet ----------------------------------------------------------------
@@ -53,7 +54,7 @@ function OrbitFactory(planet, player, angle, build) {
     this.shipsRequired = 7;
     this.shipsUsed = build ? this.shipsRequired : 0;
 }
-exports.OrbitFactory = OrbitFactory;
+exports.object = OrbitFactory;
 
 
 // Prototype -------------------------------------------------------------------
@@ -162,6 +163,10 @@ OrbitFactory.prototype = {
     },
     
     // Network -----------------------------------------------------------------
+    update: function() {
+        this.updated = true;
+    },
+    
     createMessage: function() {
         return [this.planet.id, this.id, this.angle, this.player.id,
                 this.shipsUsed, this.shipsRequired];
@@ -175,8 +180,20 @@ OrbitFactory.prototype = {
         return [this.planet.id, this.id];
     },
     
-    update: function() {
-        this.updated = true;
+    createStructMessage: function() {
+        return [this.planet.id, this.id, this.angle, this.player.id,
+                this.shipsUsed, this.shipsRequired];
+    },
+    
+    updateStructMessage: function() {
+        var msg = new Struct();
+        msg.writeInt8(this.planet.id).writeInt16(this.id);
+        msg.writeInt8(this.shipsUsed);
+        return msg;
+    },
+    
+    destroyStructMessage: function() {
+        return new Struct().writeInt8(this.planet.id).writeInt16(this.id);
     },
     
     // Helpers -----------------------------------------------------------------

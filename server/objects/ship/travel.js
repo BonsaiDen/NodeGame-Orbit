@@ -21,7 +21,7 @@
 */
 
 // Modules ---------------------------------------------------------------------
-var Bezier = require('./../libs/bezier.js').Bezier;
+var Bezier = importLib('bezier');
 
 
 // Orbit Ship Traveling --------------------------------------------------------

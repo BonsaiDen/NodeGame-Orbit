@@ -21,10 +21,19 @@
 */
 
 
+// Modules ---------------------------------------------------------------------
+var Struct = importLib('struct');
+
+
 // Orbit Ship Network ----------------------------------------------------------
 // -----------------------------------------------------------------------------
 exports.methods = {
- 
+    
+    update: function() {
+        this.updated = true;
+    },
+    
+    // BiSON -------------------------------------------------------------------
     createMessage: function() {
         return this.toMessage(true);
     },
@@ -35,10 +44,6 @@ exports.methods = {
     
     destroyMessage: function() {
         return [this.id];
-    },
-    
-    update: function() {
-        this.updated = true;
     },
 
     toMessage: function(create) {
@@ -110,6 +115,93 @@ exports.methods = {
             } else if (!this.hasStopped) {
                 msg.push(this.offsetAngle);
                 msg.push(this.planet.id);
+            }
+        }
+        return msg;
+    },
+    
+    // Struct ------------------------------------------------------------------
+    createStructMessage: function() {
+        return this.toStructMessage(true);
+    },
+    
+    updateStructMessage: function() {
+        return this.toStructMessage(false);
+    },
+    
+    destroyStructMessage: function() {
+        return new Struct().writeInt16(this.id);
+    },
+    
+    toStructMessage: function(create) {
+        var msg = new Struct();
+    
+        // Ship Flags
+        var flags = 0;
+        flags += create ? 1 : 0;
+        flags += this.isTraveling ? 2: 0;
+        flags += this.inOrbit ? 4 : 0;
+        flags += this.isLanding ? 8 : 0;
+        flags += this.nextPlanet ? 16 : 0;
+        flags += this.hasTraveled ? 32 : 0;
+        flags += this.direction === 1 ? 64 : 0;
+        flags += this.hasStopped ? 128 : 0;
+        
+        // Basic fields
+        msg.writeInt8(flags);
+        msg.writeInt16(this.id);   
+        
+        // Ship created
+        if (create) {
+            msg.writeInt8(this.planet.id);
+            msg.writeInt8(this.player.id);
+            msg.writeInt16(this.offsetTick);
+            msg.writeDeg(this.offsetAngle);
+            
+            // Ship created while isLanding
+            if (this.isLanding) {
+                msg.writeInt16(this.targetFactory.id);
+                msg.writeInt16(this.landingTick);
+                
+            // Ship created in travel
+            } else if (this.nextPlanet && this.isTraveling) {
+                msg.writeInt8(this.nextPlanet.id);
+                msg.writeInt16(this.arriveTick);
+                msg.writeInt16(this.travelTicks);
+            
+            // Ship created and already sent
+            } else if (this.nextPlanet) {
+                msg.writeInt8(this.nextPlanet.id);
+            }
+        
+        // Ship Updates
+        } else { 
+            
+            // Ship sent
+            if (this.nextPlanet && !this.isTraveling) {
+                msg.writeInt8(this.nextPlanet.id);
+                
+                // Ship has just arrived
+                if (this.hasTraveled) {
+                    msg.writeDeg(this.offsetAngle);
+                    msg.writeInt8(this.planet.id);
+                }
+            
+            // Ship starts travel
+            } else if (this.nextPlanet && this.isTraveling) {
+                msg.writeDeg(this.offsetAngle);
+                msg.writeInt8(this.nextPlanet.id);
+                msg.writeInt16(this.travelTicks);
+            
+            // Ship isLanding
+            } else if (this.isLanding) {
+                msg.writeInt16(this.targetFactory.id);
+                msg.writeInt16(this.landingTick);
+            
+            // Ship finishes travel 
+            } else if (!this.hasStopped) {
+                msg.writeDeg(this.offsetAngle);
+                msg.writeInt8(this.planet.id);
             }
         }
         return msg;

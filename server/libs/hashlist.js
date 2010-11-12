@@ -27,7 +27,7 @@ function HashList(max) {
     this.maximum = max || null;
     this.clear();
 }
-exports.HashList = HashList;
+exports.lib = HashList;
 
 HashList.prototype = {
     clear: function() {

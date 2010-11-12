@@ -22,8 +22,8 @@
 
 
 // Modules ---------------------------------------------------------------------
-var Maps = require('./../maps').Maps;
-var OrbitPlanet = require('./../objects/planet').OrbitPlanet;
+var Maps = importData('maps');
+var OrbitPlanet = importObject('planet');
 
 
 // Orbit Map -------------------------------------------------------------------
@@ -31,7 +31,7 @@ var OrbitPlanet = require('./../objects/planet').OrbitPlanet;
 function OrbitMap(game) {
     this.game = game;
 }
-exports.OrbitMap = OrbitMap;
+exports.object = OrbitMap;
 
 
 // Prototype -------------------------------------------------------------------

@@ -22,7 +22,8 @@
 
 
 // Modules ---------------------------------------------------------------------
-var HashList = require('./../libs/hashlist').HashList;
+var HashList = importLib('hashlist');
+var Struct = importLib('struct');
 
 
 // Orbit Planet ----------------------------------------------------------------
@@ -59,12 +60,12 @@ function OrbitPlanet(game, id, x, y, size, nodes, shipMax, factoryMax, start) {
     this.neutralAttacked = false;
     this.neutralBorder = false;
 }
-exports.OrbitPlanet = OrbitPlanet;
+exports.object = OrbitPlanet;
 
 
 // Prototype -------------------------------------------------------------------
-OrbitPlanet.extend('objects/planet.factory', 'objects/planet.ship',
-                   'objects/planet.ai');
+OrbitPlanet.extend('objects/planet/factory', 'objects/planet/ship',
+                   'objects/planet/ai');
 
 OrbitPlanet.extend({
     
@@ -223,6 +224,10 @@ OrbitPlanet.extend({
     },
     
     // Network -----------------------------------------------------------------
+    update: function() {
+        this.updated = true;
+    },
+    
     initMessage: function() {
         return [this.id, this.x, this.y, this.size, this.player.id,
                 this.shipMax, this.planetNodesIDS, this.factoryMax,
@@ -233,8 +238,20 @@ OrbitPlanet.extend({
         return [this.id, this.player.id, this.shipMax];
     },
     
-    update: function() {
-        this.updated = true;
+    initStructMessage: function() {
+        var msg = new Struct();
+        msg.writeInt8(this.id).writeInt16(this.x).writeInt16(this.y);
+        msg.writeInt8(this.size).writeInt8(this.player.id);
+        msg.writeInt8(this.shipMax);
+        msg.writeInt8Array8(this.planetNodesIDS);
+        msg.writeInt8(this.factoryMax).writeDeg(this.factoryAngle);
+        return msg;
+    },
+    
+    updateStructMessage: function() {
+        var msg = new Struct();
+        msg.writeInt8(this.id).writeInt8(this.player.id).writeInt8(this.shipMax);
+        return msg;
     },
     
     // Helpers -----------------------------------------------------------------
