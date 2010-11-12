@@ -74,9 +74,16 @@ exports.methods = {
         this.update();
         this.offsetAngle = this.angle;
         this.offsetTick = this.getTick();
-        this.calculateTravelDistance();
         this.planet.removeShip(this);
+        
+        // Get chached travel distance or calculate it
+        this.travelTicks = this.planet.getPlanetDistance(this.nextPlanet);
+        if (this.travelTicks === false) {
+            this.travelTicks = this.calculateTravelDistance();
+            this.planet.setPlanetDistance(this.nextPlanet, this.travelTicks);
+        }
         this.calculateTravelDirection();
+        
         this.nextPlanet.addShip(this);
         this.arriveTick = this.getTick() + this.travelTicks;
         this.isTraveling = true;
@@ -99,7 +106,7 @@ exports.methods = {
         var b = this.pointInOrbit(this.planet, this.travelAngle, 2);
         var c = this.pointInOrbit(this.nextPlanet, (this.travelAngle + 180) % 360, 2);
         var d = this.pointInOrbit(this.nextPlanet, (this.travelAngle + 180 + 20 * this.direction) % 360, 0);
-        this.travelTicks = Math.floor(new Bezier(a, b, c, d, 25).length * 1.05);
+        return Math.floor(new Bezier(a, b, c, d, 25).length * 1.05);
     },
     
     pointInOrbit: function(planet, r, e) {
