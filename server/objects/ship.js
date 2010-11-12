@@ -180,9 +180,15 @@ OrbitShip.extend({
     },
     
     isReady: function() {
-        return !this.isLanding && !this.isTraveling
-               && !this.nextPlanet && !this.targetFactory;
-        
+        return this.isHalfReady() && !this.targetFactory;
+    },
+    
+    isHalfReady: function() {
+        return this.isControlable() && !this.targetPlanet;
+    },
+    
+    isControlable: function() {
+        return !this.isLanding && !this.isTraveling;
     },
     
     isTargeting: function(planet) {
