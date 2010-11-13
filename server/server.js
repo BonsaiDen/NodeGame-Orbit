@@ -55,7 +55,7 @@ exports.module = OrbitServer;
 
 
 // Prototype -------------------------------------------------------------------
-OrbitServer.prototype = {
+OrbitServer.extend({
     connect: function(conn) {
         if (this.clients.length >= this.maxClients) {
             conn.send({error: ERROR_SERVER_FULL});
@@ -153,7 +153,7 @@ OrbitServer.prototype = {
     log: function(msg) {
         console.log('[Server]: ' + msg);
     }
-};
+});
 
 
 // Orbit Client ----------------------------------------------------------------
@@ -176,7 +176,7 @@ function OrbitClient(server, conn, name, game, watch, hash) {
 
 
 // Prototype -------------------------------------------------------------------
-OrbitClient.prototype = {
+OrbitClient.extend({
     send: function(type, msg) {
         msg.unshift(type);
         this.conn.send(msg);
@@ -195,5 +195,5 @@ OrbitClient.prototype = {
     log: function(msg) {
         console.log('[Client ' + this.name + '@' + this.connID + ']: ' + msg);
     }
-};
+});
 
