@@ -23,7 +23,6 @@
 
 // Modules ---------------------------------------------------------------------
 var HashList = importLib('hashlist');
-var Struct = importLib('struct');
 
 
 // Orbit Planet ----------------------------------------------------------------
@@ -168,10 +167,12 @@ OrbitPlanet.extend({
         var minAngle = 361;
         var factoryAngle = 361;
         this.factories.each(function(factory) {
-            if (factory.player === player && factory.isBuilding()) {
+            if (factory.player === player && factory.isBuilding()
+                && factory.needsShips()) {
+                
                 var angle = factory.angleDifference(targetAngle);
                 var pAngle = Math.abs(angle);
-                if (pAngle > 30 && pAngle < minAngle) {
+                if (pAngle > 60 && pAngle < minAngle) {
                     minAngle = pAngle;
                     factoryAngle = angle;
                 }

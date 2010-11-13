@@ -53,6 +53,7 @@ function OrbitFactory(planet, player, angle, build) {
     
     this.shipsRequired = 7;
     this.shipsUsed = build ? this.shipsRequired : 0;
+    this.callingShips = 0;
 }
 exports.object = OrbitFactory;
 
@@ -116,17 +117,17 @@ OrbitFactory.prototype = {
     callShip: function() {
         var ships = this.getNearestShips();
         var neededShips = this.shipsRequired - this.shipsUsed;
-        var callingShips = 0;
+        this.callingShips = 0;
         ships.each(function(ship) {
             if (ship.targetFactory === this) {
-                callingShips++;
-                if (callingShips > neededShips) {
+                this.callingShips++;
+                if (this.callingShips > neededShips) {
                     ship.targetFactory = null;
                 }
             }
-        }, this); 
+        }, this);
         
-        var additionalShips = neededShips - callingShips;
+        var additionalShips = neededShips - this.callingShips;
         if (additionalShips > 0) {
             ships.each(function(ship) {
                 if (!ship.targetFactory
@@ -207,6 +208,10 @@ OrbitFactory.prototype = {
     
     isBuilding: function() {
         return !this.build;
+    },
+    
+    needsShips: function() {
+        return this.callingShips < (this.shipsRequired - this.shipsUsed);
     },
     
     requiredCount: function() {
