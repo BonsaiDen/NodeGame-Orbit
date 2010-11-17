@@ -23,7 +23,6 @@
 
 // Modules ---------------------------------------------------------------------
 var HashList = importLib('hashlist');
-var Struct = importLib('struct');
 var OrbitShip = importObject('ship');
 
 
@@ -179,22 +178,6 @@ OrbitFactory.prototype = {
     
     destroyMessage: function() {
         return [this.planet.id, this.id];
-    },
-    
-    createStructMessage: function() {
-        return [this.planet.id, this.id, this.angle, this.player.id,
-                this.shipsUsed, this.shipsRequired];
-    },
-    
-    updateStructMessage: function() {
-        var msg = new Struct();
-        msg.writeInt8(this.planet.id).writeInt16(this.id);
-        msg.writeInt8(this.shipsUsed);
-        return msg;
-    },
-    
-    destroyStructMessage: function() {
-        return new Struct().writeInt8(this.planet.id).writeInt16(this.id);
     },
     
     // Helpers -----------------------------------------------------------------
