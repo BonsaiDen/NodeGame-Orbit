@@ -9,15 +9,15 @@
 var http = require('http');
 var net = require('net');
 var crypto = require('crypto');
-var HashList = importLib('hashlist');
+var HashList = require('./hashlist').lib;
 
 
 // WebSocekt Server ------------------------------------------------------------
 // -----------------------------------------------------------------------------
 function Server(flashSocket, encoder, decoder) {
     var that = this;
-    this.encoder = encoder;
-    this.decoder = decoder;
+    this.encoder = encoder || function(data){return data.toString()};
+    this.decoder = decoder || function(data){return data};
     
     this.server = new http.Server();
     this.flashSocket = flashSocket;
@@ -27,18 +27,25 @@ function Server(flashSocket, encoder, decoder) {
     this.connectionID = 1;
     this.connections = new HashList();
     
-    // WebSockets
     this.server.addListener('upgrade', function(req, socket, upgradeHeader) {
         if (req.method === 'GET'
             && 'upgrade' in req.headers && 'connection' in req.headers
-            && req.headers.upgrade.toLowerCase() === 'websocket'
             && req.headers.connection.toLowerCase() === 'upgrade') {
             
-            // Setup connection
             socket.setTimeout(0);
             socket.setNoDelay(true);
-            socket.setKeepAlive(true, 0);
-            new Connection(that, req, socket, req.headers, upgradeHeader);
+            socket.setKeepAlive(true, 0); 
+            
+            if (req.headers.upgrade.toLowerCase() === 'websocket') {
+                new WebSocket(that, socket, req.headers, upgradeHeader);
+            
+            } else if (req.headers.upgrade.toLowerCase() === 'fluffsocket') {
+                new FluffSocket(that, socket);
+            
+            } else {
+                socket.end();
+                socket.destroy();      
+            }
         
         } else {
             socket.end();
@@ -52,9 +59,7 @@ exports.lib = Server;
 // Prototype -------------------------------------------------------------------
 Server.prototype = {
     onConnect: function(conn) {},
-    
     onMessage: function(conn, data) {},
-    
     onClose: function(conn) {},
     
     add: function(conn) {
@@ -112,9 +117,9 @@ Server.prototype = {
 exports.Server = Server;
 
 
-// WebSocket Connection --------------------------------------------------------
+// WebSockets ------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function Connection(server, req, socket, headers, upgradeHeader) {
+function WebSocket(server, socket, headers, upgradeHeader) {
     this.server = server;
     this.socket = socket;
     this.host = this.socket.remoteAddress;
@@ -128,19 +133,19 @@ function Connection(server, req, socket, headers, upgradeHeader) {
     this.dataState = 0;
     
     if (this.establish(headers, upgradeHeader)) {
-        this.init(req);
+        this.init();
         this.server.add(this);
     }
 };
 
 
 // Prototype -------------------------------------------------------------------
-Connection.prototype = {
-    init: function(req) {
+WebSocket.prototype = {
+    init: function() {
         var that = this;
-        req.socket.addListener('data', function(data) {that.read(data);});
-        req.socket.addListener('end', function() {that.server.remove(that);});
-        req.socket.addListener('error', function() {that.close();});
+        this.socket.addListener('data', function(data) {that.read(data);});
+        this.socket.addListener('end', function() {that.server.remove(that);});
+        this.socket.addListener('error', function() {that.close();});
         
         this.connected = true;
     },
@@ -163,7 +168,7 @@ Connection.prototype = {
             this.server.remove(this);
         }
     },
-
+    
     read: function read(data) {
         for(var i = 0, l = data.length; i < l; i++) {
             var b = data[i];
@@ -289,6 +294,124 @@ Connection.prototype = {
             this.version = 75;
             return true;
         }
+    }
+};
+
+
+// FluffSockets ----------------------------------------------------------------
+// -----------------------------------------------------------------------------
+function FluffSocket(server, socket) {
+    this.server = server;
+    this.socket = socket;
+    this.socket.setEncoding('utf-8');
+    this.host = this.socket.remoteAddress;
+    this.port = this.socket.remotePort;
+    this.connected = false;
+    this.id = server.connectionID++;
+    
+    this.dataBuffer = '';
+    this.dataSize = -1;
+    this.init();
+    this.server.add(this);
+};
+
+
+// Prototype -------------------------------------------------------------------
+FluffSocket.prototype = {
+    init: function(req) {
+        var that = this;
+        this.socket.addListener('data', function(data) {that.read(data);});
+        this.socket.addListener('end', function() {that.server.remove(that);});
+        this.socket.addListener('error', function() {that.close();});
+        
+        this.connected = true;
+    },
+    
+    send: function(data, encoded) {
+        if (this.connected) {
+            return this.write(encoded ? data : this.server.encoder(data));
+        
+        } else {
+            return 0;
+        }
+    },
+    
+    close: function() {
+        if (this.connected) {
+            this.connected = false;
+            this.socket.end();
+            this.socket.destroy();
+            this.server.remove(this);
+        }
+    },
+    
+    read: function read(data) {
+        if (!this.connected) {
+            return false;
+        }
+        this.dataBuffer += data;
+        
+        var more = true;
+        while (more) {
+            more = false;
+            var len = this.dataBuffer.length;
+            if (this.dataSize === -1) {
+                if (len >= 2) {
+                    this.dataSize = (this.dataBuffer.charCodeAt(0) << 16)
+                                     + this.dataBuffer.charCodeAt(1);
+                    
+                    this.dataBuffer = this.dataBuffer.substr(2);
+                }
+            }
+            if (this.dataSize !== -1 && len >= this.dataSize) {
+                if (!this.message(this.dataBuffer.substr(0, this.dataSize))) {
+                    this.send({error: 'Invalid Message.'});
+                    this.close();
+                    return;
+                }
+                this.dataBuffer = this.dataBuffer.substr(this.dataSize);
+                this.dataSize = -1;
+                more = true;
+            }
+        }
+    },
+    
+    write: function(data) {
+        var bytes = 0;
+        if (!this.socket.writable) {
+            return bytes;
+        }
+        
+        try {
+            var size = data.length;
+            if (typeof data === 'string') {
+                var msg = String.fromCharCode((size >> 16) & 0xffff)
+                          + String.fromCharCode(size & 0xffff) + data;
+                
+                this.socket.write(msg, 'utf8');
+                bytes += Buffer.byteLength(msg);
+            }
+            this.socket.flush();
+        
+        } catch(e) {}
+        
+        this.bytesSend += bytes;
+        this.server.bytesSend += bytes;
+        return bytes;
+    },
+      
+    message: function(msg) {
+        if (this.server.decoder) {
+            try {
+                msg = this.server.decoder(msg);
+            
+            } catch(e) {  
+                this.close();
+                return false;
+            }
+        }
+        this.server.onMessage(this, msg);
+        return true;
     }
 };
 

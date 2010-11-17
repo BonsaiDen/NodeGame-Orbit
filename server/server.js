@@ -22,7 +22,7 @@
 
 
 // Modules ---------------------------------------------------------------------
-var WebSocket = importLib('websocket');
+var WebSocket = importLib('socket');
 var bison = importLib('bison');
 var HashList = importLib('hashlist');
 var OrbitServerStatus = importModule('status');
