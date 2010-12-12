@@ -178,11 +178,11 @@ WebSocket.prototype = {
             // Low bit frame
             } else if (this.dataState === 1) {
                 if (b === 0xff) {
-                    var data = new Buffer(this.dataFrames);
+                    var buffer = new Buffer(this.dataFrames);
                     this.dataFrames = [];
                     this.dataState = 0;
                     
-                    if (!this.message(data.toString('utf8', 0, data.length))) {
+                    if (!this.message(buffer.toString('utf8', 0, buffer.length))) {
                         this.send({error: 'Invalid Message.'});
                         this.close();
                         return;
