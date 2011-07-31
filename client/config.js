@@ -1,1 +1,2 @@
-var HOST = '127.0.0.1', PORT = 28785;
+var HOST = window.location.host.split(':')[0],
+    PORT = 28785;

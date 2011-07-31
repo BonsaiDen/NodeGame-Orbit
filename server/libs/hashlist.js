@@ -24,31 +24,27 @@
 // Hash List Utility Class -----------------------------------------------------
 // -----------------------------------------------------------------------------
 function HashList(max) {
-    this.maximum = max || null;
+    this.maximum = max || -1;
     this.clear();
 }
 exports.lib = HashList;
 
+
+// Prototype -------------------------------------------------------------------
 HashList.prototype = {
+
+    // General Methods ---------------------------------------------------------
     clear: function() {
         this.hash = {};
         this.items = [];
         this.length = 0;
     },
 
-    has: function(obj) {
-        if (typeof obj !== 'object') {
-            return obj in this.hash;
-        
-        } else {
-            return obj.id in this.hash;
-        }
-    },
-    
     full: function() {
-        return this.maximum === null ? false : this.length === this.maximum;
+        return this.maximum === -1 ? false : this.length === this.maximum;
     },
     
+    // Index based Methods -----------------------------------------------------
     contains: function(item) {
         return this.items.indexOf(item) !== -1;
     },
@@ -59,6 +55,16 @@ HashList.prototype = {
     
     at: function(index) {
         return this.items[index];
+    },
+    
+    // ID based methods --------------------------------------------------------
+    has: function(obj) {
+        if (typeof obj !== 'object') {
+            return obj in this.hash;
+        
+        } else {
+            return obj.id in this.hash;
+        }
     },
     
     get: function(obj) {
@@ -106,11 +112,13 @@ HashList.prototype = {
         }
     },
     
+    // Sorting -----------------------------------------------------------------
     sort: function(func) {
         this.items.sort(func);
         return this;
     },
     
+    // Iteration ---------------------------------------------------------------
     each: function(cb, scope) {
         for(var i = 0; i < this.length; i++) {
             var oldLength = this.length;

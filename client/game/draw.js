@@ -154,7 +154,7 @@ Game.prototype.drawPlanets = function(sx, sy) {
 Game.prototype.drawShips = function(sx, sy) {
     this.fbg.save();
     this.fbg.scale(this.scale, this.scale);    
-    this.fbg.translate(-this.cameraX, -this.cameraY);
+    this.fbg.translate(-this.cameraX, -this.cameraY );
     for(var i in this.ships) {
         this.ships[i].clear(sx, sy);
     }
