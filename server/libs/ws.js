@@ -631,6 +631,7 @@ function Server() {
 
     }
 
+    this.bytesSend = 0;
     this.broadcast = function(data, binary) {
 
         var bytes = 0;
@@ -640,11 +641,14 @@ function Server() {
             }
         }
 
+        this.bytesSend += bytes;
         return bytes;
 
     };
 
+    this.port = -1;
     this.listen = function(port) {
+        this.port = port;
         server.listen(port);
     };
 
