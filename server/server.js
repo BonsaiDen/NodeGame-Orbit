@@ -22,7 +22,7 @@
 
 
 // Modules ---------------------------------------------------------------------
-var WebSocket = importLib('ws');
+var lithium = require('lithium');
 var bison = importLib('bison');
 var HashList = importLib('hashlist');
 var OrbitServerStatus = importModule('status');
@@ -43,72 +43,73 @@ function OrbitServer(port, flash, max) {
     this.games = new HashList();
     this.maxGames = 12;
 
-    this.server = new WebSocket();
+    this.server = new lithium.Server(function(remote) {
 
-    this.server.on('connection', function(conn) {
-        console.log('connect');
-        that.connect(conn);
-    });
+        remote.on('message', function(msg) {
+            that.message(remote, msg);
+        });
 
-    this.server.on('data', function(conn, data, binary) {
-        that.message(conn, bison.decode(data));
-    });
+        remote.on('close', function() {
+            that.close(remote);
+        });
 
-    this.server.on('end', function(conn) {
-        that.close(conn);
-    });
+        that.connect(remote);
+
+    }, bison.encode, bison.decode);
 
     this.server.listen(port);
 
-    new OrbitServerStatus(this);
+    this.status = new OrbitServerStatus(this);
 }
 exports.module = OrbitServer;
 
 
 // Prototype -------------------------------------------------------------------
 OrbitServer.extend({
-    connect: function(conn) {
+    connect: function(remote) {
         if (this.clients.length >= this.maxClients) {
-            conn.send(bison.encode({error: ERROR_SERVER_FULL}));
-            conn.close();
+            remote.send({error: ERROR_SERVER_FULL});
+            remote.close();
             return false;
         }
+
+        remote.accept();
     },
 
     broadcast: function(type, msg, clients, exclude) {
         msg.unshift(type);
         if (!clients || clients.length === 0) {
-            this.server.broadcast(bison.encode(msg));
+            this.server.send(msg);
 
         } else if (exclude) {
             this.clients.eachNot(clients, function(client) {
-                client.conn.send(bison.encode(msg));
+                client.remote.send(msg);
             });
 
         } else {
             this.clients.eachIn(clients, function(client) {
-                client.conn.send(bison.encode(msg));
+                client.remote.send(msg);
             });
         }
     },
 
-    close: function(conn) {
-        if (this.clients.has(conn)) {
-            this.clients.get(conn).close();
-            this.clients.remove(conn);
+    close: function(remote) {
+        if (this.clients.has(remote)) {
+            this.clients.get(remote).close();
+            this.clients.remove(remote);
         }
     },
 
-    message: function(conn, msg) {
-        if (this.clients.has(conn)) {
-            this.clients.get(conn).message(msg);
+    message: function(remote, msg) {
+        if (this.clients.has(remote)) {
+            this.clients.get(remote).message(msg);
 
         } else {
-            this.login(conn, msg);
+            this.login(remote, msg);
         }
     },
 
-    login: function(conn, msg) {
+    login: function(remote, msg) {
         if (msg instanceof Array
 
             // basic check
@@ -137,14 +138,14 @@ OrbitServer.extend({
         ) {
             var name = msg[1].trim();
             var game = msg[2], watch = msg[3], hash = msg[4].trim();
-            var client = new OrbitClient(this, conn, name, game, watch, hash);
+            var client = new OrbitClient(this, remote, name, game, watch, hash);
             this.clients.add(client);
 
         // Invalid
         } else {
             this.log('Invalid login');
-            conn.send(bison.encode({error: ERROR_INVALID_LOGIN}));
-            conn.close();
+            remote.send({error: ERROR_INVALID_LOGIN});
+            remote.close();
         }
     },
 
@@ -169,11 +170,11 @@ OrbitServer.extend({
 
 // Orbit Client ----------------------------------------------------------------
 // -----------------------------------------------------------------------------
-function OrbitClient(server, conn, name, game, watch, hash) {
+function OrbitClient(server, remote, name, game, watch, hash) {
     this.server = server;
-    this.conn = conn;
-    this.connID = conn.host + ':' + conn.port;
-    this.id = this.conn.id;
+    this.remote = remote;
+    this.connID = this.remote.id;
+    this.id = this.remote.id;
 
     this.name = name;
     this.player = null;
@@ -190,12 +191,12 @@ function OrbitClient(server, conn, name, game, watch, hash) {
 OrbitClient.extend({
     send: function(type, msg) {
         msg.unshift(type);
-        this.conn.send(bison.encode(msg));
+        this.remote.send(msg);
     },
 
     close: function() {
         this.server.removeFromGame(this);
-        this.conn.close();
+        this.remote.close();
         this.log('Disconnected');
     },
 
